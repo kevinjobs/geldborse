@@ -1,0 +1,666 @@
+"use client"
+
+import React, { useState, useEffect, Fragment, useMemo } from "react"
+import { AppSidebar } from "@/components/app-sidebar"
+import { SiteHeader } from "@/components/site-header"
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Badge } from "@/components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { CalendarIcon, ChevronDown, ChevronRight, Plus, Trash2 } from "lucide-react"
+import { getAccountNameColor, getAccountTypeConfig, getAssetTypeConfig } from "@/lib/account-config"
+import { getAccountLogo } from "@/lib/account-logos"
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts"
+import { Button } from "@/components/ui/button"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+
+interface Account {
+  id: string
+  name: string
+  type: string
+  accountNumber: string | null
+}
+
+interface Asset {
+  id: string
+  name: string
+  type: string
+  amount: number
+}
+
+interface DailySnapshot {
+  id: string
+  snapshotAt: string
+  accountId: string
+  assetId: string | null
+  amount: number
+  account: Account
+  asset: Asset | null
+  createdAt: string
+  updatedAt: string
+}
+
+type PeriodType = "0.5" | "1" | "2" | "3"
+
+export default function SnapshotsPage() {
+  const [snapshots, setSnapshots] = useState<DailySnapshot[]>([])
+  const [loading, setLoading] = useState(true)
+  const [selectedDate, setSelectedDate] = useState<string>("all")
+  const [expandedAccounts, setExpandedAccounts] = useState<Set<string>>(new Set())
+  const [expandedSnapshots, setExpandedSnapshots] = useState<Set<string>>(new Set())
+  const [chartPeriod, setChartPeriod] = useState<PeriodType>("1")
+  const [generating, setGenerating] = useState(false)
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean
+    type: "single" | "group"
+    id?: string
+    snapshotAt?: string
+  }>({ open: false, type: "single" })
+
+  useEffect(() => {
+    fetchSnapshots()
+  }, [])
+
+  const fetchSnapshots = async () => {
+    try {
+      const res = await fetch("/api/daily-snapshots")
+      const data = await res.json()
+      setSnapshots(Array.isArray(data) ? data : [])
+    } catch (error) {
+      console.error("获取快照失败:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const generateSnapshot = async () => {
+    setGenerating(true)
+    try {
+      const res = await fetch("/api/daily-snapshots", { method: "POST" })
+      const data = await res.json()
+      if (data.success) {
+        await fetchSnapshots()
+      }
+    } catch (error) {
+      console.error("生成快照失败:", error)
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  const confirmDeleteSingle = (id: string) => {
+    setDeleteDialog({ open: true, type: "single", id })
+  }
+
+  const confirmDeleteGroup = (snapshotAt: string) => {
+    setDeleteDialog({ open: true, type: "group", snapshotAt })
+  }
+
+  const executeDelete = async () => {
+    if (deleteDialog.type === "single" && deleteDialog.id) {
+      try {
+        const res = await fetch(`/api/daily-snapshots/${deleteDialog.id}`, { method: "DELETE" })
+        const data = await res.json()
+        if (data.success) {
+          setSnapshots((prev) => prev.filter((s) => s.id !== deleteDialog.id))
+        }
+      } catch (error) {
+        console.error("删除快照失败:", error)
+      }
+    } else if (deleteDialog.type === "group" && deleteDialog.snapshotAt) {
+      try {
+        const res = await fetch(`/api/daily-snapshots?snapshotAt=${encodeURIComponent(deleteDialog.snapshotAt)}`, { method: "DELETE" })
+        const data = await res.json()
+        if (data.success) {
+          setSnapshots((prev) => prev.filter((s) => s.snapshotAt !== deleteDialog.snapshotAt))
+        }
+      } catch (error) {
+        console.error("删除快照组失败:", error)
+      }
+    }
+    setDeleteDialog({ open: false, type: "single" })
+  }
+
+  const toggleAccountExpand = (accountKey: string) => {
+    setExpandedAccounts((prev) => {
+      const newSet = new Set(prev)
+      if (newSet.has(accountKey)) {
+        newSet.delete(accountKey)
+      } else {
+        newSet.add(accountKey)
+      }
+      return newSet
+    })
+  }
+
+  const toggleSnapshotExpand = (snapshotAt: string) => {
+    setExpandedSnapshots((prev) => {
+      const newSet = new Set(prev)
+      if (newSet.has(snapshotAt)) {
+        newSet.delete(snapshotAt)
+      } else {
+        newSet.add(snapshotAt)
+      }
+      return newSet
+    })
+  }
+
+  const formatDateTime = (dateStr: string) => {
+    return new Date(dateStr).toLocaleString("zh-CN", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    })
+  }
+
+  const formatDateShort = (dateStr: string) => {
+    const date = new Date(dateStr)
+    return `${date.getMonth() + 1}/${date.getDate()}`
+  }
+
+  const formatAmount = (amount: number) => {
+    return amount.toLocaleString("zh-CN", {
+      style: "currency",
+      currency: "CNY",
+    })
+  }
+
+  const formatAmountShort = (amount: number) => {
+    if (Math.abs(amount) >= 10000) {
+      return `${(amount / 10000).toFixed(1)}万`
+    }
+    return amount.toFixed(0)
+  }
+
+  const getUniqueSnapshotTimes = () => {
+    const times = [...new Set(snapshots.map((s) => s.snapshotAt))]
+    return times.sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
+  }
+
+  const getUniqueDates = () => {
+    const dates = [...new Set(snapshots.map((s) => {
+      const d = new Date(s.snapshotAt)
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+    }))]
+    return dates.sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
+  }
+
+  const getSnapshotsByTime = (snapshotAt: string) => {
+    return snapshots.filter((s) => s.snapshotAt === snapshotAt)
+  }
+
+  const getTotalByTime = (snapshotAt: string) => {
+    return getSnapshotsByTime(snapshotAt).reduce((sum, s) => sum + s.amount, 0)
+  }
+
+  const getChartDateRange = () => {
+    const now = new Date()
+    const years = parseFloat(chartPeriod)
+    const startDate = new Date(now)
+    startDate.setFullYear(startDate.getFullYear() - years)
+    return startDate
+  }
+
+  const chartData = useMemo(() => {
+    const startDate = getChartDateRange()
+    const dateTotals = new Map<string, number>()
+
+    snapshots.forEach((s) => {
+      const date = new Date(s.snapshotAt)
+      if (date >= startDate) {
+        const dateStr = s.snapshotAt
+        dateTotals.set(dateStr, (dateTotals.get(dateStr) || 0) + s.amount)
+      }
+    })
+
+    const sortedDates = Array.from(dateTotals.entries())
+      .sort((a, b) => new Date(a[0]).getTime() - new Date(b[0]).getTime())
+
+    return sortedDates.map(([date, total]) => ({
+      date,
+      label: formatDateShort(date),
+      total,
+    }))
+  }, [snapshots, chartPeriod])
+
+  const getGroupedSnapshots = () => {
+    let times = getUniqueSnapshotTimes()
+
+    if (selectedDate !== "all") {
+      times = times.filter((t) => {
+        const d = new Date(t)
+        const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+        return dateStr === selectedDate
+      })
+    }
+
+    return times.map((snapshotAt) => {
+      const timeSnapshots = getSnapshotsByTime(snapshotAt)
+      const accountMap = new Map<string, { account: Account; snapshots: DailySnapshot[]; total: number }>()
+
+      timeSnapshots.forEach((snapshot) => {
+        const key = snapshot.accountId
+        if (!accountMap.has(key)) {
+          accountMap.set(key, {
+            account: snapshot.account,
+            snapshots: [],
+            total: 0,
+          })
+        }
+        const entry = accountMap.get(key)!
+        entry.snapshots.push(snapshot)
+        entry.total += snapshot.amount
+      })
+
+      const accounts = Array.from(accountMap.values())
+      return {
+        snapshotAt,
+        accounts,
+        total: getTotalByTime(snapshotAt),
+      }
+    })
+  }
+
+  if (loading) {
+    return (
+      <SidebarProvider>
+        <AppSidebar variant="sidebar" />
+        <SidebarInset>
+          <SiteHeader />
+          <div className="flex flex-1 items-center justify-center">
+            <p>加载中...</p>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
+    )
+  }
+
+  const groupedSnapshots = getGroupedSnapshots()
+
+  return (
+    <SidebarProvider>
+      <AppSidebar variant="sidebar" />
+      <SidebarInset>
+        <SiteHeader />
+        <div className="flex flex-1 flex-col overflow-y-auto" style={{ scrollbarGutter: "stable" }}>
+          <div className="@container/main flex flex-1 flex-col gap-2">
+            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+              <div className="px-4 lg:px-6">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">快照次数</CardTitle>
+                      <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{getUniqueSnapshotTimes().length}</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">快照记录数</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{snapshots.length}</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">最新总资产</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {getUniqueSnapshotTimes().length > 0
+                          ? formatAmount(getTotalByTime(getUniqueSnapshotTimes()[0]))
+                          : formatAmount(0)}
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">资产变化</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {getUniqueSnapshotTimes().length >= 2
+                          ? formatAmount(
+                            getTotalByTime(getUniqueSnapshotTimes()[0]) - getTotalByTime(getUniqueSnapshotTimes()[1])
+                          )
+                          : "-"}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+
+              <div className="px-4 lg:px-6">
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle>资产变化趋势</CardTitle>
+                        <CardDescription>每次快照的总资产变化曲线</CardDescription>
+                      </div>
+                      <Select value={chartPeriod} onValueChange={(v) => setChartPeriod(v as PeriodType)}>
+                        <SelectTrigger className="w-[120px]">
+                          <SelectValue placeholder="选择周期" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="0.5">半年</SelectItem>
+                          <SelectItem value="1">一年</SelectItem>
+                          <SelectItem value="2">二年</SelectItem>
+                          <SelectItem value="3">三年</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {chartData.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">暂无数据</div>
+                    ) : (
+                      <div className="h-[300px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                            <XAxis
+                              dataKey="label"
+                              tick={{ fontSize: 12 }}
+                              stroke="#9ca3af"
+                              tickLine={false}
+                            />
+                            <YAxis
+                              tick={{ fontSize: 12 }}
+                              stroke="#9ca3af"
+                              tickLine={false}
+                              tickFormatter={formatAmountShort}
+                            />
+                            <Tooltip
+                              formatter={(value: number) => [formatAmount(value), "总资产"]}
+                              labelFormatter={(label, payload) => {
+                                if (payload && payload[0]) {
+                                  return formatDateTime((payload[0].payload as { date: string }).date)
+                                }
+                                return label
+                              }}
+                              contentStyle={{
+                                backgroundColor: "white",
+                                border: "1px solid #e5e7eb",
+                                borderRadius: "8px",
+                                boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                              }}
+                            />
+                            <Line
+                              type="monotone"
+                              dataKey="total"
+                              stroke="#3b82f6"
+                              strokeWidth={2}
+                              dot={false}
+                              activeDot={{ r: 6, fill: "#3b82f6" }}
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="px-4 lg:px-6">
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle>资产快照记录</CardTitle>
+                        <CardDescription>查看每次快照的账户资产记录</CardDescription>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          onClick={generateSnapshot}
+                          disabled={generating}
+                          size="sm"
+                          className="gap-1"
+                        >
+                          <Plus className="h-4 w-4" />
+                          {generating ? "生成中..." : "生成快照"}
+                        </Button>
+                        <Select value={selectedDate} onValueChange={setSelectedDate}>
+                          <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="选择日期" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">全部日期</SelectItem>
+                            {getUniqueDates().map((date) => (
+                              <SelectItem key={date} value={date}>
+                                {date}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {groupedSnapshots.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">暂无快照数据</div>
+                    ) : (
+                      <div className="space-y-4">
+                        {groupedSnapshots.map((group) => {
+                          const isExpanded = expandedSnapshots.has(group.snapshotAt)
+                          return (
+                            <div key={group.snapshotAt} className="border rounded-lg overflow-hidden">
+                              <div
+                                className="flex items-center justify-between p-4 bg-slate-50 cursor-pointer hover:bg-slate-100 transition-colors"
+                                onClick={() => toggleSnapshotExpand(group.snapshotAt)}
+                              >
+                                <div className="flex items-center gap-2">
+                                  {isExpanded ? (
+                                    <ChevronDown className="h-4 w-4" />
+                                  ) : (
+                                    <ChevronRight className="h-4 w-4" />
+                                  )}
+                                  <h3 className="font-semibold">{formatDateTime(group.snapshotAt)}</h3>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                  <div className="text-lg font-bold">
+                                    总计: <span className={group.total >= 0 ? "text-green-600" : "text-red-600"}>{formatAmount(group.total)}</span>
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      confirmDeleteGroup(group.snapshotAt)
+                                    }}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                              {isExpanded && (
+                                <Table className="select-none">
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead className="w-[35%]">账户</TableHead>
+                                      <TableHead className="w-[18%]">账户类型</TableHead>
+                                      <TableHead className="w-[18%] text-right">金额</TableHead>
+                                      <TableHead className="w-[18%] text-right">账户总计</TableHead>
+                                      <TableHead className="w-[11%] text-right">操作</TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {group.accounts.map((accountData) => {
+                                      const nameColor = getAccountNameColor(accountData.account.name)
+                                      const typeConfig = getAccountTypeConfig(accountData.account.type)
+                                      const TypeIcon = typeConfig.icon
+                                      const LogoComponent = getAccountLogo(accountData.account.name)
+                                      const accountKey = `${group.snapshotAt}-${accountData.account.id}`
+                                      const isAccountExpanded = expandedAccounts.has(accountKey)
+                                      const hasMultipleAssets = accountData.snapshots.length > 1
+
+                                      return (
+                                        <Fragment key={accountKey}>
+                                          <TableRow
+                                            className={`${nameColor.bgColor} ${hasMultipleAssets ? "cursor-pointer hover:brightness-95 transition-all" : ""}`}
+                                            onClick={() => hasMultipleAssets && toggleAccountExpand(accountKey)}
+                                          >
+                                            <TableCell className="py-3">
+                                              <div className="flex items-center gap-2">
+                                                {hasMultipleAssets && (
+                                                  <span className="w-4 h-4 flex items-center justify-center shrink-0">
+                                                    {isAccountExpanded ? (
+                                                      <ChevronDown className="h-3 w-3" />
+                                                    ) : (
+                                                      <ChevronRight className="h-3 w-3" />
+                                                    )}
+                                                  </span>
+                                                )}
+                                                {!hasMultipleAssets && <span className="w-4" />}
+                                                {LogoComponent ? (
+                                                  <LogoComponent size={16} className={nameColor.color} />
+                                                ) : (
+                                                  <div className={`w-3 h-3 rounded-full ${nameColor.bgColor}`} />
+                                                )}
+                                                <span className="font-medium">{accountData.account.name}</span>
+                                                {accountData.account.accountNumber && (
+                                                  <span className="text-xs text-muted-foreground">
+                                                    ({accountData.account.accountNumber})
+                                                  </span>
+                                                )}
+                                              </div>
+                                            </TableCell>
+                                            <TableCell>
+                                              <Badge variant="outline" className="gap-1">
+                                                <TypeIcon className="h-3 w-3" />
+                                                {typeConfig.label}
+                                              </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                              <span className={accountData.total >= 0 ? "text-green-600" : "text-red-600"}>
+                                                {formatAmount(accountData.total)}
+                                              </span>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                              <span className={accountData.total >= 0 ? "text-green-600" : "text-red-600"}>
+                                                {formatAmount(accountData.total)}
+                                              </span>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                              {!hasMultipleAssets && accountData.snapshots[0] && (
+                                                <Button
+                                                  variant="ghost"
+                                                  size="icon"
+                                                  className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                                                  onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    confirmDeleteSingle(accountData.snapshots[0].id)
+                                                  }}
+                                                >
+                                                  <Trash2 className="h-3.5 w-3.5" />
+                                                </Button>
+                                              )}
+                                            </TableCell>
+                                          </TableRow>
+                                          {isAccountExpanded && accountData.snapshots.map((snapshot, snapshotIndex) => {
+                                            const isLastSnapshot = snapshotIndex === accountData.snapshots.length - 1
+                                            const assetTypeConfig = snapshot.asset ? getAssetTypeConfig(snapshot.asset.type) : null
+                                            const AssetIcon = assetTypeConfig?.icon
+
+                                            return (
+                                              <TableRow key={snapshot.id} className="bg-slate-50/50 hover:bg-slate-100/50 transition-colors">
+                                                <TableCell className="relative py-2">
+                                                  {!isLastSnapshot && (
+                                                    <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200" />
+                                                  )}
+                                                  {isLastSnapshot && (
+                                                    <div className="absolute left-4 top-0 h-1/2 w-px bg-slate-200" />
+                                                  )}
+                                                  <div className="absolute left-4 top-1/2 w-3 h-px bg-slate-200" />
+                                                  <div className="pl-10 flex items-center gap-2">
+                                                    <span className="text-sm text-slate-600">
+                                                      {snapshot.asset?.name || "默认资产"}
+                                                    </span>
+                                                    {assetTypeConfig && (
+                                                      <Badge className="gap-1 text-xs font-normal">
+                                                        {AssetIcon && <AssetIcon className="h-3 w-3" />}
+                                                        {assetTypeConfig.label}
+                                                      </Badge>
+                                                    )}
+                                                  </div>
+                                                </TableCell>
+                                                <TableCell />
+                                                <TableCell className="text-right text-sm">
+                                                  <span className={snapshot.amount >= 0 ? "text-green-600" : "text-red-600"}>
+                                                    {formatAmount(snapshot.amount)}
+                                                  </span>
+                                                </TableCell>
+                                                <TableCell />
+                                                <TableCell className="text-right">
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                                                    onClick={(e) => {
+                                                      e.stopPropagation()
+                                                      confirmDeleteSingle(snapshot.id)
+                                                    }}
+                                                  >
+                                                    <Trash2 className="h-3.5 w-3.5" />
+                                                  </Button>
+                                                </TableCell>
+                                              </TableRow>
+                                            )
+                                          })}
+                                        </Fragment>
+                                      )
+                                    })}
+                                  </TableBody>
+                                </Table>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </div>
+        </div>
+      </SidebarInset>
+
+      <AlertDialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog({ ...deleteDialog, open })}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认删除</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteDialog.type === "group"
+                ? "确定要删除该次快照的所有记录吗？此操作无法撤销。"
+                : "确定要删除该条快照记录吗？此操作无法撤销。"}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction onClick={executeDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              删除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </SidebarProvider>
+  )
+}

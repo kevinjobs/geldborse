@@ -1,0 +1,1059 @@
+"use client"
+
+import { useState, useEffect, Fragment } from "react"
+import { AppSidebar } from "@/components/app-sidebar"
+import { SiteHeader } from "@/components/site-header"
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { ChevronDown, ChevronRight, Plus, Pencil, Trash2 } from "lucide-react"
+import { Label } from "@/components/ui/label"
+import { Badge } from "@/components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  getAccountNameColor,
+  getAccountTypeConfig,
+  getAssetTypeConfig,
+  ACCOUNT_TYPE_CONFIG,
+  ASSET_TYPE_CONFIG,
+  AccountDisplay
+} from "@/lib/account-config"
+
+interface Account {
+  id: string
+  name: string
+  type: string
+  accountNumber: string | null
+  initialBalance: number
+  createdAt: string
+  updatedAt: string
+  _count?: {
+    records: number
+    assets: number
+  }
+}
+
+interface Asset {
+  id: string
+  name: string
+  type: string
+  amount: number
+  accountId: string
+  createdAt: string
+  updatedAt: string
+}
+
+interface Balance {
+  id: string
+  amount: number
+  recordedAt: string
+  assetId: string
+  asset?: Asset
+  createdAt: string
+  updatedAt: string
+}
+
+export default function AccountsPage() {
+  const [accounts, setAccounts] = useState<Account[]>([])
+  const [loading, setLoading] = useState(true)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [assetDialogOpen, setAssetDialogOpen] = useState(false)
+  const [balanceDialogOpen, setBalanceDialogOpen] = useState(false)
+  const [editingAccount, setEditingAccount] = useState<Account | null>(null)
+  const [deletingAccount, setDeletingAccount] = useState<Account | null>(null)
+  const [accountName, setAccountName] = useState("")
+  const [accountType, setAccountType] = useState("CASH")
+  const [accountNumber, setAccountNumber] = useState("")
+  const [initialBalance, setInitialBalance] = useState("")
+  const [saving, setSaving] = useState(false)
+
+  const [expandedAccounts, setExpandedAccounts] = useState<Set<string>>(new Set())
+  const [expandedAssets, setExpandedAssets] = useState<Set<string>>(new Set())
+  const [accountAssets, setAccountAssets] = useState<Record<string, Asset[]>>({})
+  const [assetBalances, setAssetBalances] = useState<Record<string, Balance[]>>({})
+
+  const [selectedAccount, setSelectedAccount] = useState<Account | null>(null)
+  const [assets, setAssets] = useState<Asset[]>([])
+  const [editingAsset, setEditingAsset] = useState<Asset | null>(null)
+  const [assetName, setAssetName] = useState("")
+  const [assetType, setAssetType] = useState("DEPOSIT")
+  const [assetAmount, setAssetAmount] = useState("")
+
+  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null)
+  const [balances, setBalances] = useState<Balance[]>([])
+  const [editingBalance, setEditingBalance] = useState<Balance | null>(null)
+  const [balanceAmount, setBalanceAmount] = useState("")
+  const [balanceDate, setBalanceDate] = useState("")
+
+  useEffect(() => {
+    fetchAccounts()
+  }, [])
+
+  const fetchAccounts = async () => {
+    try {
+      const res = await fetch("/api/accounts")
+      const data = await res.json()
+      setAccounts(data)
+    } catch (error) {
+      console.error("获取账户列表失败:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchAssets = async (accountId: string) => {
+    try {
+      const res = await fetch(`/api/assets?accountId=${accountId}`)
+      const data = await res.json()
+      setAssets(data)
+    } catch (error) {
+      console.error("获取资产列表失败:", error)
+    }
+  }
+
+  const fetchBalances = async (assetId: string) => {
+    try {
+      const res = await fetch(`/api/balances?assetId=${assetId}`)
+      const data = await res.json()
+      setBalances(data)
+    } catch (error) {
+      console.error("获取余额快照列表失败:", error)
+    }
+  }
+
+  const toggleAccountExpand = async (accountId: string) => {
+    setExpandedAccounts((prev) => {
+      const newSet = new Set(prev)
+      if (newSet.has(accountId)) {
+        newSet.delete(accountId)
+      } else {
+        newSet.add(accountId)
+        if (!accountAssets[accountId]) {
+          fetch(`/api/assets?accountId=${accountId}`)
+            .then((res) => res.json())
+            .then((data) => {
+              setAccountAssets((prev) => ({ ...prev, [accountId]: data }))
+            })
+        }
+      }
+      return newSet
+    })
+  }
+
+  const toggleAssetExpand = async (assetId: string) => {
+    setExpandedAssets((prev) => {
+      const newSet = new Set(prev)
+      if (newSet.has(assetId)) {
+        newSet.delete(assetId)
+      } else {
+        newSet.add(assetId)
+        if (!assetBalances[assetId]) {
+          fetch(`/api/balances?assetId=${assetId}`)
+            .then((res) => res.json())
+            .then((data) => {
+              setAssetBalances((prev) => ({ ...prev, [assetId]: data }))
+            })
+        }
+      }
+      return newSet
+    })
+  }
+
+  const handleAdd = () => {
+    setEditingAccount(null)
+    setAccountName("")
+    setAccountType("CASH")
+    setAccountNumber("")
+    setInitialBalance("")
+    setDialogOpen(true)
+  }
+
+  const handleEdit = (account: Account) => {
+    setEditingAccount(account)
+    setAccountName(account.name)
+    setAccountType(account.type)
+    setAccountNumber(account.accountNumber || "")
+    setInitialBalance(account.initialBalance.toString())
+    setDialogOpen(true)
+  }
+
+  const handleDelete = (account: Account) => {
+    setDeletingAccount(account)
+    setDeleteDialogOpen(true)
+  }
+
+  const handleSave = async () => {
+    if (!accountName.trim()) {
+      alert("请输入账户名称")
+      return
+    }
+
+    setSaving(true)
+    try {
+      if (editingAccount) {
+        const res = await fetch(`/api/accounts/${editingAccount.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: accountName, type: accountType, accountNumber, initialBalance }),
+        })
+        if (res.ok) {
+          fetchAccounts()
+          setDialogOpen(false)
+        } else {
+          alert("更新失败")
+        }
+      } else {
+        const res = await fetch("/api/accounts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: accountName, type: accountType, accountNumber, initialBalance }),
+        })
+        if (res.ok) {
+          fetchAccounts()
+          setDialogOpen(false)
+        } else {
+          alert("创建失败")
+        }
+      }
+    } catch (error) {
+      console.error("保存失败:", error)
+      alert("保存失败")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!deletingAccount) return
+
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/accounts/${deletingAccount.id}`, {
+        method: "DELETE",
+      })
+      if (res.ok) {
+        fetchAccounts()
+        setDeleteDialogOpen(false)
+      } else {
+        const data = await res.json()
+        alert(data.error || "删除失败")
+      }
+    } catch (error) {
+      console.error("删除失败:", error)
+      alert("删除失败")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleViewAssets = (account: Account) => {
+    setSelectedAccount(account)
+    setSelectedAsset(null)
+    fetchAssets(account.id)
+  }
+
+  const handleAddAsset = () => {
+    setEditingAsset(null)
+    setAssetName("")
+    setAssetType("DEPOSIT")
+    setAssetAmount("")
+    setAssetDialogOpen(true)
+  }
+
+  const handleEditAsset = async (asset: Asset) => {
+    setEditingAsset(asset)
+    setAssetName(asset.name)
+    setAssetType(asset.type)
+    setAssetAmount(asset.amount.toString())
+    if (!assetBalances[asset.id]) {
+      const res = await fetch(`/api/balances?assetId=${asset.id}`)
+      const data = await res.json()
+      setAssetBalances((prev) => ({ ...prev, [asset.id]: data }))
+    }
+    setAssetDialogOpen(true)
+  }
+
+  const handleDeleteAsset = async (asset: Asset) => {
+    if (!confirm(`确定要删除资产 "${asset.name}" 吗？`)) return
+
+    try {
+      const res = await fetch(`/api/assets/${asset.id}`, {
+        method: "DELETE",
+      })
+      if (res.ok) {
+        if (selectedAccount) {
+          fetchAssets(selectedAccount.id)
+        }
+        const assetsRes = await fetch(`/api/assets?accountId=${asset.accountId}`)
+        const assetsData = await assetsRes.json()
+        setAccountAssets((prev) => ({ ...prev, [asset.accountId]: assetsData }))
+        fetchAccounts()
+        if (selectedAsset?.id === asset.id) {
+          setSelectedAsset(null)
+        }
+      } else {
+        alert("删除失败")
+      }
+    } catch (error) {
+      console.error("删除失败:", error)
+      alert("删除失败")
+    }
+  }
+
+  const handleSaveAsset = async () => {
+    if (!assetName.trim()) {
+      alert("请输入资产名称")
+      return
+    }
+
+    setSaving(true)
+    try {
+      if (editingAsset) {
+        const res = await fetch(`/api/assets/${editingAsset.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: assetName, type: assetType, amount: assetAmount }),
+        })
+        if (res.ok) {
+          if (selectedAccount) {
+            fetchAssets(selectedAccount.id)
+          }
+          if (editingAsset.accountId) {
+            const assetsRes = await fetch(`/api/assets?accountId=${editingAsset.accountId}`)
+            const assetsData = await assetsRes.json()
+            setAccountAssets((prev) => ({ ...prev, [editingAsset.accountId]: assetsData }))
+          }
+          const balancesRes = await fetch(`/api/balances?assetId=${editingAsset.id}`)
+          const balancesData = await balancesRes.json()
+          setAssetBalances((prev) => ({ ...prev, [editingAsset.id]: balancesData }))
+          fetchAccounts()
+          setAssetDialogOpen(false)
+        } else {
+          alert("更新失败")
+        }
+      } else {
+        const res = await fetch("/api/assets", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: assetName, type: assetType, amount: assetAmount, accountId: selectedAccount!.id }),
+        })
+        if (res.ok) {
+          fetchAssets(selectedAccount!.id)
+          const assetsRes = await fetch(`/api/assets?accountId=${selectedAccount!.id}`)
+          const assetsData = await assetsRes.json()
+          setAccountAssets((prev) => ({ ...prev, [selectedAccount!.id]: assetsData }))
+          fetchAccounts()
+          setAssetDialogOpen(false)
+        } else {
+          alert("创建失败")
+        }
+      }
+    } catch (error) {
+      console.error("保存失败:", error)
+      alert("保存失败")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleViewBalances = (asset: Asset) => {
+    setSelectedAsset(asset)
+    fetchBalances(asset.id)
+  }
+
+  const handleAddBalance = () => {
+    setEditingBalance(null)
+    setBalanceAmount("")
+    setBalanceDate(new Date().toISOString().slice(0, 16))
+    setBalanceDialogOpen(true)
+  }
+
+  const handleEditBalance = (balance: Balance) => {
+    setEditingBalance(balance)
+    setBalanceAmount(balance.amount.toString())
+    setBalanceDate(new Date(balance.recordedAt).toISOString().slice(0, 16))
+    setBalanceDialogOpen(true)
+  }
+
+  const handleDeleteBalance = async (balance: Balance) => {
+    if (!confirm("确定要删除此余额快照吗？")) return
+
+    try {
+      const res = await fetch(`/api/balances/${balance.id}`, {
+        method: "DELETE",
+      })
+      if (res.ok) {
+        if (selectedAsset) {
+          fetchBalances(selectedAsset.id)
+        }
+        const balancesRes = await fetch(`/api/balances?assetId=${balance.assetId}`)
+        const balancesData = await balancesRes.json()
+        setAssetBalances((prev) => ({ ...prev, [balance.assetId]: balancesData }))
+      } else {
+        alert("删除失败")
+      }
+    } catch (error) {
+      console.error("删除失败:", error)
+      alert("删除失败")
+    }
+  }
+
+  const handleSaveBalance = async () => {
+    if (!balanceAmount || !balanceDate) {
+      alert("请填写金额和时间")
+      return
+    }
+
+    setSaving(true)
+    try {
+      if (editingBalance) {
+        const res = await fetch(`/api/balances/${editingBalance.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ amount: balanceAmount, recordedAt: balanceDate }),
+        })
+        if (res.ok) {
+          if (selectedAsset) {
+            fetchBalances(selectedAsset.id)
+          }
+          if (editingBalance.assetId) {
+            const balancesRes = await fetch(`/api/balances?assetId=${editingBalance.assetId}`)
+            const balancesData = await balancesRes.json()
+            setAssetBalances((prev) => ({ ...prev, [editingBalance.assetId]: balancesData }))
+          }
+          setBalanceDialogOpen(false)
+        } else {
+          alert("更新失败")
+        }
+      } else {
+        const res = await fetch("/api/balances", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ amount: balanceAmount, recordedAt: balanceDate, assetId: selectedAsset!.id }),
+        })
+        if (res.ok) {
+          if (selectedAsset) {
+            fetchBalances(selectedAsset.id)
+            const balancesRes = await fetch(`/api/balances?assetId=${selectedAsset.id}`)
+            const balancesData = await balancesRes.json()
+            setAssetBalances((prev) => ({ ...prev, [selectedAsset.id]: balancesData }))
+          }
+          setBalanceDialogOpen(false)
+        } else {
+          alert("创建失败")
+        }
+      }
+    } catch (error) {
+      console.error("保存失败:", error)
+      alert("保存失败")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString("zh-CN")
+  }
+
+  const formatDateTime = (dateStr: string) => {
+    return new Date(dateStr).toLocaleString("zh-CN")
+  }
+
+  const formatAmount = (amount: number) => {
+    return amount.toLocaleString("zh-CN", {
+      style: "currency",
+      currency: "CNY",
+    })
+  }
+
+  const getLatestBalanceAmount = (assetId: string, defaultAmount: number): number => {
+    const balanceList = assetBalances[assetId] || []
+    if (balanceList.length === 0) {
+      return defaultAmount
+    }
+    const sortedBalances = [...balanceList].sort(
+      (a, b) => new Date(b.recordedAt).getTime() - new Date(a.recordedAt).getTime()
+    )
+    return sortedBalances[0].amount
+  }
+
+  if (loading) {
+    return (
+      <SidebarProvider>
+        <AppSidebar variant="sidebar" />
+        <SidebarInset>
+          <SiteHeader />
+          <div className="flex flex-1 items-center justify-center">
+            <p>加载中...</p>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
+    )
+  }
+
+  return (
+    <SidebarProvider>
+      <AppSidebar variant="sidebar" />
+      <SidebarInset>
+        <SiteHeader />
+        <div className="flex flex-1 flex-col overflow-y-auto" style={{ scrollbarGutter: "stable" }}>
+          <div className="@container/main flex flex-1 flex-col gap-2">
+            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+              <div className="px-4 lg:px-6">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                      <CardTitle>账户管理</CardTitle>
+                      <CardDescription>管理您的财务账户、资产和余额快照</CardDescription>
+                    </div>
+                    <Button onClick={handleAdd}>添加账户</Button>
+                  </CardHeader>
+                  <CardContent className="min-h-[300px]">
+                    <Table className="table-fixed select-none">
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[25%]">名称</TableHead>
+                          <TableHead className="w-[15%]">账户号码</TableHead>
+                          <TableHead className="w-[20%] text-right">总资产</TableHead>
+                          <TableHead className="w-[10%] text-center">收支数</TableHead>
+                          <TableHead className="w-[10%] text-center">资产数</TableHead>
+                          <TableHead className="w-[20%] text-right">操作</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {accounts.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={6} className="text-center text-muted-foreground">
+                              暂无账户
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          accounts.map((account) => {
+                            const nameColor = getAccountNameColor(account.name)
+                            const isExpanded = expandedAccounts.has(account.id)
+                            const hasAssets = (account._count?.assets || 0) > 0
+                            const accountAssetList = accountAssets[account.id] || []
+                            const totalAssets = (account as { totalAssets?: number }).totalAssets || 0
+                            const isNegative = totalAssets < 0
+                            return (
+                              <Fragment key={account.id}>
+                                <TableRow
+                                  className={`${nameColor.bgColor} ${hasAssets ? "cursor-pointer hover:brightness-95 transition-all" : ""}`}
+                                  onClick={() => hasAssets && toggleAccountExpand(account.id)}
+                                >
+                                  <TableCell className="py-3">
+                                    <div className="flex items-center gap-2">
+                                      {hasAssets && (
+                                        <span className="w-4 h-4 flex items-center justify-center shrink-0">
+                                          {isExpanded ? (
+                                            <ChevronDown className="h-4 w-4" />
+                                          ) : (
+                                            <ChevronRight className="h-4 w-4" />
+                                          )}
+                                        </span>
+                                      )}
+                                      {!hasAssets && <span className="w-4 shrink-0" />}
+                                      <AccountDisplay name={account.name} type={account.type} variant="table" />
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>{account.accountNumber || "-"}</TableCell>
+                                  <TableCell className={`text-right font-medium ${isNegative ? "text-red-600" : "text-green-600"}`}>
+                                    {formatAmount(totalAssets)}
+                                  </TableCell>
+                                  <TableCell className="text-center">{account._count?.records || 0}</TableCell>
+                                  <TableCell className="text-center">{account._count?.assets || 0}</TableCell>
+                                  <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="mr-2 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                                      onClick={() => {
+                                        setSelectedAccount(account)
+                                        handleAddAsset()
+                                      }}
+                                    >
+                                      <Plus className="h-3.5 w-3.5 mr-1" />
+                                      添加资产
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="mr-2"
+                                      onClick={() => handleEdit(account)}
+                                    >
+                                      <Pencil className="h-3.5 w-3.5 mr-1" />
+                                      编辑
+                                    </Button>
+                                    <Button
+                                      variant="destructive"
+                                      size="sm"
+                                      onClick={() => handleDelete(account)}
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5 mr-1" />
+                                      删除
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                                {isExpanded && accountAssetList.map((asset, assetIndex) => {
+                                  const assetTypeConfig = getAssetTypeConfig(asset.type)
+                                  const AssetIcon = assetTypeConfig.icon
+                                  const isAssetExpanded = expandedAssets.has(asset.id)
+                                  const isLastAsset = assetIndex === accountAssetList.length - 1
+                                  const assetBalanceList = assetBalances[asset.id] || []
+                                  return (
+                                    <Fragment key={asset.id}>
+                                      <TableRow
+                                        className="bg-slate-50/50 hover:bg-slate-100/50 transition-colors cursor-pointer"
+                                        onClick={() => toggleAssetExpand(asset.id)}
+                                      >
+                                        <TableCell className="relative py-3">
+                                          {!isLastAsset && (
+                                            <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200" />
+                                          )}
+                                          {isLastAsset && (
+                                            <div className="absolute left-4 top-0 h-1/2 w-px bg-slate-200" />
+                                          )}
+                                          <div className="absolute left-4 top-1/2 w-3 h-px bg-slate-200" />
+                                          <div className="pl-10 flex items-center gap-2">
+                                            <span className="w-4 h-4 flex items-center justify-center shrink-0">
+                                              {isAssetExpanded ? (
+                                                <ChevronDown className="h-3 w-3" />
+                                              ) : (
+                                                <ChevronRight className="h-3 w-3" />
+                                              )}
+                                            </span>
+                                            <span className="text-sm text-slate-600">{asset.name}</span>
+                                            <Badge className="gap-1 text-xs font-normal">
+                                              <AssetIcon className="h-3 w-3" />
+                                              {assetTypeConfig.label}
+                                            </Badge>
+                                          </div>
+                                        </TableCell>
+                                        <TableCell className="text-right">{formatAmount(getLatestBalanceAmount(asset.id, asset.amount))}</TableCell>
+                                        <TableCell />
+                                        <TableCell />
+                                        <TableCell />
+                                        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="mr-2 h-7 text-blue-600 hover:text-blue-700"
+                                            onClick={() => {
+                                              setSelectedAccount(account)
+                                              setSelectedAsset(asset)
+                                              handleAddBalance()
+                                            }}
+                                          >
+                                            <Plus className="h-3 w-3 mr-1" />
+                                            快照
+                                          </Button>
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="mr-2"
+                                            onClick={() => handleEditAsset(asset)}
+                                          >
+                                            <Pencil className="h-3.5 w-3.5 mr-1" />
+                                            编辑
+                                          </Button>
+                                          <Button
+                                            variant="destructive"
+                                            size="sm"
+                                            onClick={() => handleDeleteAsset(asset)}
+                                          >
+                                            <Trash2 className="h-3.5 w-3.5 mr-1" />
+                                            删除
+                                          </Button>
+                                        </TableCell>
+                                      </TableRow>
+                                      {isAssetExpanded && assetBalanceList.map((balance, balanceIndex) => {
+                                        const isLastBalance = balanceIndex === assetBalanceList.length - 1
+                                        return (
+                                          <TableRow key={balance.id} className="bg-slate-100/50 hover:bg-slate-200/50 transition-colors">
+                                            <TableCell className="relative py-2">
+                                              {!isLastAsset && (
+                                                <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200" />
+                                              )}
+                                              {!isLastBalance && (
+                                                <div className="absolute left-8 top-0 bottom-0 w-px bg-slate-200" />
+                                              )}
+                                              {isLastBalance && (
+                                                <div className="absolute left-8 top-0 h-1/2 w-px bg-slate-200" />
+                                              )}
+                                              <div className="absolute left-8 top-1/2 w-2 h-px bg-slate-200" />
+                                              <div className="pl-12 flex items-center gap-2">
+                                                <span className="text-xs text-muted-foreground">
+                                                  {formatDateTime(balance.recordedAt)}
+                                                </span>
+                                                <span className="text-xs text-slate-500">快照</span>
+                                              </div>
+                                            </TableCell>
+                                            <TableCell className="text-right text-sm">{formatAmount(balance.amount)}</TableCell>
+                                            <TableCell />
+                                            <TableCell />
+                                            <TableCell />
+                                            <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                                              <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="mr-2 h-7"
+                                                onClick={() => handleEditBalance(balance)}
+                                              >
+                                                <Pencil className="h-3 w-3 mr-1" />
+                                                编辑
+                                              </Button>
+                                              <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-7 text-destructive hover:text-destructive"
+                                                onClick={() => handleDeleteBalance(balance)}
+                                              >
+                                                <Trash2 className="h-3 w-3 mr-1" />
+                                                删除
+                                              </Button>
+                                            </TableCell>
+                                          </TableRow>
+                                        )
+                                      })}
+                                      {isAssetExpanded && assetBalanceList.length === 0 && (
+                                        <TableRow className="bg-slate-100/50">
+                                          <TableCell className="relative py-2">
+                                            {!isLastAsset && (
+                                              <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200" />
+                                            )}
+                                            <div className="absolute left-8 top-1/2 w-2 h-px bg-slate-200" />
+                                            <div className="pl-12 text-xs text-muted-foreground">暂无快照</div>
+                                          </TableCell>
+                                          <TableCell />
+                                          <TableCell />
+                                          <TableCell />
+                                          <TableCell />
+                                          <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              className="h-7 text-blue-600 hover:text-blue-700"
+                                              onClick={() => {
+                                                setSelectedAccount(account)
+                                                setSelectedAsset(asset)
+                                                handleAddBalance()
+                                              }}
+                                            >
+                                              <Plus className="h-3 w-3 mr-1" />
+                                              添加
+                                            </Button>
+                                          </TableCell>
+                                        </TableRow>
+                                      )}
+                                    </Fragment>
+                                  )
+                                })}
+                                {isExpanded && accountAssetList.length === 0 && (
+                                  <TableRow className="bg-slate-50/50">
+                                    <TableCell className="relative py-2">
+                                      <div className="absolute left-4 top-0 h-1/2 w-px bg-slate-200" />
+                                      <div className="absolute left-4 top-1/2 w-3 h-px bg-slate-200" />
+                                      <div className="pl-10 text-xs text-muted-foreground">暂无资产</div>
+                                    </TableCell>
+                                    <TableCell />
+                                    <TableCell />
+                                    <TableCell />
+                                    <TableCell />
+                                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-7 text-blue-600 hover:text-blue-700"
+                                        onClick={() => {
+                                          setSelectedAccount(account)
+                                          handleAddAsset()
+                                        }}
+                                      >
+                                        <Plus className="h-3 w-3 mr-1" />
+                                        添加
+                                      </Button>
+                                    </TableCell>
+                                  </TableRow>
+                                )}
+                              </Fragment>
+                            )
+                          })
+                        )}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </div>
+        </div>
+      </SidebarInset>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingAccount ? "编辑账户" : "添加账户"}</DialogTitle>
+            <DialogDescription>
+              {editingAccount ? "修改账户信息" : "创建一个新的财务账户"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="accountName">账户名称</Label>
+              <Input
+                id="accountName"
+                placeholder="如：支付宝、微信、中信银行"
+                value={accountName}
+                onChange={(e) => setAccountName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="accountType">账户类型</Label>
+              <Select value={accountType} onValueChange={setAccountType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="选择账户类型" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(ACCOUNT_TYPE_CONFIG).map(([value, config]) => {
+                    const Icon = config.icon
+                    return (
+                      <SelectItem key={value} value={value}>
+                        <span className="flex items-center gap-2">
+                          <Icon className="h-4 w-4" />
+                          {config.label}
+                        </span>
+                      </SelectItem>
+                    )
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="accountNumber">账户号码</Label>
+              <Input
+                id="accountNumber"
+                placeholder="可选，如银行卡号"
+                value={accountNumber}
+                onChange={(e) => setAccountNumber(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="initialBalance">初始余额</Label>
+              <Input
+                id="initialBalance"
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                value={initialBalance}
+                onChange={(e) => setInitialBalance(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+              取消
+            </Button>
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? "保存中..." : "保存"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>确认删除</DialogTitle>
+            <DialogDescription>
+              确定要删除账户 &quot;{deletingAccount?.name}&quot; 吗？如果该账户有关联收支记录，将无法删除。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              取消
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmDelete} disabled={saving}>
+              {saving ? "删除中..." : "删除"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={assetDialogOpen} onOpenChange={setAssetDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{editingAsset ? "编辑资产" : "添加资产"}</DialogTitle>
+            <DialogDescription>
+              {editingAsset ? "修改资产信息" : "为账户添加新资产"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="assetName">资产名称</Label>
+              <Input
+                id="assetName"
+                placeholder="如：活期存款、定期存款、基金"
+                value={assetName}
+                onChange={(e) => setAssetName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="assetType">资产类型</Label>
+              <Select value={assetType} onValueChange={setAssetType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="选择资产类型" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(ASSET_TYPE_CONFIG).map(([value, config]) => {
+                    const Icon = config.icon
+                    return (
+                      <SelectItem key={value} value={value}>
+                        <span className="flex items-center gap-2">
+                          <Icon className="h-4 w-4" />
+                          {config.label}
+                        </span>
+                      </SelectItem>
+                    )
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="assetAmount">金额</Label>
+              <Input
+                id="assetAmount"
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                value={assetAmount}
+                onChange={(e) => setAssetAmount(e.target.value)}
+              />
+            </div>
+            {editingAsset && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>余额快照</Label>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-blue-600 hover:text-blue-700"
+                    onClick={() => {
+                      setSelectedAsset(editingAsset)
+                      handleAddBalance()
+                    }}
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    添加快照
+                  </Button>
+                </div>
+                <div className="border rounded-md max-h-40 overflow-y-auto">
+                  {assetBalances[editingAsset.id] && assetBalances[editingAsset.id].length > 0 ? (
+                    <div className="divide-y">
+                      {[...assetBalances[editingAsset.id]]
+                        .sort((a, b) => new Date(b.recordedAt).getTime() - new Date(a.recordedAt).getTime())
+                        .map((balance) => (
+                          <div key={balance.id} className="flex items-center justify-between p-2 hover:bg-slate-50">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-muted-foreground">
+                                {formatDateTime(balance.recordedAt)}
+                              </span>
+                              <span className="text-sm font-medium">{formatAmount(balance.amount)}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 w-6 p-0"
+                                onClick={() => {
+                                  setSelectedAsset(editingAsset)
+                                  handleEditBalance(balance)
+                                }}
+                              >
+                                <Pencil className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                                onClick={() => handleDeleteBalance(balance)}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  ) : (
+                    <div className="p-4 text-center text-sm text-muted-foreground">
+                      暂无快照
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAssetDialogOpen(false)}>
+              取消
+            </Button>
+            <Button onClick={handleSaveAsset} disabled={saving}>
+              {saving ? "保存中..." : "保存"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={balanceDialogOpen} onOpenChange={setBalanceDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingBalance ? "编辑余额快照" : "添加余额快照"}</DialogTitle>
+            <DialogDescription>
+              {editingBalance ? "修改余额快照信息" : "记录当前资产余额"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="balanceAmount">金额</Label>
+              <Input
+                id="balanceAmount"
+                type="number"
+                step="0.01"
+                placeholder="请输入当前资产余额"
+                value={balanceAmount}
+                onChange={(e) => setBalanceAmount(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="balanceDate">登记时间</Label>
+              <Input
+                id="balanceDate"
+                type="datetime-local"
+                value={balanceDate}
+                onChange={(e) => setBalanceDate(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBalanceDialogOpen(false)}>
+              取消
+            </Button>
+            <Button onClick={handleSaveBalance} disabled={saving}>
+              {saving ? "保存中..." : "保存"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </SidebarProvider>
+  )
+}

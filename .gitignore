@@ -39,3 +39,32 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/lib/generated/prisma
+
+# Database files (SQLite)
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+prisma/dev.db
+
+# Local IDE configuration
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary data files
+app/dashboard/data.json
+
+# Lock files - keep only one depending on package manager used
+# If using npm, uncomment the next line
+# package-lock.json
+# If using bun, uncomment the next line
+# bun.lock
+
+# Local development files
+*.local
+.DS_Store?

@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  // url      = env("DATABASE_URL")
+}
+
+model Account {
+  id             String          @id @default(cuid())
+  name           String
+  type           String          @default("CASH")
+  accountNumber  String?
+  initialBalance Float           @default(0)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  records        Record[]
+  assets         Asset[]
+  dailySnapshots DailySnapshot[]
+
+  @@index([type])
+}
+
+model Asset {
+  id        String     @id @default(cuid())
+  name      String
+  type      String     @default("DEPOSIT")
+  amount    Float      @default(0)
+  accountId String
+  account   Account    @relation(fields: [accountId], references: [id])
+  balances  Balance[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@index([accountId])
+  @@index([type])
+}
+
+model Balance {
+  id        String   @id @default(cuid())
+  amount    Float
+  recordedAt DateTime
+  assetId   String
+  asset     Asset    @relation(fields: [assetId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([assetId])
+  @@index([recordedAt])
+}
+
+model Record {
+  id        String   @id @default(cuid())
+  date      DateTime
+  amount    Float
+  type      String   @default("EXPENSE")
+  accountId String
+  account   Account  @relation(fields: [accountId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([accountId])
+  @@index([date])
+}
+
+model DailySnapshot {
+  id         String   @id @default(cuid())
+  snapshotAt DateTime
+  accountId  String
+  account    Account  @relation(fields: [accountId], references: [id])
+  assetId    String?
+  amount     Float
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([snapshotAt])
+  @@index([accountId])
+  @@index([assetId])
+}
