@@ -22,7 +22,7 @@ interface Account {
   name: string
   type: string
   accountNumber: string | null
-  assets?: { id: string }[]
+  assets?: Asset[]
 }
 
 interface Asset {
@@ -147,7 +147,7 @@ export default function ExportPage() {
     XLSX.writeFile(wb, `${fileName}.xlsx`)
   }
 
-  const exportToPDF = async (elementRef: HTMLDivElement | null, fileName: string) => {
+  const exportToPDF = async (elementRef: HTMLElement | null, fileName: string) => {
     if (!elementRef) return
     const dataUrl = await domToPng(elementRef, {
       scale: 2,
@@ -188,7 +188,7 @@ export default function ExportPage() {
     filteredSnapshots.forEach((snapshot) => {
       const accountTypeConfig = getAccountTypeConfig(snapshot.account.type)
       const assetTypeConfig = snapshot.asset ? getAssetTypeConfig(snapshot.asset.type) : null
-      const isRecordAdjustment = !snapshot.assetId && snapshot.account.assets?.length > 0
+      const isRecordAdjustment = !snapshot.assetId && (snapshot.account.assets?.length ?? 0) > 0
       data.push([
         formatDateTime(snapshot.snapshotAt),
         snapshot.account.name,
@@ -347,7 +347,7 @@ export default function ExportPage() {
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>
-          <SiteHeader title="导出" />
+          <SiteHeader />
           <div className="flex flex-1 flex-col gap-4 p-6">
             <div className="text-center text-muted-foreground">加载中...</div>
           </div>
@@ -360,7 +360,7 @@ export default function ExportPage() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <SiteHeader title="导出" />
+        <SiteHeader />
         <div className="flex flex-1 flex-col gap-6 p-6">
           <Tabs defaultValue="snapshot" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
@@ -482,7 +482,7 @@ export default function ExportPage() {
                                 const nameColor = getAccountNameColor(item.account.name)
                                 const accountTypeConfig = getAccountTypeConfig(item.account.type)
                                 const assetTypeConfig = item.asset ? getAssetTypeConfig(item.asset.type) : null
-                                const isRecordAdjustment = !item.assetId && item.account.assets?.length > 0
+                                const isRecordAdjustment = !item.assetId && (item.account.assets?.length ?? 0) > 0
                                 const LogoComponent = getAccountLogo(item.account.name)
                                 return (
                                   <tr key={item.id} style={{ backgroundColor: index % 2 === 0 ? "#ffffff" : "#f9fafb" }}>

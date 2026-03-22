@@ -10,6 +10,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/record/add": "添加收支",
   "/accounts": "账户管理",
   "/snapshots": "每日快照",
+  "/export": "导出",
 }
 
 export function SiteHeader() {

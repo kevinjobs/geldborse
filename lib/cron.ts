@@ -1,6 +1,6 @@
-import cron from "node-cron"
+import cron, { ScheduledTask } from "node-cron"
 
-let scheduledTask: cron.ScheduledTask | null = null
+let scheduledTask: ScheduledTask | null = null
 
 export function startDailySnapshotJob() {
   if (scheduledTask) {
