@@ -36,3 +36,38 @@
 2026-03-22T12:57:47: PM2 log: SIGTERM timeout      : 1600
 2026-03-22T12:57:47: PM2 log: Runtime Binary       : /home/wsl-win/.nvm/versions/node/v24.14.0/bin/node
 2026-03-22T12:57:47: PM2 log: ===============================================================================
+2026-03-22T12:58:55: PM2 log: App [geldborse:0] starting in -fork mode-
+2026-03-22T12:58:55: PM2 log: App [geldborse:0] online
+2026-03-22T12:58:55: PM2 error: Error caught while calling pidusage
+2026-03-22T12:58:55: PM2 error: Error: No matching pid found
+2026-03-22T12:59:09: PM2 error: Error caught while calling pidusage
+2026-03-22T12:59:09: PM2 error: Error: No matching pid found
+2026-03-22T12:59:09: PM2 error: Error caught while calling pidusage
+2026-03-22T12:59:09: PM2 error: Error: No matching pid found
+2026-03-22T12:59:22: PM2 error: Error caught while calling pidusage
+2026-03-22T12:59:22: PM2 error: Error: No matching pid found
+2026-03-22T12:59:52: PM2 error: Error caught while calling pidusage
+2026-03-22T12:59:52: PM2 error: Error: No matching pid found
+2026-03-22T13:00:26: PM2 error: Error caught while calling pidusage
+2026-03-22T13:00:26: PM2 error: Error: No matching pid found
+2026-03-22T13:00:57: PM2 error: Error caught while calling pidusage
+2026-03-22T13:00:57: PM2 error: Error: No matching pid found
+2026-03-22T13:01:27: PM2 error: Error caught while calling pidusage
+2026-03-22T13:01:27: PM2 error: Error: No matching pid found
+2026-03-27T23:24:06: PM2 log: ===============================================================================
+2026-03-27T23:24:06: PM2 log: --- New PM2 Daemon started ----------------------------------------------------
+2026-03-27T23:24:06: PM2 log: Time                 : Fri Mar 27 2026 23:24:06 GMT+0800 (Hong Kong Standard Time)
+2026-03-27T23:24:06: PM2 log: PM2 version          : 6.0.14
+2026-03-27T23:24:06: PM2 log: Node.js version      : 24.14.0
+2026-03-27T23:24:06: PM2 log: Current arch         : x64
+2026-03-27T23:24:06: PM2 log: PM2 home             : /home/wsl-win/projects/geldborse/.pm2
+2026-03-27T23:24:06: PM2 log: PM2 PID file         : /home/wsl-win/projects/geldborse/.pm2/pm2.pid
+2026-03-27T23:24:06: PM2 log: RPC socket file      : /home/wsl-win/projects/geldborse/.pm2/rpc.sock
+2026-03-27T23:24:06: PM2 log: BUS socket file      : /home/wsl-win/projects/geldborse/.pm2/pub.sock
+2026-03-27T23:24:06: PM2 log: Application log path : /home/wsl-win/projects/geldborse/.pm2/logs
+2026-03-27T23:24:06: PM2 log: Worker Interval      : 30000
+2026-03-27T23:24:06: PM2 log: Process dump file    : /home/wsl-win/projects/geldborse/.pm2/dump.pm2
+2026-03-27T23:24:06: PM2 log: Concurrent actions   : 2
+2026-03-27T23:24:06: PM2 log: SIGTERM timeout      : 1600
+2026-03-27T23:24:06: PM2 log: Runtime Binary       : /home/wsl-win/.nvm/versions/node/v24.14.0/bin/node
+2026-03-27T23:24:06: PM2 log: ===============================================================================

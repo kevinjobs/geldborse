@@ -49,6 +49,13 @@ next-env.d.ts
 *.db-shm
 prisma/dev.db
 
+# logs
+/logs
+*.log
+
+# pm2
+/.pm2
+
 # Local IDE configuration
 .vscode/
 .idea/
