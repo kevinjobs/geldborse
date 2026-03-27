@@ -75,3 +75,5 @@ app/dashboard/data.json
 # Local development files
 *.local
 .DS_Store?
+logs/combined.log
+logs/error.log
