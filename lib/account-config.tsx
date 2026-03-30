@@ -15,7 +15,7 @@ import {
   MinusCircle
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { getAccountLogo } from "./account-logos"
+import { ACCOUNT_LOGOS } from "./account-logos"
 
 export const ACCOUNT_NAME_COLORS: Record<string, { color: string; bgColor: string; borderColor: string }> = {
   "支付宝": { color: "text-blue-500", bgColor: "bg-blue-50", borderColor: "border-l-blue-400" },
@@ -109,7 +109,7 @@ export function AccountDisplay({ name, type, variant = "table", showBadge = true
   const nameColor = getAccountNameColor(name)
   const typeConfig = getAccountTypeConfig(type)
   const TypeIcon = typeConfig.icon
-  const LogoComponent = getAccountLogo(name)
+  const LogoComponent = ACCOUNT_LOGOS[name]
 
   if (variant === "card") {
     return (

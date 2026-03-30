@@ -4,6 +4,28 @@ import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
+// Test mode - for testing only
+let testMode = false;
+let testUser: { id: string; email: string; password: string; name?: string } | null = null;
+let testError: Error | null = null;
+let testPasswordMatch = false;
+
+export function setTestMode(enabled: boolean) {
+  testMode = enabled;
+}
+
+export function setTestUser(user: any) {
+  testUser = user;
+}
+
+export function setTestError(error: any) {
+  testError = error;
+}
+
+export function setTestPasswordMatch(match: boolean) {
+  testPasswordMatch = match;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json();
@@ -14,13 +36,26 @@ export async function POST(request: NextRequest) {
     }
 
     // 查找用户
-    const user = await prisma.user.findUnique({ where: { email } });
+    let user;
+    if (testMode) {
+      if (testError) {
+        throw testError;
+      }
+      user = testUser;
+    } else {
+      user = await prisma.user.findUnique({ where: { email } });
+    }
     if (!user) {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
     }
 
     // 验证密码
-    const passwordMatch = await bcrypt.compare(password, user.password);
+    let passwordMatch;
+    if (testMode) {
+      passwordMatch = testPasswordMatch;
+    } else {
+      passwordMatch = await bcrypt.compare(password, user.password);
+    }
     if (!passwordMatch) {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
     }

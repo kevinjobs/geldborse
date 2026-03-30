@@ -1,30 +1,36 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-
-interface User {
-  id: string;
-  email: string;
-  name: string | null;
-}
-
-interface AuthContextType {
-  user: User | null;
-  isAuthenticated: boolean;
-  login: (user: User) => void;
-  logout: () => void;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import * as React from 'react';
 
 const STORAGE_KEY = 'geldborse_user';
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+type User = {
+  id: string;
+  email: string;
+  name?: string;
+};
 
-  // 从 localStorage 恢复登录状态
-  useEffect(() => {
+type AuthContextType = {
+  user: User | null;
+  login: (credentials: { email: string; password: string }) => Promise<void>;
+  logout: () => Promise<void>;
+};
+
+const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
+
+export function useAuth() {
+  const context = React.useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = React.useState<User | null>(null);
+
+  // Restore user from localStorage on mount
+  React.useEffect(() => {
     const storedUser = localStorage.getItem(STORAGE_KEY);
     if (storedUser) {
       try {
@@ -35,37 +41,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem(STORAGE_KEY);
       }
     }
-    setIsLoading(false);
   }, []);
 
-  const login = (userData: User) => {
-    setUser(userData);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(userData));
+  const login = async (credentials: { email: string; password: string }) => {
+    const response = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(credentials),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Login failed');
+    }
+
+    const data = await response.json();
+    setUser(data.user);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data.user));
   };
 
-  const logout = () => {
+  const logout = async () => {
+    const response = await fetch('/api/auth/logout', {
+      method: 'POST',
+    });
+
+    if (!response.ok) {
+      console.error('Logout failed');
+    }
+
     setUser(null);
     localStorage.removeItem(STORAGE_KEY);
   };
 
-  const value: AuthContextType = {
+  const value = {
     user,
-    isAuthenticated: !!user,
     login,
     logout,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

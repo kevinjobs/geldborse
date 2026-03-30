@@ -1,118 +1,78 @@
-"use client"
+'use client';
 
-import { useRouter } from "next/navigation"
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar"
+import * as React from "react";
+import { useAuth } from "@/lib/auth-context";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  useSidebar,
-} from "@/components/ui/sidebar"
-import { DotsThreeVerticalIcon, UserCircleIcon, SignOutIcon, GearIcon } from "@phosphor-icons/react"
-import { useAuth } from "@/lib/auth-context"
-import { toast } from "sonner"
+} from "@/components/ui/dropdown-menu";
 
-export function NavUser({
-  user,
-}: {
-  user: {
-    name: string
-    email: string
-    avatar: string
-  }
-}) {
-  const { isMobile } = useSidebar()
-  const { logout } = useAuth()
-  const router = useRouter()
+export function NavUser() {
+  const { user, logout } = useAuth();
 
-  const handleLogout = () => {
-    logout()
-    toast.success("已成功退出登录")
-    router.push("/")
-  }
-
-  const handleEditProfile = () => {
-    router.push("/settings")
-  }
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
 
   return (
-    <SidebarMenu>
-      <SidebarMenuItem>
-        <DropdownMenu modal={false}>
-          <DropdownMenuTrigger asChild>
-            <SidebarMenuButton
-              size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-            >
-              <Avatar className="h-8 w-8 rounded-lg grayscale">
-                <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className="rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold">
-                  {user.name.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{user.name}</span>
-                <span className="truncate text-xs text-muted-foreground">
-                  {user.email}
-                </span>
-              </div>
-              <DotsThreeVerticalIcon className="ml-auto size-4" />
-            </SidebarMenuButton>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
-            side="top"
-            align="center"
-            sideOffset={4}
-          >
-            <DropdownMenuLabel className="p-0 font-normal">
-              <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold">
-                    {user.name.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{user.name}</span>
-                  <span className="truncate text-xs text-muted-foreground">
-                    {user.email}
-                  </span>
-                </div>
-              </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem onClick={handleEditProfile}>
-                <UserCircleIcon className="mr-2 size-4" />
-                编辑资料
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push("/settings")}>
-                <GearIcon className="mr-2 size-4" />
-                设置
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600">
-              <SignOutIcon className="mr-2 size-4" />
-              退出登录
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </SidebarMenuItem>
-    </SidebarMenu>
-  )
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          className="flex items-center gap-2 rounded-full border border-gray-200 p-1 transition-all hover:bg-gray-50"
+          aria-label="User menu"
+        >
+          <Avatar className="h-8 w-8">
+            <AvatarImage
+              src={`/avatars/${user?.id || "default"}.svg`}
+              alt={user?.name || "User"}
+              onError={(e) => {
+                e.currentTarget.src = "/avatars/default.svg";
+              }}
+            />
+            <AvatarFallback>
+              {user?.name?.charAt(0).toUpperCase() || "U"}
+            </AvatarFallback>
+          </Avatar>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56" side="top">
+        <DropdownMenuLabel>My Account</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem>
+          <span className="flex items-center gap-2">
+            <span className="text-sm font-medium">{user?.name || user?.email}</span>
+          </span>
+        </DropdownMenuItem>
+        <DropdownMenuItem>
+          <span className="text-sm text-gray-500">{user?.email}</span>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => window.location.href = "/settings"}>
+          <span className="flex items-center gap-2">
+            <span>Edit Profile</span>
+          </span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => window.location.href = "/settings/security"}>
+          <span className="flex items-center gap-2">
+            <span>Security</span>
+          </span>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+          <span className="flex items-center gap-2">
+            <span>Logout</span>
+          </span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 }

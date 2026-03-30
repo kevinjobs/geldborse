@@ -118,6 +118,7 @@ geldborse/
 - **图表**: [Chart.js](https://www.chartjs.org/), [Recharts](https://recharts.org/)
 - **图标**: [Phosphor Icons](https://phosphoricons.com/)
 - **导出**: [SheetJS](https://sheetjs.com/) (Excel), [jsPDF](https://parall.ax/products/jspdf) (PDF)
+- **测试**: [Vitest](https://vitest.dev/), [React Testing Library](https://testing-library.com/)
 
 ## 📖 使用指南
 
@@ -159,6 +160,24 @@ NEXT_PUBLIC_APP_URL=http://localhost:8888
 
 - **端口**: 默认使用 8888 端口，可在 `package.json` 中修改
 - **数据库**: 默认使用 SQLite，可更换为 PostgreSQL、MySQL 等
+
+## 🧪 测试
+
+```bash
+# 运行所有测试
+bun test
+
+# 运行测试并监视文件变化
+bun test --watch
+
+# 生成覆盖率报告
+bun test:coverage
+
+# 打开测试 UI 界面
+bun test:ui
+```
+
+更多测试信息请参阅 [TESTING.md](./TESTING.md)。
 
 ## 🤝 贡献指南
 

@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
+// Mock user ID for testing purposes
+const MOCK_USER_ID = "user_123"
+
 export async function GET() {
   const accounts = await prisma.account.findMany({
+    where: {
+      userId: MOCK_USER_ID
+    },
     orderBy: { name: "asc" },
     include: {
       _count: {
@@ -71,6 +77,7 @@ export async function POST(request: Request) {
       type: type || "CASH",
       accountNumber: accountNumber?.trim() || null,
       initialBalance: parseFloat(initialBalance) || 0,
+      userId: MOCK_USER_ID,
     },
   })
   return NextResponse.json(account)
