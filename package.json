@@ -26,6 +26,7 @@
     "prisma": "5",
     "radix-ui": "^1.4.3",
     "react": "19.2.4",
+    "react-chartjs-2": "^5.3.1",
     "react-dom": "19.2.4",
     "recharts": "2.15.4",
     "shadcn": "^4.1.0",
