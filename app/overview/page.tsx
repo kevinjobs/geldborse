@@ -55,7 +55,9 @@ interface Balance {
   updatedAt: string
 }
 
-export default function OverviewPage() {
+import { ProtectedRoute } from "@/components/protected-route"
+
+function OverviewPageContent() {
   const [accounts, setAccounts] = useState<Account[]>([])
   const [assets, setAssets] = useState<Asset[]>([])
   const [records, setRecords] = useState<Record[]>([])
@@ -471,5 +473,13 @@ export default function OverviewPage() {
         </div>
       </SidebarInset>
     </SidebarProvider>
+  )
+}
+
+export default function OverviewPage() {
+  return (
+    <ProtectedRoute>
+      <OverviewPageContent />
+    </ProtectedRoute>
   )
 }

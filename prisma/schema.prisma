@@ -13,6 +13,8 @@ model Account {
   type           String          @default("CASH")
   accountNumber  String?
   initialBalance Float           @default(0)
+  userId         String
+  user           User            @relation(fields: [userId], references: [id])
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   records        Record[]
@@ -20,6 +22,7 @@ model Account {
   dailySnapshots DailySnapshot[]
 
   @@index([type])
+  @@index([userId])
 }
 
 model Asset {
@@ -77,4 +80,16 @@ model DailySnapshot {
   @@index([snapshotAt])
   @@index([accountId])
   @@index([assetId])
+}
+
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  password  String
+  name      String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  accounts  Account[]
+
+  @@index([email])
 }

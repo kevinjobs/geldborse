@@ -1,11 +1,14 @@
 'use client';
 
+import { useState, useEffect } from "react";
 import { ArrowRight, BarChart3, DollarSign, Wallet, Activity, PieChart, FileText, Shield, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, ArcElement, Filler } from "chart.js";
 import { Line, Pie } from "react-chartjs-2";
+import { useAuth } from "@/lib/auth-context";
+import Link from "next/link";
 
 ChartJS.register(
   CategoryScale,
@@ -50,6 +53,19 @@ const expenseData = {
 };
 
 export default function Home() {
+  const { isAuthenticated } = useAuth();
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
+  // 根据登录状态决定跳转链接
+  const getStartedLink = isAuthenticated ? "/overview" : "/auth/register";
+  
+  // 避免hydration mismatch，服务端渲染时显示默认内容
+  const showAuthenticatedContent = mounted && isAuthenticated;
+  
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-black font-sans">
       {/* 顶部导航栏 */}
@@ -60,19 +76,21 @@ export default function Home() {
             <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">Geldborse</h1>
           </div>
           <nav className="hidden md:flex items-center gap-8">
-            <a href="#" className="text-zinc-900 dark:text-zinc-100 font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors">首页</a>
-            <a href="/dashboard" className="text-zinc-600 dark:text-zinc-400 font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors">仪表盘</a>
-            <a href="/accounts" className="text-zinc-600 dark:text-zinc-400 font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors">账户</a>
-            <a href="/record" className="text-zinc-600 dark:text-zinc-400 font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors">记录</a>
-            <a href="/export" className="text-zinc-600 dark:text-zinc-400 font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors">导出</a>
+            <Link href="/" className="text-zinc-900 dark:text-zinc-100 font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors">首页</Link>
+            <Link href="/overview" className="text-zinc-600 dark:text-zinc-400 font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors">总览</Link>
+            <Link href="/accounts" className="text-zinc-600 dark:text-zinc-400 font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors">账户</Link>
+            <Link href="/record" className="text-zinc-600 dark:text-zinc-400 font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors">记录</Link>
+            <Link href="/export" className="text-zinc-600 dark:text-zinc-400 font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors">导出</Link>
           </nav>
           <div className="flex items-center gap-3">
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-              开始使用
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white" asChild>
+              <Link href={getStartedLink}>{showAuthenticatedContent ? "进入后台" : "开始使用"}</Link>
             </Button>
-            <Button variant="ghost" size="icon" className="rounded-full">
-              <Shield className="h-5 w-5" />
-            </Button>
+            {showAuthenticatedContent && (
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <Shield className="h-5 w-5" />
+              </Button>
+            )}
           </div>
         </div>
       </header>
@@ -93,12 +111,14 @@ export default function Home() {
                   Geldborse 帮助你轻松管理账户、追踪支出、分析财务状况，让你对自己的财务了如指掌。
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <Button className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-8 py-6">
-                    立即开始
-                    <ArrowRight className="ml-2 h-5 w-5" />
+                  <Button className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-8 py-6" asChild>
+                    <Link href={getStartedLink}>
+                      {showAuthenticatedContent ? "进入后台" : "立即开始"}
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </Link>
                   </Button>
-                  <Button variant="secondary" className="text-lg px-8 py-6">
-                    了解更多
+                  <Button variant="secondary" className="text-lg px-8 py-6" asChild>
+                    <Link href="#features">了解更多</Link>
                   </Button>
                 </div>
                 <div className="flex items-center gap-6 pt-4">
@@ -134,7 +154,7 @@ export default function Home() {
         </section>
 
         {/* 功能介绍区域 */}
-        <section className="py-20 bg-white dark:bg-gray-900">
+        <section id="features" className="py-20 bg-white dark:bg-gray-900">
           <div className="container mx-auto px-4">
             <div className="text-center max-w-3xl mx-auto mb-16">
               <Badge className="mb-4 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">核心功能</Badge>
@@ -291,11 +311,17 @@ export default function Home() {
               立即注册，免费使用所有功能，掌控你的财务未来
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button className="bg-white text-blue-600 hover:bg-blue-50 text-lg px-8 py-6">
-                免费注册
-              </Button>
-              <Button variant="secondary" className="bg-blue-700 hover:bg-blue-800 text-white text-lg px-8 py-6">
-                了解更多
+              {!showAuthenticatedContent ? (
+                <Button className="bg-white text-blue-600 hover:bg-blue-50 text-lg px-8 py-6" asChild>
+                  <Link href="/auth/register">免费注册</Link>
+                </Button>
+              ) : (
+                <Button className="bg-white text-blue-600 hover:bg-blue-50 text-lg px-8 py-6" asChild>
+                  <Link href="/overview">进入后台</Link>
+                </Button>
+              )}
+              <Button variant="secondary" className="bg-blue-700 hover:bg-blue-800 text-white text-lg px-8 py-6" asChild>
+                <Link href="#features">了解更多</Link>
               </Button>
             </div>
           </div>
@@ -316,27 +342,26 @@ export default function Home() {
               </p>
             </div>
             <div>
-              <h4 className="text-white font-medium mb-4">产品</h4>
+              <h4 className="text-white font-medium mb-4">功能</h4>
               <ul className="space-y-2">
-                <li><a href="#" className="hover:text-blue-400 transition-colors">功能</a></li>
-                <li><a href="#" className="hover:text-blue-400 transition-colors">定价</a></li>
-                <li><a href="#" className="hover:text-blue-400 transition-colors">更新</a></li>
+                <li><Link href="/overview" className="hover:text-blue-400 transition-colors">总览</Link></li>
+                <li><Link href="/accounts" className="hover:text-blue-400 transition-colors">账户管理</Link></li>
+                <li><Link href="/record" className="hover:text-blue-400 transition-colors">收支记录</Link></li>
+                <li><Link href="/snapshots" className="hover:text-blue-400 transition-colors">资产快照</Link></li>
               </ul>
             </div>
             <div>
-              <h4 className="text-white font-medium mb-4">资源</h4>
+              <h4 className="text-white font-medium mb-4">工具</h4>
               <ul className="space-y-2">
-                <li><a href="#" className="hover:text-blue-400 transition-colors">文档</a></li>
-                <li><a href="#" className="hover:text-blue-400 transition-colors">教程</a></li>
-                <li><a href="#" className="hover:text-blue-400 transition-colors">常见问题</a></li>
+                <li><Link href="/export" className="hover:text-blue-400 transition-colors">数据导出</Link></li>
+                <li><Link href="/record/add" className="hover:text-blue-400 transition-colors">快速记账</Link></li>
               </ul>
             </div>
             <div>
-              <h4 className="text-white font-medium mb-4">公司</h4>
+              <h4 className="text-white font-medium mb-4">账户</h4>
               <ul className="space-y-2">
-                <li><a href="#" className="hover:text-blue-400 transition-colors">关于我们</a></li>
-                <li><a href="#" className="hover:text-blue-400 transition-colors">联系我们</a></li>
-                <li><a href="#" className="hover:text-blue-400 transition-colors">隐私政策</a></li>
+                <li><Link href="/auth/login" className="hover:text-blue-400 transition-colors">登录</Link></li>
+                <li><Link href="/auth/register" className="hover:text-blue-400 transition-colors">注册</Link></li>
               </ul>
             </div>
           </div>

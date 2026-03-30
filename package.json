@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 8888",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 8888",
     "lint": "eslint"
   },
   "dependencies": {
@@ -16,6 +16,8 @@
     "@phosphor-icons/react": "^2.1.10",
     "@prisma/client": "5",
     "@tanstack/react-table": "^8.21.3",
+    "@types/bcrypt": "^6.0.0",
+    "bcrypt": "^6.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "jspdf": "^4.2.1",
