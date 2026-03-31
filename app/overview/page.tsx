@@ -10,7 +10,6 @@ import { Badge } from "@/components/ui/badge"
 import { ChevronDown, ChevronRight } from "lucide-react"
 import {
   getAccountNameColor,
-  getAccountTypeConfig,
   getAssetTypeConfig,
   AccountDisplay
 } from "@/lib/account-config"
@@ -130,24 +129,7 @@ function OverviewPageContent() {
     return records.filter((r) => r.accountId === accountId)
   }
 
-  const getAssetTotal = (assetId: string): { total: number; baseType: "balance" | "initial"; baseAmount: number } => {
-    const latestBalance = getLatestBalanceByAsset(assetId)
 
-    if (latestBalance) {
-      return {
-        total: latestBalance.amount,
-        baseType: "balance",
-        baseAmount: latestBalance.amount,
-      }
-    }
-
-    const asset = assets.find((a) => a.id === assetId)
-    return {
-      total: asset?.amount || 0,
-      baseType: "initial",
-      baseAmount: asset?.amount || 0,
-    }
-  }
 
   const getAssetRealTimeTotal = (assetId: string): {
     total: number

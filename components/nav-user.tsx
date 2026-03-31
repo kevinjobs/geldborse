@@ -41,7 +41,7 @@ export function NavUser() {
               }}
             />
             <AvatarFallback>
-              {user?.name?.charAt(0).toUpperCase() || "U"}
+              {typeof window !== 'undefined' ? (user?.name?.charAt(0).toUpperCase() || "U") : "U"}
             </AvatarFallback>
           </Avatar>
         </button>
