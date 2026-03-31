@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useAuth } from "@/lib/auth-context";
+import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -14,6 +15,7 @@ import {
 
 export function NavUser() {
   const { user, logout } = useAuth();
+  const router = useRouter();
 
   const handleLogout = async () => {
     try {
@@ -56,12 +58,12 @@ export function NavUser() {
           <span className="text-sm text-gray-500">{user?.email}</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => window.location.href = "/settings"}>
+        <DropdownMenuItem onClick={() => router.push("/settings")}>
           <span className="flex items-center gap-2">
             <span>Edit Profile</span>
           </span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => window.location.href = "/settings/security"}>
+        <DropdownMenuItem onClick={() => router.push("/settings/security")}>
           <span className="flex items-center gap-2">
             <span>Security</span>
           </span>

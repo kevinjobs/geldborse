@@ -24,28 +24,12 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        setError(errorData.error || 'Login failed');
-        return;
-      }
-
-      const data = await response.json();
-      console.log('Login successful:', data);
-      // 保存登录状态
-      login(data.user);
+      // 使用auth-context中的login函数处理登录
+      await login({ email, password });
       // 登录成功后跳转到概览页面
       router.push('/overview');
-    } catch (err) {
-      setError('An error occurred. Please try again.');
+    } catch (err: any) {
+      setError(err.message || 'An error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
