@@ -11,6 +11,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuPortal,
 } from "@/components/ui/dropdown-menu";
 
 export function NavUser() {
@@ -20,8 +21,10 @@ export function NavUser() {
   const handleLogout = async () => {
     try {
       await logout();
+      // 注销成功后手动跳转到登录页面
+      router.push('/auth/login');
     } catch (error) {
-      console.error("Logout error:", error);
+      console.error("退出登录错误:", error);
     }
   };
 
@@ -29,13 +32,14 @@ export function NavUser() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
-          className="flex items-center gap-2 rounded-full border border-gray-200 p-1 transition-all hover:bg-gray-50"
-          aria-label="User menu"
+          className="flex items-center gap-2 rounded-full border border-gray-200 p-1 transition-all hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          aria-label="用户菜单"
+          onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
         >
           <Avatar className="h-8 w-8">
             <AvatarImage
               src={`/avatars/${user?.id || "default"}.svg`}
-              alt={user?.name || "User"}
+              alt={user?.name || "用户"}
               onError={(e) => {
                 e.currentTarget.src = "/avatars/default.svg";
               }}
@@ -46,33 +50,29 @@ export function NavUser() {
           </Avatar>
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56" side="top">
-        <DropdownMenuLabel>My Account</DropdownMenuLabel>
+      <DropdownMenuContent align="end" className="w-56 z-50" side="top" sideOffset={8} onClick={(e) => e.stopPropagation()}>
+        <DropdownMenuLabel>
+          我的账户
+        </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
+        <DropdownMenuItem className="cursor-default">
           <span className="flex items-center gap-2">
             <span className="text-sm font-medium">{user?.name || user?.email}</span>
           </span>
         </DropdownMenuItem>
-        <DropdownMenuItem>
+        <DropdownMenuItem className="cursor-default">
           <span className="text-sm text-gray-500">{user?.email}</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => router.push("/settings")}>
-          <span className="flex items-center gap-2">
-            <span>Edit Profile</span>
-          </span>
+          编辑个人资料
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => router.push("/settings/security")}>
-          <span className="flex items-center gap-2">
-            <span>Security</span>
-          </span>
+          安全设置
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout} className="text-red-600">
-          <span className="flex items-center gap-2">
-            <span>Logout</span>
-          </span>
+          退出登录
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

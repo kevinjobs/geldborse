@@ -27,23 +27,23 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  // Restore user from localStorage on initialization
-  const [user, setUser] = React.useState<User | null>(() => {
+  // Initialize user state to null
+  const [user, setUser] = React.useState<User | null>(null);
+
+  // Restore user from localStorage on client side
+  React.useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedUser = localStorage.getItem(STORAGE_KEY);
       if (storedUser) {
         try {
-          return JSON.parse(storedUser);
+          setUser(JSON.parse(storedUser));
         } catch (error) {
           console.error('Failed to parse stored user:', error);
           localStorage.removeItem(STORAGE_KEY);
         }
       }
     }
-    return null;
-  });
-
-  // No need for useEffect to restore user since we're using useState initialization
+  }, []);
 
   const login = async (credentials: { email: string; password: string }) => {
     const response = await fetch('/api/auth/login', {

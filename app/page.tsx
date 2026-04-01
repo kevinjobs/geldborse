@@ -18,7 +18,7 @@ export default function Home() {
 
   // 根据登录状态决定跳转链接
   const getStartLink = () => {
-    return user ? '/overview' : '/auth/login';
+    return mounted && user ? '/overview' : '/auth/login';
   };
 
   return (
@@ -39,7 +39,7 @@ export default function Home() {
                 href={getStartLink()}
                 className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
-                {user ? '进入控制台' : '开始使用'}
+                {mounted && user ? '进入控制台' : '开始使用'}
                 <ArrowRight className="ml-2 -mr-1 h-5 w-5" />
               </Link>
               <Link

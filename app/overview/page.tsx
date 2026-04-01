@@ -227,232 +227,224 @@ function OverviewPageContent() {
 
   const latestRecords = records.slice(0, 10)
 
-  if (loading) {
-    return (
-      <SidebarProvider>
-        <AppSidebar variant="sidebar" />
-        <SidebarInset>
-          <SiteHeader />
-          <div className="flex flex-1 items-center justify-center">
-            <p>加载中...</p>
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
-    )
-  }
-
   return (
     <SidebarProvider>
       <AppSidebar variant="sidebar" />
       <SidebarInset>
         <SiteHeader />
-        <div className="flex flex-1 flex-col overflow-y-auto" style={{ scrollbarGutter: "stable" }}>
-          <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-              <div className="px-4 lg:px-6">
-                <Card className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white">
-                  <CardHeader className="pb-2">
-                    <CardDescription className="text-white/80">我的总资产</CardDescription>
-                    <CardTitle className="text-4xl font-bold">
-                      {formatAmount(accounts.reduce((sum, account) => sum + getAccountTotal(account.id).total, 0))}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-white/80">
-                      {accounts.length} 个账户 · {records.length} 条收支
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              <div className="px-4 lg:px-6">
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                  {accounts.map((account) => {
-                    const { total, hasBalance, baseAmount } = getAccountTotal(account.id)
-                    const accountAssets = getAssetsByAccount(account.id)
-                    const nameColor = getAccountNameColor(account.name)
-                    return (
-                      <Card key={account.id} className={`border-l-4 ${nameColor.borderColor} ${nameColor.bgColor}`}>
-                        <CardHeader className="pb-2">
-                          <AccountDisplay name={account.name} type={account.type} variant="card" />
-                          <CardTitle className="text-2xl">
-                            {formatAmount(total)}
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <p className="text-xs text-muted-foreground">
-                            {accountAssets.length > 0
-                              ? `${accountAssets.length} 个资产`
-                              : `${hasBalance ? "快照基准" : "初始资金"}: ${formatAmount(baseAmount)}`
-                            } · {records.filter((r) => r.accountId === account.id).length} 条收支
-                          </p>
-                        </CardContent>
-                      </Card>
-                    )
-                  })}
+        {loading ? (
+          <div className="flex flex-1 items-center justify-center">
+            <p>加载中...</p>
+          </div>
+        ) : (
+          <div className="flex flex-1 flex-col overflow-y-auto" style={{ scrollbarGutter: "stable" }}>
+            <div className="@container/main flex flex-1 flex-col gap-2">
+              <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+                <div className="px-4 lg:px-6">
+                  <Card className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white">
+                    <CardHeader className="pb-2">
+                      <CardDescription className="text-white/80">我的总资产</CardDescription>
+                      <CardTitle className="text-4xl font-bold">
+                        {formatAmount(accounts.reduce((sum, account) => sum + getAccountTotal(account.id).total, 0))}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-white/80">
+                        {accounts.length} 个账户 · {records.length} 条收支
+                      </p>
+                    </CardContent>
+                  </Card>
                 </div>
-              </div>
 
-              <div className="px-4 lg:px-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>最近收支</CardTitle>
-                    <CardDescription>最近10条收支记录</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>日期</TableHead>
-                          <TableHead>类型</TableHead>
-                          <TableHead>账户</TableHead>
-                          <TableHead className="text-right">金额</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {latestRecords.length === 0 ? (
+                <div className="px-4 lg:px-6">
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    {accounts.map((account) => {
+                      const { total, hasBalance, baseAmount } = getAccountTotal(account.id)
+                      const accountAssets = getAssetsByAccount(account.id)
+                      const nameColor = getAccountNameColor(account.name)
+                      return (
+                        <Card key={account.id} className={`border-l-4 ${nameColor.borderColor} ${nameColor.bgColor}`}>
+                          <CardHeader className="pb-2">
+                            <AccountDisplay name={account.name} type={account.type} variant="card" />
+                            <CardTitle className="text-2xl">
+                              {formatAmount(total)}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <p className="text-xs text-muted-foreground">
+                              {accountAssets.length > 0
+                                ? `${accountAssets.length} 个资产`
+                                : `${hasBalance ? "快照基准" : "初始资金"}: ${formatAmount(baseAmount)}`
+                              } · {records.filter((r) => r.accountId === account.id).length} 条收支
+                            </p>
+                          </CardContent>
+                        </Card>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                <div className="px-4 lg:px-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>最近收支</CardTitle>
+                      <CardDescription>最近10条收支记录</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <Table>
+                        <TableHeader>
                           <TableRow>
-                            <TableCell colSpan={4} className="text-center text-muted-foreground">
-                              暂无收支记录
-                            </TableCell>
+                            <TableHead>日期</TableHead>
+                            <TableHead>类型</TableHead>
+                            <TableHead>账户</TableHead>
+                            <TableHead className="text-right">金额</TableHead>
                           </TableRow>
-                        ) : (
-                          latestRecords.map((record) => (
-                            <TableRow key={record.id}>
-                              <TableCell>{formatDate(record.date)}</TableCell>
-                              <TableCell>
-                                <Badge variant={record.type === "INCOME" ? "default" : "destructive"}>
-                                  {record.type === "INCOME" ? "收入" : "支出"}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                <AccountDisplay name={record.account.name} type={record.account.type} variant="compact" />
-                              </TableCell>
-                              <TableCell className={`text-right font-medium ${record.amount >= 0 ? "text-green-600" : "text-red-600"}`}>
-                                {formatAmount(record.amount)}
+                        </TableHeader>
+                        <TableBody>
+                          {latestRecords.length === 0 ? (
+                            <TableRow>
+                              <TableCell colSpan={4} className="text-center text-muted-foreground">
+                                暂无收支记录
                               </TableCell>
                             </TableRow>
-                          ))
-                        )}
-                      </TableBody>
-                    </Table>
-                  </CardContent>
-                </Card>
-              </div>
-
-              <div className="px-4 lg:px-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>账户汇总</CardTitle>
-                    <CardDescription>各账户及资产余额统计</CardDescription>
-                  </CardHeader>
-                  <CardContent className="min-h-[300px]">
-                    <Table className="table-fixed select-none">
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-[35%]">名称</TableHead>
-                          <TableHead className="w-[20%]">类型</TableHead>
-                          <TableHead className="w-[22.5%] text-right">基准金额</TableHead>
-                          <TableHead className="w-[22.5%] text-right">实时余额</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {accounts.map((account) => {
-                          const { total, hasBalance, baseAmount } = getAccountTotal(account.id)
-                          const accountAssets = getAssetsByAccount(account.id)
-                          const nameColor = getAccountNameColor(account.name)
-                          const isExpanded = expandedAccounts.has(account.id)
-                          const hasAssets = accountAssets.length > 0
-                          return (
-                            <Fragment key={account.id}>
-                              <TableRow
-                                className={`${nameColor.bgColor} ${hasAssets ? "cursor-pointer hover:brightness-95 transition-all" : ""}`}
-                                onClick={() => hasAssets && toggleAccountExpand(account.id)}
-                              >
-                                <TableCell className="py-3">
-                                  <div className="flex items-center gap-2">
-                                    {hasAssets && (
-                                      <span className="w-4 h-4 flex items-center justify-center shrink-0">
-                                        {isExpanded ? (
-                                          <ChevronDown className="h-4 w-4" />
-                                        ) : (
-                                          <ChevronRight className="h-4 w-4" />
-                                        )}
-                                      </span>
-                                    )}
-                                    {!hasAssets && <span className="w-4 shrink-0" />}
-                                    <AccountDisplay name={account.name} type={account.type} variant="table" />
-                                  </div>
+                          ) : (
+                            latestRecords.map((record) => (
+                              <TableRow key={record.id}>
+                                <TableCell>{formatDate(record.date)}</TableCell>
+                                <TableCell>
+                                  <Badge variant={record.type === "INCOME" ? "default" : "destructive"}>
+                                    {record.type === "INCOME" ? "收入" : "支出"}
+                                  </Badge>
                                 </TableCell>
                                 <TableCell>
-                                  <span className="text-xs text-muted-foreground">
-                                    {hasAssets ? `${accountAssets.length} 个资产` : "无资产"}
-                                  </span>
+                                  <AccountDisplay name={record.account.name} type={record.account.type} variant="compact" />
                                 </TableCell>
-                                <TableCell className="text-right">
-                                  {hasAssets ? (
-                                    <span className="text-xs text-muted-foreground">资产汇总</span>
-                                  ) : (
-                                    <>
-                                      <span className="text-xs text-muted-foreground mr-1">
-                                        {hasBalance ? "(快照)" : "(初始)"}
-                                      </span>
-                                      {formatAmount(baseAmount)}
-                                    </>
-                                  )}
-                                </TableCell>
-                                <TableCell className={`text-right font-bold ${total >= 0 ? "text-green-600" : "text-red-600"}`}>
-                                  {formatAmount(total)}
+                                <TableCell className={`text-right font-medium ${record.amount >= 0 ? "text-green-600" : "text-red-600"}`}>
+                                  {formatAmount(record.amount)}
                                 </TableCell>
                               </TableRow>
-                              {isExpanded && accountAssets.map((asset, index) => {
-                                const assetTotal = getAssetRealTimeTotal(asset.id)
-                                const assetTypeConfig = getAssetTypeConfig(asset.type)
-                                const AssetIcon = assetTypeConfig.icon
-                                const isLast = index === accountAssets.length - 1
-                                return (
-                                  <TableRow key={asset.id} className="bg-slate-50/50 hover:bg-slate-100/50 transition-colors">
-                                    <TableCell className="relative py-3">
-                                      {!isLast && (
-                                        <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200" />
+                            ))
+                          )}
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <div className="px-4 lg:px-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>账户汇总</CardTitle>
+                      <CardDescription>各账户及资产余额统计</CardDescription>
+                    </CardHeader>
+                    <CardContent className="min-h-[300px]">
+                      <Table className="table-fixed select-none">
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-[35%]">名称</TableHead>
+                            <TableHead className="w-[20%]">类型</TableHead>
+                            <TableHead className="w-[22.5%] text-right">基准金额</TableHead>
+                            <TableHead className="w-[22.5%] text-right">实时余额</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {accounts.map((account) => {
+                            const { total, hasBalance, baseAmount } = getAccountTotal(account.id)
+                            const accountAssets = getAssetsByAccount(account.id)
+                            const nameColor = getAccountNameColor(account.name)
+                            const isExpanded = expandedAccounts.has(account.id)
+                            const hasAssets = accountAssets.length > 0
+                            return (
+                              <Fragment key={account.id}>
+                                <TableRow
+                                  className={`${nameColor.bgColor} ${hasAssets ? "cursor-pointer hover:brightness-95 transition-all" : ""}`}
+                                  onClick={() => hasAssets && toggleAccountExpand(account.id)}
+                                >
+                                  <TableCell className="py-3">
+                                    <div className="flex items-center gap-2">
+                                      {hasAssets && (
+                                        <span className="w-4 h-4 flex items-center justify-center shrink-0">
+                                          {isExpanded ? (
+                                            <ChevronDown className="h-4 w-4" />
+                                          ) : (
+                                            <ChevronRight className="h-4 w-4" />
+                                          )}
+                                        </span>
                                       )}
-                                      {isLast && (
-                                        <div className="absolute left-4 top-0 h-1/2 w-px bg-slate-200" />
-                                      )}
-                                      <div className="absolute left-4 top-1/2 w-3 h-px bg-slate-200" />
-                                      <div className="pl-10">
-                                        <span className="text-sm text-slate-600">{asset.name}</span>
-                                      </div>
-                                    </TableCell>
-                                    <TableCell className="py-3">
-                                      <Badge className="gap-1 text-xs font-normal">
-                                        <AssetIcon className="h-3 w-3" />
-                                        {assetTypeConfig.label}
-                                      </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right py-3">
-                                      <span className="text-xs text-muted-foreground mr-1">
-                                        {assetTotal.baseType === "balance" ? "(快照)" : "(初始)"}
-                                      </span>
-                                      {formatAmount(assetTotal.baseAmount)}
-                                    </TableCell>
-                                    <TableCell className={`text-right font-medium py-3 ${assetTotal.total >= 0 ? "text-green-600" : "text-red-600"}`}>
-                                      {formatAmount(assetTotal.total)}
-                                    </TableCell>
-                                  </TableRow>
-                                )
-                              })}
-                            </Fragment>
-                          )
-                        })}
-                      </TableBody>
-                    </Table>
-                  </CardContent>
-                </Card>
+                                      {!hasAssets && <span className="w-4 shrink-0" />}
+                                      <AccountDisplay name={account.name} type={account.type} variant="table" />
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <span className="text-xs text-muted-foreground">
+                                      {hasAssets ? `${accountAssets.length} 个资产` : "无资产"}
+                                    </span>
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    {hasAssets ? (
+                                      <span className="text-xs text-muted-foreground">资产汇总</span>
+                                    ) : (
+                                      <>
+                                        <span className="text-xs text-muted-foreground mr-1">
+                                          {hasBalance ? "(快照)" : "(初始)"}
+                                        </span>
+                                        {formatAmount(baseAmount)}
+                                      </>
+                                    )}
+                                  </TableCell>
+                                  <TableCell className={`text-right font-bold ${total >= 0 ? "text-green-600" : "text-red-600"}`}>
+                                    {formatAmount(total)}
+                                  </TableCell>
+                                </TableRow>
+                                {isExpanded && accountAssets.map((asset, index) => {
+                                  const assetTotal = getAssetRealTimeTotal(asset.id)
+                                  const assetTypeConfig = getAssetTypeConfig(asset.type)
+                                  const AssetIcon = assetTypeConfig.icon
+                                  const isLast = index === accountAssets.length - 1
+                                  return (
+                                    <TableRow key={asset.id} className="bg-slate-50/50 hover:bg-slate-100/50 transition-colors">
+                                      <TableCell className="relative py-3">
+                                        {!isLast && (
+                                          <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200" />
+                                        )}
+                                        {isLast && (
+                                          <div className="absolute left-4 top-0 h-1/2 w-px bg-slate-200" />
+                                        )}
+                                        <div className="absolute left-4 top-1/2 w-3 h-px bg-slate-200" />
+                                        <div className="pl-10">
+                                          <span className="text-sm text-slate-600">{asset.name}</span>
+                                        </div>
+                                      </TableCell>
+                                      <TableCell className="py-3">
+                                        <Badge className="gap-1 text-xs font-normal">
+                                          <AssetIcon className="h-3 w-3" />
+                                          {assetTypeConfig.label}
+                                        </Badge>
+                                      </TableCell>
+                                      <TableCell className="text-right py-3">
+                                        <span className="text-xs text-muted-foreground mr-1">
+                                          {assetTotal.baseType === "balance" ? "(快照)" : "(初始)"}
+                                        </span>
+                                        {formatAmount(assetTotal.baseAmount)}
+                                      </TableCell>
+                                      <TableCell className={`text-right font-medium py-3 ${assetTotal.total >= 0 ? "text-green-600" : "text-red-600"}`}>
+                                        {formatAmount(assetTotal.total)}
+                                      </TableCell>
+                                    </TableRow>
+                                  )
+                                })}
+                              </Fragment>
+                            )
+                          })}
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
       </SidebarInset>
     </SidebarProvider>
   )

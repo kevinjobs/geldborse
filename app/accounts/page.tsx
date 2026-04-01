@@ -488,25 +488,16 @@ export default function AccountsPage() {
     return sortedBalances[0].amount
   }
 
-  if (loading) {
-    return (
-      <SidebarProvider>
-        <AppSidebar variant="sidebar" />
-        <SidebarInset>
-          <SiteHeader />
-          <div className="flex flex-1 items-center justify-center">
-            <p>加载中...</p>
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
-    )
-  }
-
   return (
     <SidebarProvider>
       <AppSidebar variant="sidebar" />
       <SidebarInset>
         <SiteHeader />
+        {loading ? (
+          <div className="flex flex-1 items-center justify-center">
+            <p>加载中...</p>
+          </div>
+        ) : (
         <div className="flex flex-1 flex-col overflow-y-auto" style={{ scrollbarGutter: "stable" }}>
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
@@ -798,6 +789,7 @@ export default function AccountsPage() {
             </div>
           </div>
         </div>
+        )}
       </SidebarInset>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
