@@ -5,7 +5,7 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { ResponsiveTable, ResponsiveTableBody, ResponsiveTableCell, ResponsiveTableHeader, ResponsiveTableRow } from "@/components/responsive-table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -205,55 +205,56 @@ export default function RecordsPage() {
                         暂无收支记录
                       </p>
                     ) : (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>日期</TableHead>
-                            <TableHead>账户</TableHead>
-                            <TableHead>类型</TableHead>
-                            <TableHead className="text-right">金额</TableHead>
-                            <TableHead className="text-right">操作</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
+                      <ResponsiveTable>
+                        <thead>
+                          <ResponsiveTableRow>
+                            <ResponsiveTableHeader>日期</ResponsiveTableHeader>
+                            <ResponsiveTableHeader>账户</ResponsiveTableHeader>
+                            <ResponsiveTableHeader>类型</ResponsiveTableHeader>
+                            <ResponsiveTableHeader className="text-right">金额</ResponsiveTableHeader>
+                            <ResponsiveTableHeader className="text-right">操作</ResponsiveTableHeader>
+                          </ResponsiveTableRow>
+                        </thead>
+                        <ResponsiveTableBody>
                           {sortedRecords.map((record) => {
                             const nameColor = getAccountNameColor(record.account.name)
                             return (
-                              <TableRow key={record.id} className={`${nameColor.bgColor} dark:${nameColor.darkBgColor}`}>
-                                <TableCell>{formatDate(record.date)}</TableCell>
-                                <TableCell>
+                              <ResponsiveTableRow key={record.id} className={`${nameColor.bgColor} dark:${nameColor.darkBgColor}`}>
+                                <ResponsiveTableCell mobileLabel="日期">{formatDate(record.date)}</ResponsiveTableCell>
+                                <ResponsiveTableCell mobileLabel="账户">
                                   <AccountDisplay name={record.account.name} type={record.account.type} variant="compact" />
-                                </TableCell>
-                                <TableCell>
+                                </ResponsiveTableCell>
+                                <ResponsiveTableCell mobileLabel="类型">
                                   <Badge variant={record.type === "INCOME" ? "default" : "secondary"}>
                                     {record.type === "INCOME" ? "收入" : "支出"}
                                   </Badge>
-                                </TableCell>
-                                <TableCell className={`text-right font-medium ${record.amount >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
+                                </ResponsiveTableCell>
+                                <ResponsiveTableCell mobileLabel="金额" className={`text-right font-medium ${record.amount >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
                                   {formatAmount(record.amount)}
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="mr-2"
-                                    onClick={() => handleEdit(record)}
-                                  >
-                                    编辑
-                                  </Button>
-                                  <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    onClick={() => handleDelete(record)}
-                                  >
-                                    删除
-                                  </Button>
-                                </TableCell>
-                              </TableRow>
+                                </ResponsiveTableCell>
+                                <ResponsiveTableCell mobileLabel="操作" className="text-right">
+                                  <div className="flex flex-col sm:flex-row gap-1 justify-end">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleEdit(record)}
+                                    >
+                                      编辑
+                                    </Button>
+                                    <Button
+                                      variant="destructive"
+                                      size="sm"
+                                      onClick={() => handleDelete(record)}
+                                    >
+                                      删除
+                                    </Button>
+                                  </div>
+                                </ResponsiveTableCell>
+                              </ResponsiveTableRow>
                             )
                           })}
-                        </TableBody>
-                      </Table>
+                        </ResponsiveTableBody>
+                      </ResponsiveTable>
                     )}
                   </CardContent>
                 </Card>
