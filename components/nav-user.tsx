@@ -32,7 +32,7 @@ export function NavUser() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
-          className="flex items-center gap-2 rounded-full border border-gray-200 p-1 transition-all hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="flex items-center gap-2 rounded-full border border-gray-200 p-1 transition-all hover:bg-gray-50 focus:outline-none focus:ring-0"
           aria-label="用户菜单"
           onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
         >
