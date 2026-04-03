@@ -5,7 +5,7 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { ResponsiveTable, ResponsiveTableBody, ResponsiveTableCell, ResponsiveTableHeader, ResponsiveTableRow } from "@/components/responsive-table"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CalendarIcon, ChevronDown, ChevronRight, Plus, Trash2 } from "lucide-react"
@@ -491,17 +491,17 @@ export default function SnapshotsPage() {
                                 </div>
                               </div>
                               {isExpanded && (
-                                <Table className="select-none">
-                                  <TableHeader>
-                                    <TableRow>
-                                      <TableHead className="w-[35%]">账户</TableHead>
-                                      <TableHead className="w-[18%]">账户类型</TableHead>
-                                      <TableHead className="w-[18%] text-right">金额</TableHead>
-                                      <TableHead className="w-[18%] text-right">账户总计</TableHead>
-                                      <TableHead className="w-[11%] text-right">操作</TableHead>
-                                    </TableRow>
-                                  </TableHeader>
-                                  <TableBody>
+                                <ResponsiveTable className="select-none">
+                                  <thead>
+                                    <ResponsiveTableRow>
+                                      <ResponsiveTableHeader>账户</ResponsiveTableHeader>
+                                      <ResponsiveTableHeader>账户类型</ResponsiveTableHeader>
+                                      <ResponsiveTableHeader className="text-right">金额</ResponsiveTableHeader>
+                                      <ResponsiveTableHeader className="text-right">账户总计</ResponsiveTableHeader>
+                                      <ResponsiveTableHeader className="text-right">操作</ResponsiveTableHeader>
+                                    </ResponsiveTableRow>
+                                  </thead>
+                                  <ResponsiveTableBody>
                                     {group.accounts.map((accountData) => {
                                       const nameColor = getAccountNameColor(accountData.account.name)
                                       const typeConfig = getAccountTypeConfig(accountData.account.type)
@@ -513,11 +513,11 @@ export default function SnapshotsPage() {
 
                                       return (
                                         <Fragment key={accountKey}>
-                                          <TableRow
+                                          <ResponsiveTableRow
                                             className={`${nameColor.bgColor} dark:${nameColor.darkBgColor} ${hasMultipleAssets ? "cursor-pointer hover:brightness-95 transition-all" : ""}`}
                                             onClick={() => hasMultipleAssets && toggleAccountExpand(accountKey)}
                                           >
-                                            <TableCell className="py-3">
+                                            <ResponsiveTableCell mobileLabel="账户" className="py-3">
                                               <div className="flex items-center gap-2">
                                                 {hasMultipleAssets && (
                                                   <span className="w-4 h-4 flex items-center justify-center shrink-0">
@@ -541,24 +541,24 @@ export default function SnapshotsPage() {
                                                   </span>
                                                 )}
                                               </div>
-                                            </TableCell>
-                                            <TableCell>
+                                            </ResponsiveTableCell>
+                                            <ResponsiveTableCell mobileLabel="账户类型">
                                               <Badge variant="outline" className="gap-1">
                                                 <TypeIcon className="h-3 w-3" />
                                                 {typeConfig.label}
                                               </Badge>
-                                            </TableCell>
-                                            <TableCell className="text-right">
+                                            </ResponsiveTableCell>
+                                            <ResponsiveTableCell mobileLabel="金额" className="text-right">
                                               <span className={accountData.total >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}>
                                                 {formatAmount(accountData.total)}
                                               </span>
-                                            </TableCell>
-                                            <TableCell className="text-right">
+                                            </ResponsiveTableCell>
+                                            <ResponsiveTableCell mobileLabel="账户总计" className="text-right">
                                               <span className={accountData.total >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}>
                                                 {formatAmount(accountData.total)}
                                               </span>
-                                            </TableCell>
-                                            <TableCell className="text-right">
+                                            </ResponsiveTableCell>
+                                            <ResponsiveTableCell mobileLabel="操作" className="text-right">
                                               {!hasMultipleAssets && accountData.snapshots[0] && (
                                                 <Button
                                                   variant="ghost"
@@ -572,16 +572,16 @@ export default function SnapshotsPage() {
                                                   <Trash2 className="h-3.5 w-3.5" />
                                                 </Button>
                                               )}
-                                            </TableCell>
-                                          </TableRow>
+                                            </ResponsiveTableCell>
+                                          </ResponsiveTableRow>
                                           {isAccountExpanded && accountData.snapshots.map((snapshot, snapshotIndex) => {
                                             const isLastSnapshot = snapshotIndex === accountData.snapshots.length - 1
                                             const assetTypeConfig = snapshot.asset ? getAssetTypeConfig(snapshot.asset.type) : null
                                             const AssetIcon = assetTypeConfig?.icon
 
                                             return (
-                                              <TableRow key={snapshot.id} className="bg-slate-50/50 dark:bg-slate-800/50 hover:bg-slate-100/50 dark:hover:bg-slate-700/50 transition-colors">
-                                                <TableCell className="relative py-2">
+                                              <ResponsiveTableRow key={snapshot.id} className="bg-slate-50/50 dark:bg-slate-800/50 hover:bg-slate-100/50 dark:hover:bg-slate-700/50 transition-colors">
+                                                <ResponsiveTableCell mobileLabel="资产" className="relative py-2">
                                                   {!isLastSnapshot && (
                                                     <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200 dark:bg-slate-700" />
                                                   )}
@@ -600,15 +600,15 @@ export default function SnapshotsPage() {
                                                       </Badge>
                                                     )}
                                                   </div>
-                                                </TableCell>
-                                                <TableCell />
-                                                <TableCell className="text-right text-sm">
+                                                </ResponsiveTableCell>
+                                                <ResponsiveTableCell />
+                                                <ResponsiveTableCell mobileLabel="金额" className="text-right text-sm">
                                                   <span className={snapshot.amount >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}>
                                                     {formatAmount(snapshot.amount)}
                                                   </span>
-                                                </TableCell>
-                                                <TableCell />
-                                                <TableCell className="text-right">
+                                                </ResponsiveTableCell>
+                                                <ResponsiveTableCell />
+                                                <ResponsiveTableCell mobileLabel="操作" className="text-right">
                                                   <Button
                                                     variant="ghost"
                                                     size="icon"
@@ -620,15 +620,15 @@ export default function SnapshotsPage() {
                                                   >
                                                     <Trash2 className="h-3.5 w-3.5" />
                                                   </Button>
-                                                </TableCell>
-                                              </TableRow>
+                                                </ResponsiveTableCell>
+                                              </ResponsiveTableRow>
                                             )
                                           })}
                                         </Fragment>
                                       )
                                     })}
-                                  </TableBody>
-                                </Table>
+                                  </ResponsiveTableBody>
+                                </ResponsiveTable>
                               )}
                             </div>
                           )
