@@ -1,17 +1,23 @@
 import { PrismaClient } from "@prisma/client"
 import bcrypt from "bcrypt"
+import "dotenv/config"
 
 const prisma = new PrismaClient()
 
 async function main() {
-  // 创建默认用户
-  const defaultEmail = "admin@example.com"
-  const defaultPassword = "password123"
-  
+  // 从环境变量读取管理员用户信息
+  const defaultEmail = process.env.ADMIN_USER;
+  const defaultPassword = process.env.ADMIN_PASSWORD;
+
   let user = await prisma.user.findUnique({
     where: { email: defaultEmail }
   })
-  
+
+  if (!defaultEmail || !defaultPassword) {
+    console.error("未配置默认用户信息")
+    process.exit(1)
+  }
+
   if (!user) {
     const hashedPassword = await bcrypt.hash(defaultPassword, 10)
     user = await prisma.user.create({
@@ -23,27 +29,27 @@ async function main() {
     })
     console.log(`创建默认用户: ${defaultEmail}`)
   } else {
+
     console.log(`默认用户已存在: ${defaultEmail}`)
   }
 
+
+
   // 创建账户
   const accounts = [
-    { name: "主账户" },
-    { name: "储蓄账户" },
-    { name: "信用卡" },
     { name: "支付宝" },
     { name: "微信" },
   ]
 
   for (const account of accounts) {
     const existing = await prisma.account.findFirst({
-      where: { 
+      where: {
         name: account.name,
-        userId: user.id
+        userId: user?.id
       },
     })
     if (!existing) {
-      await prisma.account.create({ 
+      await prisma.account.create({
         data: {
           ...account,
           userId: user.id

@@ -40,9 +40,16 @@ export default function AddRecordPage() {
     try {
       const res = await fetch("/api/accounts")
       const data = await res.json()
-      setAccounts(data)
+      // 确保data是一个数组
+      if (Array.isArray(data)) {
+        setAccounts(data)
+      } else {
+        console.error("获取账户列表失败: 响应数据不是数组")
+        setAccounts([])
+      }
     } catch (error) {
       console.error("获取账户列表失败:", error)
+      setAccounts([])
     }
   }
 

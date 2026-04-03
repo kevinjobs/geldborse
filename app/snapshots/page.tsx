@@ -462,7 +462,7 @@ export default function SnapshotsPage() {
                           return (
                             <div key={group.snapshotAt} className="border rounded-lg overflow-hidden">
                               <div
-                                className="flex items-center justify-between p-4 bg-slate-50 cursor-pointer hover:bg-slate-100 transition-colors"
+                                className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                                 onClick={() => toggleSnapshotExpand(group.snapshotAt)}
                               >
                                 <div className="flex items-center gap-2">
@@ -475,7 +475,7 @@ export default function SnapshotsPage() {
                                 </div>
                                 <div className="flex items-center gap-4">
                                   <div className="text-lg font-bold">
-                                    总计: <span className={group.total >= 0 ? "text-green-600" : "text-red-600"}>{formatAmount(group.total)}</span>
+                                    总计: <span className={group.total >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}>{formatAmount(group.total)}</span>
                                   </div>
                                   <Button
                                     variant="ghost"
@@ -514,7 +514,7 @@ export default function SnapshotsPage() {
                                       return (
                                         <Fragment key={accountKey}>
                                           <TableRow
-                                            className={`${nameColor.bgColor} ${hasMultipleAssets ? "cursor-pointer hover:brightness-95 transition-all" : ""}`}
+                                            className={`${nameColor.bgColor} dark:${nameColor.darkBgColor} ${hasMultipleAssets ? "cursor-pointer hover:brightness-95 transition-all" : ""}`}
                                             onClick={() => hasMultipleAssets && toggleAccountExpand(accountKey)}
                                           >
                                             <TableCell className="py-3">
@@ -532,7 +532,7 @@ export default function SnapshotsPage() {
                                                 {LogoComponent ? (
                                                   <LogoComponent size={16} className={nameColor.color} />
                                                 ) : (
-                                                  <div className={`w-3 h-3 rounded-full ${nameColor.bgColor}`} />
+                                                  <div className={`w-3 h-3 rounded-full ${nameColor.bgColor} dark:${nameColor.darkBgColor}`} />
                                                 )}
                                                 <span className="font-medium">{accountData.account.name}</span>
                                                 {accountData.account.accountNumber && (
@@ -549,12 +549,12 @@ export default function SnapshotsPage() {
                                               </Badge>
                                             </TableCell>
                                             <TableCell className="text-right">
-                                              <span className={accountData.total >= 0 ? "text-green-600" : "text-red-600"}>
+                                              <span className={accountData.total >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}>
                                                 {formatAmount(accountData.total)}
                                               </span>
                                             </TableCell>
                                             <TableCell className="text-right">
-                                              <span className={accountData.total >= 0 ? "text-green-600" : "text-red-600"}>
+                                              <span className={accountData.total >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}>
                                                 {formatAmount(accountData.total)}
                                               </span>
                                             </TableCell>
@@ -580,17 +580,17 @@ export default function SnapshotsPage() {
                                             const AssetIcon = assetTypeConfig?.icon
 
                                             return (
-                                              <TableRow key={snapshot.id} className="bg-slate-50/50 hover:bg-slate-100/50 transition-colors">
+                                              <TableRow key={snapshot.id} className="bg-slate-50/50 dark:bg-slate-800/50 hover:bg-slate-100/50 dark:hover:bg-slate-700/50 transition-colors">
                                                 <TableCell className="relative py-2">
                                                   {!isLastSnapshot && (
-                                                    <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200" />
+                                                    <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200 dark:bg-slate-700" />
                                                   )}
                                                   {isLastSnapshot && (
-                                                    <div className="absolute left-4 top-0 h-1/2 w-px bg-slate-200" />
+                                                    <div className="absolute left-4 top-0 h-1/2 w-px bg-slate-200 dark:bg-slate-700" />
                                                   )}
-                                                  <div className="absolute left-4 top-1/2 w-3 h-px bg-slate-200" />
+                                                  <div className="absolute left-4 top-1/2 w-3 h-px bg-slate-200 dark:bg-slate-700" />
                                                   <div className="pl-10 flex items-center gap-2">
-                                                    <span className="text-sm text-slate-600">
+                                                    <span className="text-sm text-slate-600 dark:text-slate-300">
                                                       {snapshot.asset?.name || "默认资产"}
                                                     </span>
                                                     {assetTypeConfig && (
@@ -603,7 +603,7 @@ export default function SnapshotsPage() {
                                                 </TableCell>
                                                 <TableCell />
                                                 <TableCell className="text-right text-sm">
-                                                  <span className={snapshot.amount >= 0 ? "text-green-600" : "text-red-600"}>
+                                                  <span className={snapshot.amount >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}>
                                                     {formatAmount(snapshot.amount)}
                                                   </span>
                                                 </TableCell>

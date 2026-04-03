@@ -67,10 +67,24 @@ export default function RecordsPage() {
       ])
       const recordsData = await recordsRes.json()
       const accountsData = await accountsRes.json()
-      setRecords(recordsData)
-      setAccounts(accountsData)
+      // 确保recordsData是一个数组
+      if (Array.isArray(recordsData)) {
+        setRecords(recordsData)
+      } else {
+        console.error("获取记录列表失败: 响应数据不是数组")
+        setRecords([])
+      }
+      // 确保accountsData是一个数组
+      if (Array.isArray(accountsData)) {
+        setAccounts(accountsData)
+      } else {
+        console.error("获取账户列表失败: 响应数据不是数组")
+        setAccounts([])
+      }
     } catch (error) {
       console.error("获取数据失败:", error)
+      setRecords([])
+      setAccounts([])
     } finally {
       setLoading(false)
     }
@@ -205,7 +219,7 @@ export default function RecordsPage() {
                           {sortedRecords.map((record) => {
                             const nameColor = getAccountNameColor(record.account.name)
                             return (
-                              <TableRow key={record.id} className={nameColor.bgColor}>
+                              <TableRow key={record.id} className={`${nameColor.bgColor} dark:${nameColor.darkBgColor}`}>
                                 <TableCell>{formatDate(record.date)}</TableCell>
                                 <TableCell>
                                   <AccountDisplay name={record.account.name} type={record.account.type} variant="compact" />
@@ -215,7 +229,7 @@ export default function RecordsPage() {
                                     {record.type === "INCOME" ? "收入" : "支出"}
                                   </Badge>
                                 </TableCell>
-                                <TableCell className={`text-right font-medium ${record.amount >= 0 ? "text-green-600" : "text-red-600"}`}>
+                                <TableCell className={`text-right font-medium ${record.amount >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
                                   {formatAmount(record.amount)}
                                 </TableCell>
                                 <TableCell className="text-right">

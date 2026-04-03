@@ -13,6 +13,7 @@ import {
   getAssetTypeConfig,
   AccountDisplay
 } from "@/lib/account-config"
+import { useAuth } from "@/lib/auth-context"
 
 interface Account {
   id: string
@@ -21,6 +22,7 @@ interface Account {
   initialBalance: number
   createdAt: string
   updatedAt: string
+  userId: string
 }
 
 interface Asset {
@@ -57,6 +59,7 @@ interface Balance {
 import { ProtectedRoute } from "@/components/protected-route"
 
 function OverviewPageContent() {
+  const { user } = useAuth()
   const [accounts, setAccounts] = useState<Account[]>([])
   const [assets, setAssets] = useState<Asset[]>([])
   const [records, setRecords] = useState<Record[]>([])
@@ -65,25 +68,52 @@ function OverviewPageContent() {
   const [expandedAccounts, setExpandedAccounts] = useState<Set<string>>(new Set())
 
   useEffect(() => {
-    fetchData()
-  }, [])
+    if (user) {
+      fetchData()
+    } else {
+      setLoading(false)
+    }
+  }, [user])
 
   const fetchData = async () => {
     try {
+      // 获取用户认证信息
+      const storedUser = typeof window !== 'undefined' ? localStorage.getItem('geldborse_user') : null
+      const userData = storedUser ? JSON.parse(storedUser) : null
+      const authToken = userData?.id // 使用用户ID作为临时token
+
+      // 构建请求头
+      const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : undefined
+
       const [accountsRes, assetsRes, recordsRes, balancesRes] = await Promise.all([
-        fetch("/api/accounts"),
-        fetch("/api/assets"),
-        fetch("/api/records"),
-        fetch("/api/balances"),
+        fetch("/api/accounts", headers ? { headers } : {}),
+        fetch("/api/assets", headers ? { headers } : {}),
+        fetch("/api/records", headers ? { headers } : {}),
+        fetch("/api/balances", headers ? { headers } : {}),
       ])
       const accountsData = await accountsRes.json()
       const assetsData = await assetsRes.json()
       const recordsData = await recordsRes.json()
       const balancesData = await balancesRes.json()
-      setAccounts(accountsData)
-      setAssets(assetsData)
-      setRecords(recordsData)
-      setBalances(balancesData)
+
+      // 过滤出当前用户的账户
+      const userAccounts = accountsData.filter((account: Account) => account.userId === user?.id)
+      const userAccountIds = new Set(userAccounts.map((account: Account) => account.id))
+
+      // 过滤出当前用户账户相关的资产
+      const userAssets = assetsData.filter((asset: Asset) => userAccountIds.has(asset.accountId))
+      const userAssetIds = new Set(userAssets.map((asset: Asset) => asset.id))
+
+      // 过滤出当前用户账户相关的记录
+      const userRecords = recordsData.filter((record: Record) => userAccountIds.has(record.accountId))
+
+      // 过滤出当前用户资产相关的余额
+      const userBalances = balancesData.filter((balance: Balance) => userAssetIds.has(balance.assetId))
+
+      setAccounts(userAccounts)
+      setAssets(userAssets)
+      setRecords(userRecords)
+      setBalances(userBalances)
     } catch (error) {
       console.error("获取数据失败:", error)
     } finally {
@@ -263,7 +293,7 @@ function OverviewPageContent() {
                       const accountAssets = getAssetsByAccount(account.id)
                       const nameColor = getAccountNameColor(account.name)
                       return (
-                        <Card key={account.id} className={`border-l-4 ${nameColor.borderColor} ${nameColor.bgColor}`}>
+                        <Card key={account.id} className={`border-l-4 ${nameColor.borderColor} dark:${nameColor.darkBorderColor} ${nameColor.bgColor} dark:${nameColor.darkBgColor}`}>
                           <CardHeader className="pb-2">
                             <AccountDisplay name={account.name} type={account.type} variant="card" />
                             <CardTitle className="text-2xl">
@@ -319,7 +349,7 @@ function OverviewPageContent() {
                                 <TableCell>
                                   <AccountDisplay name={record.account.name} type={record.account.type} variant="compact" />
                                 </TableCell>
-                                <TableCell className={`text-right font-medium ${record.amount >= 0 ? "text-green-600" : "text-red-600"}`}>
+                                <TableCell className={`text-right font-medium ${record.amount >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
                                   {formatAmount(record.amount)}
                                 </TableCell>
                               </TableRow>
@@ -357,7 +387,7 @@ function OverviewPageContent() {
                             return (
                               <Fragment key={account.id}>
                                 <TableRow
-                                  className={`${nameColor.bgColor} ${hasAssets ? "cursor-pointer hover:brightness-95 transition-all" : ""}`}
+                                  className={`${nameColor.bgColor} dark:${nameColor.darkBgColor} ${hasAssets ? "cursor-pointer hover:brightness-95 transition-all" : ""}`}
                                   onClick={() => hasAssets && toggleAccountExpand(account.id)}
                                 >
                                   <TableCell className="py-3">
@@ -392,7 +422,7 @@ function OverviewPageContent() {
                                       </>
                                     )}
                                   </TableCell>
-                                  <TableCell className={`text-right font-bold ${total >= 0 ? "text-green-600" : "text-red-600"}`}>
+                                  <TableCell className={`text-right font-bold ${total >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
                                     {formatAmount(total)}
                                   </TableCell>
                                 </TableRow>
@@ -402,17 +432,17 @@ function OverviewPageContent() {
                                   const AssetIcon = assetTypeConfig.icon
                                   const isLast = index === accountAssets.length - 1
                                   return (
-                                    <TableRow key={asset.id} className="bg-slate-50/50 hover:bg-slate-100/50 transition-colors">
+                                    <TableRow key={asset.id} className="bg-slate-50/50 dark:bg-slate-800/50 hover:bg-slate-100/50 dark:hover:bg-slate-700/50 transition-colors">
                                       <TableCell className="relative py-3">
                                         {!isLast && (
-                                          <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200" />
+                                          <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200 dark:bg-slate-700" />
                                         )}
                                         {isLast && (
-                                          <div className="absolute left-4 top-0 h-1/2 w-px bg-slate-200" />
+                                          <div className="absolute left-4 top-0 h-1/2 w-px bg-slate-200 dark:bg-slate-700" />
                                         )}
-                                        <div className="absolute left-4 top-1/2 w-3 h-px bg-slate-200" />
+                                        <div className="absolute left-4 top-1/2 w-3 h-px bg-slate-200 dark:bg-slate-700" />
                                         <div className="pl-10">
-                                          <span className="text-sm text-slate-600">{asset.name}</span>
+                                          <span className="text-sm text-slate-600 dark:text-slate-300">{asset.name}</span>
                                         </div>
                                       </TableCell>
                                       <TableCell className="py-3">
@@ -427,7 +457,7 @@ function OverviewPageContent() {
                                         </span>
                                         {formatAmount(assetTotal.baseAmount)}
                                       </TableCell>
-                                      <TableCell className={`text-right font-medium py-3 ${assetTotal.total >= 0 ? "text-green-600" : "text-red-600"}`}>
+                                      <TableCell className={`text-right font-medium py-3 ${assetTotal.total >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
                                         {formatAmount(assetTotal.total)}
                                       </TableCell>
                                     </TableRow>

@@ -20,11 +20,15 @@ function AlertDialogTrigger({
   )
 }
 
-function AlertDialogPortal({
-  ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Portal>) {
+function AlertDialogPortal({ ...props }: React.ComponentProps<typeof AlertDialogPrimitive.Portal>) {
+  const [container, setContainer] = React.useState<Element | null>(null)
+
+  React.useEffect(() => {
+    setContainer(document.body)
+  }, [])
+
   return (
-    <AlertDialogPrimitive.Portal data-slot="alert-dialog-portal" {...props} />
+    <AlertDialogPrimitive.Portal data-slot="alert-dialog-portal" container={container} {...props} />
   )
 }
 
