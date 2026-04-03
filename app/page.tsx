@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ArrowRight, ChevronDown, Shield, Star, Zap, DollarSign, LineChart, Clock, CreditCard, Smartphone, Save, BarChart3, CheckCircle } from 'lucide-react';
+import { ArrowRight, DollarSign, LineChart, CreditCard, BarChart3, CheckCircle, Save, Star } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import Link from 'next/link';
 
@@ -95,18 +95,7 @@ export default function Home() {
             {/* Feature 3 */}
             <div className="p-6 rounded-lg bg-gray-50 dark:bg-gray-700 hover:shadow-md transition-shadow">
               <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-md flex items-center justify-center mb-4">
-                <Clock className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">预算管理</h3>
-              <p className="mt-2 text-gray-600 dark:text-gray-300">
-                制定个性化预算计划，实时监控支出情况，避免超支，帮助你养成良好的消费习惯。
-              </p>
-            </div>
-
-            {/* Feature 4 */}
-            <div className="p-6 rounded-lg bg-gray-50 dark:bg-gray-700 hover:shadow-md transition-shadow">
-              <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-md flex items-center justify-center mb-4">
-                <CreditCard className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                <CreditCard className="h-6 w-6 text-blue-600 dark:text-blue-400" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white">账户管理</h3>
               <p className="mt-2 text-gray-600 dark:text-gray-300">
@@ -114,14 +103,25 @@ export default function Home() {
               </p>
             </div>
 
+            {/* Feature 4 */}
+            <div className="p-6 rounded-lg bg-gray-50 dark:bg-gray-700 hover:shadow-md transition-shadow">
+              <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-md flex items-center justify-center mb-4">
+                <BarChart3 className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">快照功能</h3>
+              <p className="mt-2 text-gray-600 dark:text-gray-300">
+                定期生成资产快照，记录历史数据，方便对比分析财务变化趋势。
+              </p>
+            </div>
+
             {/* Feature 5 */}
             <div className="p-6 rounded-lg bg-gray-50 dark:bg-gray-700 hover:shadow-md transition-shadow">
-              <div className="w-12 h-12 bg-red-100 dark:bg-red-900 rounded-md flex items-center justify-center mb-4">
-                <Smartphone className="h-6 w-6 text-red-600 dark:text-red-400" />
+              <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900 rounded-md flex items-center justify-center mb-4">
+                <CheckCircle className="h-6 w-6 text-orange-600 dark:text-orange-400" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">移动同步</h3>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">数据导出</h3>
               <p className="mt-2 text-gray-600 dark:text-gray-300">
-                支持多设备同步，随时随地查看和管理你的财务，让财务管理更加灵活便捷。
+                支持多种格式导出，包括PDF、Excel、图片等，方便你保存和分享财务数据。
               </p>
             </div>
 
@@ -162,7 +162,7 @@ export default function Home() {
                 <Star className="h-5 w-5 text-yellow-400" />
               </div>
               <p className="text-gray-600 dark:text-gray-300">
-                "Geldborse 让我的财务管理变得轻松简单，我现在对自己的财务状况了如指掌，能够更好地规划未来。"
+                "Geldborse 让我的财务管理变得轻松简单，收支记录清晰，资产分析直观，界面美观易用。"
               </p>
               <div className="mt-4 flex items-center">
                 <div className="h-10 w-10 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
@@ -170,7 +170,7 @@ export default function Home() {
                 </div>
                 <div className="ml-3">
                   <p className="text-sm font-medium text-gray-900 dark:text-white">张先生</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">企业经理</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">财务分析师</p>
                 </div>
               </div>
             </div>
@@ -185,7 +185,7 @@ export default function Home() {
                 <Star className="h-5 w-5 text-yellow-400" />
               </div>
               <p className="text-gray-600 dark:text-gray-300">
-                "作为一名自由职业者，Geldborse 帮助我更好地管理收入和支出，制定合理的预算，让我的财务更加健康。"
+                "快照功能非常实用，可以随时记录资产状态，对比历史数据，帮助我更好地了解财务变化趋势。"
               </p>
               <div className="mt-4 flex items-center">
                 <div className="h-10 w-10 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
@@ -208,7 +208,7 @@ export default function Home() {
                 <Star className="h-5 w-5 text-yellow-400" />
               </div>
               <p className="text-gray-600 dark:text-gray-300">
-                "界面美观，功能强大，操作简单，是我用过的最好的财务管理工具之一。强烈推荐！"
+                "数据导出功能很强大，支持PDF、Excel、图片等多种格式，方便保存和分享财务数据，界面设计简洁美观。"
               </p>
               <div className="mt-4 flex items-center">
                 <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
@@ -231,7 +231,7 @@ export default function Home() {
             开始你的财务管理之旅
           </h2>
           <p className="mt-4 text-xl text-indigo-100">
-            立即注册，享受 14 天免费试用，无需信用卡
+            立即注册，体验智能财务管理工具，让你的财务更健康
           </p>
           <div className="mt-8 flex justify-center space-x-4">
             <Link
@@ -267,10 +267,10 @@ export default function Home() {
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">功能</h3>
               <ul className="mt-2 space-y-2">
-                <li><Link href="#" className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400">收支追踪</Link></li>
-                <li><Link href="#" className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400">资产分析</Link></li>
-                <li><Link href="#" className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400">预算管理</Link></li>
-                <li><Link href="#" className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400">账户管理</Link></li>
+                <li><Link href="/record" className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400">收支追踪</Link></li>
+                <li><Link href="/overview" className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400">资产分析</Link></li>
+                <li><Link href="/accounts" className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400">账户管理</Link></li>
+                <li><Link href="/snapshots" className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400">快照功能</Link></li>
               </ul>
             </div>
 
@@ -278,10 +278,10 @@ export default function Home() {
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">资源</h3>
               <ul className="mt-2 space-y-2">
-                <li><Link href="#" className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400">帮助中心</Link></li>
-                <li><Link href="#" className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400">使用指南</Link></li>
-                <li><Link href="#" className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400">常见问题</Link></li>
-                <li><Link href="#" className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400">联系我们</Link></li>
+                <li><Link href="/overview" className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400">概览页面</Link></li>
+                <li><Link href="/accounts" className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400">账户管理</Link></li>
+                <li><Link href="/record" className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400">收支记录</Link></li>
+                <li><Link href="/export" className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400">数据导出</Link></li>
               </ul>
             </div>
 
