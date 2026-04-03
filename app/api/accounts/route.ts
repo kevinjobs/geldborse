@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
 // Mock user ID for testing purposes
-const MOCK_USER_ID = "user_123"
+const MOCK_USER_ID = "cmniu7l7u0000k6lyrogpnkt5"
 
 export async function GET() {
   const accounts = await prisma.account.findMany({

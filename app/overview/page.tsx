@@ -263,7 +263,7 @@ function OverviewPageContent() {
                       const accountAssets = getAssetsByAccount(account.id)
                       const nameColor = getAccountNameColor(account.name)
                       return (
-                        <Card key={account.id} className={`border-l-4 ${nameColor.borderColor} ${nameColor.bgColor}`}>
+                        <Card key={account.id} className={`border-l-4 ${nameColor.borderColor} dark:${nameColor.darkBorderColor} ${nameColor.bgColor} dark:${nameColor.darkBgColor}`}>
                           <CardHeader className="pb-2">
                             <AccountDisplay name={account.name} type={account.type} variant="card" />
                             <CardTitle className="text-2xl">
@@ -319,7 +319,7 @@ function OverviewPageContent() {
                                 <TableCell>
                                   <AccountDisplay name={record.account.name} type={record.account.type} variant="compact" />
                                 </TableCell>
-                                <TableCell className={`text-right font-medium ${record.amount >= 0 ? "text-green-600" : "text-red-600"}`}>
+                                <TableCell className={`text-right font-medium ${record.amount >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
                                   {formatAmount(record.amount)}
                                 </TableCell>
                               </TableRow>
@@ -357,7 +357,7 @@ function OverviewPageContent() {
                             return (
                               <Fragment key={account.id}>
                                 <TableRow
-                                  className={`${nameColor.bgColor} ${hasAssets ? "cursor-pointer hover:brightness-95 transition-all" : ""}`}
+                                  className={`${nameColor.bgColor} dark:${nameColor.darkBgColor} ${hasAssets ? "cursor-pointer hover:brightness-95 transition-all" : ""}`}
                                   onClick={() => hasAssets && toggleAccountExpand(account.id)}
                                 >
                                   <TableCell className="py-3">
@@ -392,7 +392,7 @@ function OverviewPageContent() {
                                       </>
                                     )}
                                   </TableCell>
-                                  <TableCell className={`text-right font-bold ${total >= 0 ? "text-green-600" : "text-red-600"}`}>
+                                  <TableCell className={`text-right font-bold ${total >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
                                     {formatAmount(total)}
                                   </TableCell>
                                 </TableRow>
@@ -402,17 +402,17 @@ function OverviewPageContent() {
                                   const AssetIcon = assetTypeConfig.icon
                                   const isLast = index === accountAssets.length - 1
                                   return (
-                                    <TableRow key={asset.id} className="bg-slate-50/50 hover:bg-slate-100/50 transition-colors">
+                                    <TableRow key={asset.id} className="bg-slate-50/50 dark:bg-slate-800/50 hover:bg-slate-100/50 dark:hover:bg-slate-700/50 transition-colors">
                                       <TableCell className="relative py-3">
                                         {!isLast && (
-                                          <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200" />
+                                          <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200 dark:bg-slate-700" />
                                         )}
                                         {isLast && (
-                                          <div className="absolute left-4 top-0 h-1/2 w-px bg-slate-200" />
+                                          <div className="absolute left-4 top-0 h-1/2 w-px bg-slate-200 dark:bg-slate-700" />
                                         )}
-                                        <div className="absolute left-4 top-1/2 w-3 h-px bg-slate-200" />
+                                        <div className="absolute left-4 top-1/2 w-3 h-px bg-slate-200 dark:bg-slate-700" />
                                         <div className="pl-10">
-                                          <span className="text-sm text-slate-600">{asset.name}</span>
+                                          <span className="text-sm text-slate-600 dark:text-slate-300">{asset.name}</span>
                                         </div>
                                       </TableCell>
                                       <TableCell className="py-3">
@@ -427,7 +427,7 @@ function OverviewPageContent() {
                                         </span>
                                         {formatAmount(assetTotal.baseAmount)}
                                       </TableCell>
-                                      <TableCell className={`text-right font-medium py-3 ${assetTotal.total >= 0 ? "text-green-600" : "text-red-600"}`}>
+                                      <TableCell className={`text-right font-medium py-3 ${assetTotal.total >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
                                         {formatAmount(assetTotal.total)}
                                       </TableCell>
                                     </TableRow>

@@ -498,235 +498,140 @@ export default function AccountsPage() {
             <p>加载中...</p>
           </div>
         ) : (
-        <div className="flex flex-1 flex-col overflow-y-auto" style={{ scrollbarGutter: "stable" }}>
-          <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-              <div className="px-4 lg:px-6">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <div>
-                      <CardTitle>账户管理</CardTitle>
-                      <CardDescription>管理您的财务账户、资产和余额快照</CardDescription>
-                    </div>
-                    <Button onClick={handleAdd}>添加账户</Button>
-                  </CardHeader>
-                  <CardContent className="min-h-[300px]">
-                    <Table className="table-fixed select-none">
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-[25%]">名称</TableHead>
-                          <TableHead className="w-[15%]">账户号码</TableHead>
-                          <TableHead className="w-[20%] text-right">总资产</TableHead>
-                          <TableHead className="w-[10%] text-center">收支数</TableHead>
-                          <TableHead className="w-[10%] text-center">资产数</TableHead>
-                          <TableHead className="w-[20%] text-right">操作</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {accounts.length === 0 ? (
+          <div className="flex flex-1 flex-col overflow-y-auto" style={{ scrollbarGutter: "stable" }}>
+            <div className="@container/main flex flex-1 flex-col gap-2">
+              <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+                <div className="px-4 lg:px-6">
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between">
+                      <div>
+                        <CardTitle>账户管理</CardTitle>
+                        <CardDescription>管理您的财务账户、资产和余额快照</CardDescription>
+                      </div>
+                      <Button onClick={handleAdd}>添加账户</Button>
+                    </CardHeader>
+                    <CardContent className="min-h-[300px]">
+                      <Table className="table-fixed select-none">
+                        <TableHeader>
                           <TableRow>
-                            <TableCell colSpan={6} className="text-center text-muted-foreground">
-                              暂无账户
-                            </TableCell>
+                            <TableHead className="w-[25%]">名称</TableHead>
+                            <TableHead className="w-[15%]">账户号码</TableHead>
+                            <TableHead className="w-[20%] text-right">总资产</TableHead>
+                            <TableHead className="w-[10%] text-center">收支数</TableHead>
+                            <TableHead className="w-[10%] text-center">资产数</TableHead>
+                            <TableHead className="w-[20%] text-right">操作</TableHead>
                           </TableRow>
-                        ) : (
-                          accounts.map((account) => {
-                            const nameColor = getAccountNameColor(account.name)
-                            const isExpanded = expandedAccounts.has(account.id)
-                            const hasAssets = (account._count?.assets || 0) > 0
-                            const accountAssetList = accountAssets[account.id] || []
-                            const totalAssets = (account as { totalAssets?: number }).totalAssets || 0
-                            const isNegative = totalAssets < 0
-                            return (
-                              <Fragment key={account.id}>
-                                <TableRow
-                                  className={`${nameColor.bgColor} ${hasAssets ? "cursor-pointer hover:brightness-95 transition-all" : ""}`}
-                                  onClick={() => hasAssets && toggleAccountExpand(account.id)}
-                                >
-                                  <TableCell className="py-3">
-                                    <div className="flex items-center gap-2">
-                                      {hasAssets && (
-                                        <span className="w-4 h-4 flex items-center justify-center shrink-0">
-                                          {isExpanded ? (
-                                            <ChevronDown className="h-4 w-4" />
-                                          ) : (
-                                            <ChevronRight className="h-4 w-4" />
-                                          )}
-                                        </span>
-                                      )}
-                                      {!hasAssets && <span className="w-4 shrink-0" />}
-                                      <AccountDisplay name={account.name} type={account.type} variant="table" />
-                                    </div>
-                                  </TableCell>
-                                  <TableCell>{account.accountNumber || "-"}</TableCell>
-                                  <TableCell className={`text-right font-medium ${isNegative ? "text-red-600" : "text-green-600"}`}>
-                                    {formatAmount(totalAssets)}
-                                  </TableCell>
-                                  <TableCell className="text-center">{account._count?.records || 0}</TableCell>
-                                  <TableCell className="text-center">{account._count?.assets || 0}</TableCell>
-                                  <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="mr-2 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700"
-                                      onClick={() => {
-                                        setSelectedAccount(account)
-                                        handleAddAsset()
-                                      }}
-                                    >
-                                      <Plus className="h-3.5 w-3.5 mr-1" />
-                                      添加资产
-                                    </Button>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="mr-2"
-                                      onClick={() => handleEdit(account)}
-                                    >
-                                      <Pencil className="h-3.5 w-3.5 mr-1" />
-                                      编辑
-                                    </Button>
-                                    <Button
-                                      variant="destructive"
-                                      size="sm"
-                                      onClick={() => handleDelete(account)}
-                                    >
-                                      <Trash2 className="h-3.5 w-3.5 mr-1" />
-                                      删除
-                                    </Button>
-                                  </TableCell>
-                                </TableRow>
-                                {isExpanded && accountAssetList.map((asset, assetIndex) => {
-                                  const assetTypeConfig = getAssetTypeConfig(asset.type)
-                                  const AssetIcon = assetTypeConfig.icon
-                                  const isAssetExpanded = expandedAssets.has(asset.id)
-                                  const isLastAsset = assetIndex === accountAssetList.length - 1
-                                  const assetBalanceList = assetBalances[asset.id] || []
-                                  return (
-                                    <Fragment key={asset.id}>
-                                      <TableRow
-                                        className="bg-slate-50/50 hover:bg-slate-100/50 transition-colors cursor-pointer"
-                                        onClick={() => toggleAssetExpand(asset.id)}
-                                      >
-                                        <TableCell className="relative py-3">
-                                          {!isLastAsset && (
-                                            <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200" />
-                                          )}
-                                          {isLastAsset && (
-                                            <div className="absolute left-4 top-0 h-1/2 w-px bg-slate-200" />
-                                          )}
-                                          <div className="absolute left-4 top-1/2 w-3 h-px bg-slate-200" />
-                                          <div className="pl-10 flex items-center gap-2">
-                                            <span className="w-4 h-4 flex items-center justify-center shrink-0">
-                                              {isAssetExpanded ? (
-                                                <ChevronDown className="h-3 w-3" />
-                                              ) : (
-                                                <ChevronRight className="h-3 w-3" />
-                                              )}
-                                            </span>
-                                            <span className="text-sm text-slate-600">{asset.name}</span>
-                                            <Badge className="gap-1 text-xs font-normal">
-                                              <AssetIcon className="h-3 w-3" />
-                                              {assetTypeConfig.label}
-                                            </Badge>
-                                          </div>
-                                        </TableCell>
-                                        <TableCell className="text-right">{formatAmount(getLatestBalanceAmount(asset.id, asset.amount))}</TableCell>
-                                        <TableCell />
-                                        <TableCell />
-                                        <TableCell />
-                                        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="mr-2 h-7 text-blue-600 hover:text-blue-700"
-                                            onClick={() => {
-                                              setSelectedAccount(account)
-                                              setSelectedAsset(asset)
-                                              handleAddBalance()
-                                            }}
-                                          >
-                                            <Plus className="h-3 w-3 mr-1" />
-                                            快照
-                                          </Button>
-                                          <Button
-                                            variant="outline"
-                                            size="sm"
-                                            className="mr-2"
-                                            onClick={() => handleEditAsset(asset)}
-                                          >
-                                            <Pencil className="h-3.5 w-3.5 mr-1" />
-                                            编辑
-                                          </Button>
-                                          <Button
-                                            variant="destructive"
-                                            size="sm"
-                                            onClick={() => handleDeleteAsset(asset)}
-                                          >
-                                            <Trash2 className="h-3.5 w-3.5 mr-1" />
-                                            删除
-                                          </Button>
-                                        </TableCell>
-                                      </TableRow>
-                                      {isAssetExpanded && assetBalanceList.map((balance, balanceIndex) => {
-                                        const isLastBalance = balanceIndex === assetBalanceList.length - 1
-                                        return (
-                                          <TableRow key={balance.id} className="bg-slate-100/50 hover:bg-slate-200/50 transition-colors">
-                                            <TableCell className="relative py-2">
-                                              {!isLastAsset && (
-                                                <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200" />
-                                              )}
-                                              {!isLastBalance && (
-                                                <div className="absolute left-8 top-0 bottom-0 w-px bg-slate-200" />
-                                              )}
-                                              {isLastBalance && (
-                                                <div className="absolute left-8 top-0 h-1/2 w-px bg-slate-200" />
-                                              )}
-                                              <div className="absolute left-8 top-1/2 w-2 h-px bg-slate-200" />
-                                              <div className="pl-12 flex items-center gap-2">
-                                                <span className="text-xs text-muted-foreground">
-                                                  {formatDateTime(balance.recordedAt)}
-                                                </span>
-                                                <span className="text-xs text-slate-500">快照</span>
-                                              </div>
-                                            </TableCell>
-                                            <TableCell className="text-right text-sm">{formatAmount(balance.amount)}</TableCell>
-                                            <TableCell />
-                                            <TableCell />
-                                            <TableCell />
-                                            <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                                              <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="mr-2 h-7"
-                                                onClick={() => handleEditBalance(balance)}
-                                              >
-                                                <Pencil className="h-3 w-3 mr-1" />
-                                                编辑
-                                              </Button>
-                                              <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-7 text-destructive hover:text-destructive"
-                                                onClick={() => handleDeleteBalance(balance)}
-                                              >
-                                                <Trash2 className="h-3 w-3 mr-1" />
-                                                删除
-                                              </Button>
-                                            </TableCell>
-                                          </TableRow>
-                                        )
-                                      })}
-                                      {isAssetExpanded && assetBalanceList.length === 0 && (
-                                        <TableRow className="bg-slate-100/50">
-                                          <TableCell className="relative py-2">
-                                            {!isLastAsset && (
-                                              <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200" />
+                        </TableHeader>
+                        <TableBody>
+                          {accounts.length === 0 ? (
+                            <TableRow>
+                              <TableCell colSpan={6} className="text-center text-muted-foreground">
+                                暂无账户
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            accounts.map((account) => {
+                              const nameColor = getAccountNameColor(account.name)
+                              const isExpanded = expandedAccounts.has(account.id)
+                              const hasAssets = (account._count?.assets || 0) > 0
+                              const accountAssetList = accountAssets[account.id] || []
+                              const totalAssets = (account as { totalAssets?: number }).totalAssets || 0
+                              const isNegative = totalAssets < 0
+                              return (
+                                <Fragment key={account.id}>
+                                  <TableRow
+                                    className={`${nameColor.bgColor} dark:${nameColor.darkBgColor} ${hasAssets ? "cursor-pointer hover:brightness-95 transition-all" : ""}`}
+                                    onClick={() => hasAssets && toggleAccountExpand(account.id)}
+                                  >
+                                    <TableCell className="py-3">
+                                      <div className="flex items-center gap-2">
+                                        {hasAssets && (
+                                          <span className="w-4 h-4 flex items-center justify-center shrink-0">
+                                            {isExpanded ? (
+                                              <ChevronDown className="h-4 w-4" />
+                                            ) : (
+                                              <ChevronRight className="h-4 w-4" />
                                             )}
-                                            <div className="absolute left-8 top-1/2 w-2 h-px bg-slate-200" />
-                                            <div className="pl-12 text-xs text-muted-foreground">暂无快照</div>
+                                          </span>
+                                        )}
+                                        {!hasAssets && <span className="w-4 shrink-0" />}
+                                        <AccountDisplay name={account.name} type={account.type} variant="table" />
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>{account.accountNumber || "-"}</TableCell>
+                                    <TableCell className={`text-right font-medium ${isNegative ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
+                                      {formatAmount(totalAssets)}
+                                    </TableCell>
+                                    <TableCell className="text-center">{account._count?.records || 0}</TableCell>
+                                    <TableCell className="text-center">{account._count?.assets || 0}</TableCell>
+                                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="mr-2 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-700 dark:hover:text-blue-300"
+                                        onClick={() => {
+                                          setSelectedAccount(account)
+                                          handleAddAsset()
+                                        }}
+                                      >
+                                        <Plus className="h-3.5 w-3.5 mr-1" />
+                                        添加资产
+                                      </Button>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="mr-2"
+                                        onClick={() => handleEdit(account)}
+                                      >
+                                        <Pencil className="h-3.5 w-3.5 mr-1" />
+                                        编辑
+                                      </Button>
+                                      <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        onClick={() => handleDelete(account)}
+                                      >
+                                        <Trash2 className="h-3.5 w-3.5 mr-1" />
+                                        删除
+                                      </Button>
+                                    </TableCell>
+                                  </TableRow>
+                                  {isExpanded && accountAssetList.map((asset, assetIndex) => {
+                                    const assetTypeConfig = getAssetTypeConfig(asset.type)
+                                    const AssetIcon = assetTypeConfig.icon
+                                    const isAssetExpanded = expandedAssets.has(asset.id)
+                                    const isLastAsset = assetIndex === accountAssetList.length - 1
+                                    const assetBalanceList = assetBalances[asset.id] || []
+                                    return (
+                                      <Fragment key={asset.id}>
+                                        <TableRow
+                                          className="bg-slate-50/50 dark:bg-slate-800/50 hover:bg-slate-100/50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
+                                          onClick={() => toggleAssetExpand(asset.id)}
+                                        >
+                                          <TableCell className="relative py-3">
+                                            {!isLastAsset && (
+                                              <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200 dark:bg-slate-700" />
+                                            )}
+                                            {isLastAsset && (
+                                              <div className="absolute left-4 top-0 h-1/2 w-px bg-slate-200 dark:bg-slate-700" />
+                                            )}
+                                            <div className="absolute left-4 top-1/2 w-3 h-px bg-slate-200 dark:bg-slate-700" />
+                                            <div className="pl-10 flex items-center gap-2">
+                                              <span className="w-4 h-4 flex items-center justify-center shrink-0">
+                                                {isAssetExpanded ? (
+                                                  <ChevronDown className="h-3 w-3" />
+                                                ) : (
+                                                  <ChevronRight className="h-3 w-3" />
+                                                )}
+                                              </span>
+                                              <span className="text-sm text-slate-600 dark:text-slate-300">{asset.name}</span>
+                                              <Badge className="gap-1 text-xs font-normal">
+                                                <AssetIcon className="h-3 w-3" />
+                                                {assetTypeConfig.label}
+                                              </Badge>
+                                            </div>
                                           </TableCell>
-                                          <TableCell />
+                                          <TableCell className="text-right">{formatAmount(getLatestBalanceAmount(asset.id, asset.amount))}</TableCell>
                                           <TableCell />
                                           <TableCell />
                                           <TableCell />
@@ -734,7 +639,7 @@ export default function AccountsPage() {
                                             <Button
                                               variant="ghost"
                                               size="sm"
-                                              className="h-7 text-blue-600 hover:text-blue-700"
+                                              className="mr-2 h-7 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
                                               onClick={() => {
                                                 setSelectedAccount(account)
                                                 setSelectedAsset(asset)
@@ -742,53 +647,148 @@ export default function AccountsPage() {
                                               }}
                                             >
                                               <Plus className="h-3 w-3 mr-1" />
-                                              添加
+                                              快照
+                                            </Button>
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              className="mr-2"
+                                              onClick={() => handleEditAsset(asset)}
+                                            >
+                                              <Pencil className="h-3.5 w-3.5 mr-1" />
+                                              编辑
+                                            </Button>
+                                            <Button
+                                              variant="destructive"
+                                              size="sm"
+                                              onClick={() => handleDeleteAsset(asset)}
+                                            >
+                                              <Trash2 className="h-3.5 w-3.5 mr-1" />
+                                              删除
                                             </Button>
                                           </TableCell>
                                         </TableRow>
-                                      )}
-                                    </Fragment>
-                                  )
-                                })}
-                                {isExpanded && accountAssetList.length === 0 && (
-                                  <TableRow className="bg-slate-50/50">
-                                    <TableCell className="relative py-2">
-                                      <div className="absolute left-4 top-0 h-1/2 w-px bg-slate-200" />
-                                      <div className="absolute left-4 top-1/2 w-3 h-px bg-slate-200" />
-                                      <div className="pl-10 text-xs text-muted-foreground">暂无资产</div>
-                                    </TableCell>
-                                    <TableCell />
-                                    <TableCell />
-                                    <TableCell />
-                                    <TableCell />
-                                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-7 text-blue-600 hover:text-blue-700"
-                                        onClick={() => {
-                                          setSelectedAccount(account)
-                                          handleAddAsset()
-                                        }}
-                                      >
-                                        <Plus className="h-3 w-3 mr-1" />
-                                        添加
-                                      </Button>
-                                    </TableCell>
-                                  </TableRow>
-                                )}
-                              </Fragment>
-                            )
-                          })
-                        )}
-                      </TableBody>
-                    </Table>
-                  </CardContent>
-                </Card>
+                                        {isAssetExpanded && assetBalanceList.map((balance, balanceIndex) => {
+                                          const isLastBalance = balanceIndex === assetBalanceList.length - 1
+                                          return (
+                                            <TableRow key={balance.id} className="bg-slate-100/50 dark:bg-slate-700/50 hover:bg-slate-200/50 dark:hover:bg-slate-600/50 transition-colors">
+                                              <TableCell className="relative py-2">
+                                                {!isLastAsset && (
+                                                  <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200 dark:bg-slate-700" />
+                                                )}
+                                                {!isLastBalance && (
+                                                  <div className="absolute left-8 top-0 bottom-0 w-px bg-slate-200 dark:bg-slate-700" />
+                                                )}
+                                                {isLastBalance && (
+                                                  <div className="absolute left-8 top-0 h-1/2 w-px bg-slate-200 dark:bg-slate-700" />
+                                                )}
+                                                <div className="absolute left-8 top-1/2 w-2 h-px bg-slate-200 dark:bg-slate-700" />
+                                                <div className="pl-12 flex items-center gap-2">
+                                                  <span className="text-xs text-muted-foreground">
+                                                    {formatDateTime(balance.recordedAt)}
+                                                  </span>
+                                                  <span className="text-xs text-slate-500 dark:text-slate-400">快照</span>
+                                                </div>
+                                              </TableCell>
+                                              <TableCell className="text-right text-sm">{formatAmount(balance.amount)}</TableCell>
+                                              <TableCell />
+                                              <TableCell />
+                                              <TableCell />
+                                              <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                                                <Button
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  className="mr-2 h-7"
+                                                  onClick={() => handleEditBalance(balance)}
+                                                >
+                                                  <Pencil className="h-3 w-3 mr-1" />
+                                                  编辑
+                                                </Button>
+                                                <Button
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  className="h-7 text-destructive hover:text-destructive"
+                                                  onClick={() => handleDeleteBalance(balance)}
+                                                >
+                                                  <Trash2 className="h-3 w-3 mr-1" />
+                                                  删除
+                                                </Button>
+                                              </TableCell>
+                                            </TableRow>
+                                          )
+                                        })}
+                                        {isAssetExpanded && assetBalanceList.length === 0 && (
+                                          <TableRow className="bg-slate-100/50 dark:bg-slate-700/50">
+                                            <TableCell className="relative py-2">
+                                              {!isLastAsset && (
+                                                <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200 dark:bg-slate-700" />
+                                              )}
+                                              <div className="absolute left-8 top-1/2 w-2 h-px bg-slate-200 dark:bg-slate-700" />
+                                              <div className="pl-12 text-xs text-muted-foreground">暂无快照</div>
+                                            </TableCell>
+                                            <TableCell />
+                                            <TableCell />
+                                            <TableCell />
+                                            <TableCell />
+                                            <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                                              <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-7 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                                                onClick={() => {
+                                                  setSelectedAccount(account)
+                                                  setSelectedAsset(asset)
+                                                  handleAddBalance()
+                                                }}
+                                              >
+                                                <Plus className="h-3 w-3 mr-1" />
+                                                添加
+                                              </Button>
+                                            </TableCell>
+                                          </TableRow>
+                                        )}
+                                      </Fragment>
+                                    )
+                                  })}
+                                  {isExpanded && accountAssetList.length === 0 && (
+                                    <TableRow className="bg-slate-50/50 dark:bg-slate-800/50">
+                                      <TableCell className="relative py-2">
+                                        <div className="absolute left-4 top-0 h-1/2 w-px bg-slate-200 dark:bg-slate-700" />
+                                        <div className="absolute left-4 top-1/2 w-3 h-px bg-slate-200 dark:bg-slate-700" />
+                                        <div className="pl-10 text-xs text-muted-foreground">暂无资产</div>
+                                      </TableCell>
+                                      <TableCell />
+                                      <TableCell />
+                                      <TableCell />
+                                      <TableCell />
+                                      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-7 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                                          onClick={() => {
+                                            setSelectedAccount(account)
+                                            handleAddAsset()
+                                          }}
+                                        >
+                                          <Plus className="h-3 w-3 mr-1" />
+                                          添加
+                                        </Button>
+                                      </TableCell>
+                                    </TableRow>
+                                  )}
+                                </Fragment>
+                              )
+                            })
+                          )}
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
             </div>
           </div>
-        </div>
         )}
       </SidebarInset>
 
@@ -939,7 +939,7 @@ export default function AccountsPage() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 text-blue-600 hover:text-blue-700"
+                    className="h-7 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
                     onClick={() => {
                       setSelectedAsset(editingAsset)
                       handleAddBalance()

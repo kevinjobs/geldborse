@@ -17,43 +17,260 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { ACCOUNT_LOGOS } from "./account-logos"
 
-export const ACCOUNT_NAME_COLORS: Record<string, { color: string; bgColor: string; borderColor: string }> = {
-  "支付宝": { color: "text-blue-500", bgColor: "bg-blue-50", borderColor: "border-l-blue-400" },
-  "微信": { color: "text-green-500", bgColor: "bg-green-50", borderColor: "border-l-green-400" },
-  "微信支付": { color: "text-green-500", bgColor: "bg-green-50", borderColor: "border-l-green-400" },
-  "中信银行": { color: "text-red-600", bgColor: "bg-red-50", borderColor: "border-l-red-400" },
-  "招商银行": { color: "text-red-500", bgColor: "bg-red-50", borderColor: "border-l-red-400" },
-  "工商银行": { color: "text-red-600", bgColor: "bg-red-50", borderColor: "border-l-red-400" },
-  "建设银行": { color: "text-blue-600", bgColor: "bg-blue-50", borderColor: "border-l-blue-400" },
-  "农业银行": { color: "text-green-600", bgColor: "bg-green-50", borderColor: "border-l-green-400" },
-  "中国银行": { color: "text-red-500", bgColor: "bg-red-50", borderColor: "border-l-red-400" },
-  "交通银行": { color: "text-blue-500", bgColor: "bg-blue-50", borderColor: "border-l-blue-400" },
-  "浦发银行": { color: "text-blue-500", bgColor: "bg-blue-50", borderColor: "border-l-blue-400" },
-  "民生银行": { color: "text-teal-500", bgColor: "bg-teal-50", borderColor: "border-l-teal-400" },
-  "光大银行": { color: "text-purple-500", bgColor: "bg-purple-50", borderColor: "border-l-purple-400" },
-  "平安银行": { color: "text-orange-500", bgColor: "bg-orange-50", borderColor: "border-l-orange-400" },
-  "兴业银行": { color: "text-blue-500", bgColor: "bg-blue-50", borderColor: "border-l-blue-400" },
-  "华夏银行": { color: "text-red-500", bgColor: "bg-red-50", borderColor: "border-l-red-400" },
-  "广发银行": { color: "text-red-500", bgColor: "bg-red-50", borderColor: "border-l-red-400" },
-  "邮储银行": { color: "text-green-600", bgColor: "bg-green-50", borderColor: "border-l-green-400" },
-  "京东": { color: "text-red-500", bgColor: "bg-red-50", borderColor: "border-l-red-400" },
-  "京东金融": { color: "text-red-500", bgColor: "bg-red-50", borderColor: "border-l-red-400" },
-  "云闪付": { color: "text-red-500", bgColor: "bg-red-50", borderColor: "border-l-red-400" },
-  "数字人民币": { color: "text-amber-500", bgColor: "bg-amber-50", borderColor: "border-l-amber-400" },
+export const ACCOUNT_NAME_COLORS: Record<string, { color: string; bgColor: string; borderColor: string; darkColor: string; darkBgColor: string; darkBorderColor: string }> = {
+  "支付宝": {
+    color: "text-blue-500",
+    bgColor: "bg-blue-50",
+    borderColor: "border-l-blue-400",
+    darkColor: "text-blue-400",
+    darkBgColor: "bg-blue-900/20",
+    darkBorderColor: "border-l-blue-700"
+  },
+  "微信": {
+    color: "text-green-500",
+    bgColor: "bg-green-50",
+    borderColor: "border-l-green-400",
+    darkColor: "text-green-400",
+    darkBgColor: "bg-green-900/20",
+    darkBorderColor: "border-l-green-700"
+  },
+  "微信支付": {
+    color: "text-green-500",
+    bgColor: "bg-green-50",
+    borderColor: "border-l-green-400",
+    darkColor: "text-green-400",
+    darkBgColor: "bg-green-900/20",
+    darkBorderColor: "border-l-green-700"
+  },
+  "中信银行": {
+    color: "text-red-600",
+    bgColor: "bg-red-50",
+    borderColor: "border-l-red-400",
+    darkColor: "text-red-400",
+    darkBgColor: "bg-red-900/20",
+    darkBorderColor: "border-l-red-700"
+  },
+  "招商银行": {
+    color: "text-red-500",
+    bgColor: "bg-red-50",
+    borderColor: "border-l-red-400",
+    darkColor: "text-red-400",
+    darkBgColor: "bg-red-900/20",
+    darkBorderColor: "border-l-red-700"
+  },
+  "工商银行": {
+    color: "text-red-600",
+    bgColor: "bg-red-50",
+    borderColor: "border-l-red-400",
+    darkColor: "text-red-400",
+    darkBgColor: "bg-red-900/20",
+    darkBorderColor: "border-l-red-700"
+  },
+  "建设银行": {
+    color: "text-blue-600",
+    bgColor: "bg-blue-50",
+    borderColor: "border-l-blue-400",
+    darkColor: "text-blue-400",
+    darkBgColor: "bg-blue-900/20",
+    darkBorderColor: "border-l-blue-700"
+  },
+  "农业银行": {
+    color: "text-green-600",
+    bgColor: "bg-green-50",
+    borderColor: "border-l-green-400",
+    darkColor: "text-green-400",
+    darkBgColor: "bg-green-900/20",
+    darkBorderColor: "border-l-green-700"
+  },
+  "中国银行": {
+    color: "text-red-500",
+    bgColor: "bg-red-50",
+    borderColor: "border-l-red-400",
+    darkColor: "text-red-400",
+    darkBgColor: "bg-red-900/20",
+    darkBorderColor: "border-l-red-700"
+  },
+  "交通银行": {
+    color: "text-blue-500",
+    bgColor: "bg-blue-50",
+    borderColor: "border-l-blue-400",
+    darkColor: "text-blue-400",
+    darkBgColor: "bg-blue-900/20",
+    darkBorderColor: "border-l-blue-700"
+  },
+  "浦发银行": {
+    color: "text-blue-500",
+    bgColor: "bg-blue-50",
+    borderColor: "border-l-blue-400",
+    darkColor: "text-blue-400",
+    darkBgColor: "bg-blue-900/20",
+    darkBorderColor: "border-l-blue-700"
+  },
+  "民生银行": {
+    color: "text-teal-500",
+    bgColor: "bg-teal-50",
+    borderColor: "border-l-teal-400",
+    darkColor: "text-teal-400",
+    darkBgColor: "bg-teal-900/20",
+    darkBorderColor: "border-l-teal-700"
+  },
+  "光大银行": {
+    color: "text-purple-500",
+    bgColor: "bg-purple-50",
+    borderColor: "border-l-purple-400",
+    darkColor: "text-purple-400",
+    darkBgColor: "bg-purple-900/20",
+    darkBorderColor: "border-l-purple-700"
+  },
+  "平安银行": {
+    color: "text-orange-500",
+    bgColor: "bg-orange-50",
+    borderColor: "border-l-orange-400",
+    darkColor: "text-orange-400",
+    darkBgColor: "bg-orange-900/20",
+    darkBorderColor: "border-l-orange-700"
+  },
+  "兴业银行": {
+    color: "text-blue-500",
+    bgColor: "bg-blue-50",
+    borderColor: "border-l-blue-400",
+    darkColor: "text-blue-400",
+    darkBgColor: "bg-blue-900/20",
+    darkBorderColor: "border-l-blue-700"
+  },
+  "华夏银行": {
+    color: "text-red-500",
+    bgColor: "bg-red-50",
+    borderColor: "border-l-red-400",
+    darkColor: "text-red-400",
+    darkBgColor: "bg-red-900/20",
+    darkBorderColor: "border-l-red-700"
+  },
+  "广发银行": {
+    color: "text-red-500",
+    bgColor: "bg-red-50",
+    borderColor: "border-l-red-400",
+    darkColor: "text-red-400",
+    darkBgColor: "bg-red-900/20",
+    darkBorderColor: "border-l-red-700"
+  },
+  "邮储银行": {
+    color: "text-green-600",
+    bgColor: "bg-green-50",
+    borderColor: "border-l-green-400",
+    darkColor: "text-green-400",
+    darkBgColor: "bg-green-900/20",
+    darkBorderColor: "border-l-green-700"
+  },
+  "京东": {
+    color: "text-red-500",
+    bgColor: "bg-red-50",
+    borderColor: "border-l-red-400",
+    darkColor: "text-red-400",
+    darkBgColor: "bg-red-900/20",
+    darkBorderColor: "border-l-red-700"
+  },
+  "京东金融": {
+    color: "text-red-500",
+    bgColor: "bg-red-50",
+    borderColor: "border-l-red-400",
+    darkColor: "text-red-400",
+    darkBgColor: "bg-red-900/20",
+    darkBorderColor: "border-l-red-700"
+  },
+  "云闪付": {
+    color: "text-red-500",
+    bgColor: "bg-red-50",
+    borderColor: "border-l-red-400",
+    darkColor: "text-red-400",
+    darkBgColor: "bg-red-900/20",
+    darkBorderColor: "border-l-red-700"
+  },
+  "数字人民币": {
+    color: "text-amber-500",
+    bgColor: "bg-amber-50",
+    borderColor: "border-l-amber-400",
+    darkColor: "text-amber-400",
+    darkBgColor: "bg-amber-900/20",
+    darkBorderColor: "border-l-amber-700"
+  },
 }
 
 const FALLBACK_COLORS = [
-  { color: "text-blue-500", bgColor: "bg-blue-50", borderColor: "border-l-blue-400" },
-  { color: "text-green-500", bgColor: "bg-green-50", borderColor: "border-l-green-400" },
-  { color: "text-purple-500", bgColor: "bg-purple-50", borderColor: "border-l-purple-400" },
-  { color: "text-orange-500", bgColor: "bg-orange-50", borderColor: "border-l-orange-400" },
-  { color: "text-pink-500", bgColor: "bg-pink-50", borderColor: "border-l-pink-400" },
-  { color: "text-teal-500", bgColor: "bg-teal-50", borderColor: "border-l-teal-400" },
-  { color: "text-indigo-500", bgColor: "bg-indigo-50", borderColor: "border-l-indigo-400" },
-  { color: "text-cyan-500", bgColor: "bg-cyan-50", borderColor: "border-l-cyan-400" },
+  {
+    color: "text-blue-500",
+    bgColor: "bg-blue-50",
+    borderColor: "border-l-blue-400",
+    darkColor: "text-blue-400",
+    darkBgColor: "bg-blue-900/20",
+    darkBorderColor: "border-l-blue-700"
+  },
+  {
+    color: "text-green-500",
+    bgColor: "bg-green-50",
+    borderColor: "border-l-green-400",
+    darkColor: "text-green-400",
+    darkBgColor: "bg-green-900/20",
+    darkBorderColor: "border-l-green-700"
+  },
+  {
+    color: "text-purple-500",
+    bgColor: "bg-purple-50",
+    borderColor: "border-l-purple-400",
+    darkColor: "text-purple-400",
+    darkBgColor: "bg-purple-900/20",
+    darkBorderColor: "border-l-purple-700"
+  },
+  {
+    color: "text-orange-500",
+    bgColor: "bg-orange-50",
+    borderColor: "border-l-orange-400",
+    darkColor: "text-orange-400",
+    darkBgColor: "bg-orange-900/20",
+    darkBorderColor: "border-l-orange-700"
+  },
+  {
+    color: "text-pink-500",
+    bgColor: "bg-pink-50",
+    borderColor: "border-l-pink-400",
+    darkColor: "text-pink-400",
+    darkBgColor: "bg-pink-900/20",
+    darkBorderColor: "border-l-pink-700"
+  },
+  {
+    color: "text-teal-500",
+    bgColor: "bg-teal-50",
+    borderColor: "border-l-teal-400",
+    darkColor: "text-teal-400",
+    darkBgColor: "bg-teal-900/20",
+    darkBorderColor: "border-l-teal-700"
+  },
+  {
+    color: "text-indigo-500",
+    bgColor: "bg-indigo-50",
+    borderColor: "border-l-indigo-400",
+    darkColor: "text-indigo-400",
+    darkBgColor: "bg-indigo-900/20",
+    darkBorderColor: "border-l-indigo-700"
+  },
+  {
+    color: "text-cyan-500",
+    bgColor: "bg-cyan-50",
+    borderColor: "border-l-cyan-400",
+    darkColor: "text-cyan-400",
+    darkBgColor: "bg-cyan-900/20",
+    darkBorderColor: "border-l-cyan-700"
+  },
 ]
 
-export const getAccountNameColor = (name: string): { color: string; bgColor: string; borderColor: string } => {
+export const getAccountNameColor = (name: string): {
+  color: string;
+  bgColor: string;
+  borderColor: string;
+  darkColor: string;
+  darkBgColor: string;
+  darkBorderColor: string
+} => {
   if (ACCOUNT_NAME_COLORS[name]) {
     return ACCOUNT_NAME_COLORS[name]
   }
@@ -111,12 +328,18 @@ export function AccountDisplay({ name, type, variant = "table", showBadge = true
   const TypeIcon = typeConfig.icon
   const LogoComponent = ACCOUNT_LOGOS[name]
 
+  // 检测当前是否为深色模式
+  const isDarkMode = typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
+
+  // 根据主题选择颜色
+  const displayColor = isDarkMode ? nameColor.darkColor : nameColor.color
+
   if (variant === "card") {
     return (
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          {LogoComponent && <LogoComponent size={18} className={nameColor.color} />}
-          <span className={`font-semibold ${nameColor.color}`}>{name}</span>
+          {LogoComponent && <LogoComponent size={18} className={displayColor} />}
+          <span className={`font-semibold ${displayColor}`}>{name}</span>
           {showBadge && (
             <Badge variant="outline" className="gap-1 text-xs">
               <TypeIcon className="h-3 w-3" />
@@ -131,8 +354,8 @@ export function AccountDisplay({ name, type, variant = "table", showBadge = true
   if (variant === "compact") {
     return (
       <div className="flex items-center gap-1.5">
-        {LogoComponent && <LogoComponent size={14} className={nameColor.color} />}
-        <span className={`font-medium ${nameColor.color}`}>{name}</span>
+        {LogoComponent && <LogoComponent size={14} className={displayColor} />}
+        <span className={`font-medium ${displayColor}`}>{name}</span>
         {showBadge && (
           <Badge variant="outline" className="gap-0.5 text-[10px] px-1.5 py-0 h-4">
             <TypeIcon className="h-2.5 w-2.5" />
@@ -145,8 +368,8 @@ export function AccountDisplay({ name, type, variant = "table", showBadge = true
 
   return (
     <div className="flex items-center gap-2">
-      {LogoComponent && <LogoComponent size={16} className={nameColor.color} />}
-      <span className={`font-medium ${nameColor.color}`}>{name}</span>
+      {LogoComponent && <LogoComponent size={16} className={displayColor} />}
+      <span className={`font-medium ${displayColor}`}>{name}</span>
       {showBadge && (
         <Badge variant="outline" className="gap-1 text-xs">
           <TypeIcon className="h-3 w-3" />
