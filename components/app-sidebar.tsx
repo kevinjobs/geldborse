@@ -15,50 +15,56 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { EyeIcon, PlusIcon, WalletIcon, ListIcon, CameraIcon, DownloadSimpleIcon } from "@phosphor-icons/react"
+import { useAuth } from "@/lib/auth-context"
 
-const data = {
-  user: {
-    name: "用户",
-    email: "user@example.com",
-    avatar: "/avatars/shadcn.jpg",
+const navMain = [
+  {
+    title: "总览",
+    url: "/overview",
+    icon: <EyeIcon />,
   },
-  navMain: [
-    {
-      title: "总览",
-      url: "/overview",
-      icon: <EyeIcon />,
-    },
-    {
-      title: "添加收支",
-      url: "/record/add",
-      icon: <PlusIcon />,
-    },
-    {
-      title: "收支",
-      url: "/record",
-      icon: <ListIcon />,
-    },
-    {
-      title: "账户",
-      url: "/accounts",
-      icon: <WalletIcon />,
-    },
-    {
-      title: "快照",
-      url: "/snapshots",
-      icon: <CameraIcon />,
-    },
-    {
-      title: "导出",
-      url: "/export",
-      icon: <DownloadSimpleIcon />,
-    },
-  ],
-}
+  {
+    title: "添加收支",
+    url: "/record/add",
+    icon: <PlusIcon />,
+  },
+  {
+    title: "收支",
+    url: "/record",
+    icon: <ListIcon />,
+  },
+  {
+    title: "账户",
+    url: "/accounts",
+    icon: <WalletIcon />,
+  },
+  {
+    title: "快照",
+    url: "/snapshots",
+    icon: <CameraIcon />,
+  },
+  {
+    title: "导出",
+    url: "/export",
+    icon: <DownloadSimpleIcon />,
+  },
+]
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { user } = useAuth()
+
+  const userData = user ? {
+    name: user.name || user.email.split('@')[0],
+    email: user.email,
+    avatar: "/avatars/default.svg",
+  } : {
+    name: "访客",
+    email: "请登录",
+    avatar: "/avatars/default.svg",
+  }
+
   return (
-    <Sidebar collapsible="offcanvas" {...props}>
+    <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -77,10 +83,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={navMain} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser />
       </SidebarFooter>
     </Sidebar>
   )

@@ -1,8 +1,32 @@
 import { PrismaClient } from "@prisma/client"
+import bcrypt from "bcrypt"
 
 const prisma = new PrismaClient()
 
 async function main() {
+  // 创建默认用户
+  const defaultEmail = "admin@example.com"
+  const defaultPassword = "password123"
+  
+  let user = await prisma.user.findUnique({
+    where: { email: defaultEmail }
+  })
+  
+  if (!user) {
+    const hashedPassword = await bcrypt.hash(defaultPassword, 10)
+    user = await prisma.user.create({
+      data: {
+        email: defaultEmail,
+        password: hashedPassword,
+        name: "管理员"
+      }
+    })
+    console.log(`创建默认用户: ${defaultEmail}`)
+  } else {
+    console.log(`默认用户已存在: ${defaultEmail}`)
+  }
+
+  // 创建账户
   const accounts = [
     { name: "主账户" },
     { name: "储蓄账户" },
@@ -13,10 +37,18 @@ async function main() {
 
   for (const account of accounts) {
     const existing = await prisma.account.findFirst({
-      where: { name: account.name },
+      where: { 
+        name: account.name,
+        userId: user.id
+      },
     })
     if (!existing) {
-      await prisma.account.create({ data: account })
+      await prisma.account.create({ 
+        data: {
+          ...account,
+          userId: user.id
+        }
+      })
       console.log(`创建账户: ${account.name}`)
     } else {
       console.log(`账户已存在: ${account.name}`)
