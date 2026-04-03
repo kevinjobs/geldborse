@@ -690,8 +690,8 @@ export default function AccountsPage() {
                               const isExpanded = expandedAccounts.has(account.id)
                               const hasAssets = (account._count?.assets || 0) > 0
                               const accountAssetList = accountAssets[account.id] || []
-                              const totalAssets = (account as { totalAssets?: number }).totalAssets || 0
-                              const isNegative = totalAssets < 0
+                              const totalAmount = (account as { totalAmount?: number }).totalAmount || 0
+                              const isNegative = totalAmount < 0
                               return (
                                 <Fragment key={account.id}>
                                   <ResponsiveTableRow
@@ -715,12 +715,12 @@ export default function AccountsPage() {
                                     </ResponsiveTableCell>
                                     <ResponsiveTableCell mobileLabel="账户号码">{account.accountNumber || "-"}</ResponsiveTableCell>
                                     <ResponsiveTableCell mobileLabel="总资产" className={`text-right font-medium ${isNegative ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
-                                      {formatAmount(totalAssets)}
+                                      {formatAmount(totalAmount)}
                                     </ResponsiveTableCell>
                                     <ResponsiveTableCell mobileLabel="收支数" className="text-center">{account._count?.records || 0}</ResponsiveTableCell>
                                     <ResponsiveTableCell mobileLabel="资产数" className="text-center">{account._count?.assets || 0}</ResponsiveTableCell>
                                     <ResponsiveTableCell mobileLabel="操作" className="text-right" onClick={(e) => e.stopPropagation()}>
-                                      <div className="flex flex-col sm:flex-row gap-1 justify-end">
+                                      <div className="flex flex-row flex-wrap gap-1 justify-end">
                                         <Button
                                           variant="outline"
                                           size="sm"
@@ -792,7 +792,7 @@ export default function AccountsPage() {
                                           <ResponsiveTableCell />
                                           <ResponsiveTableCell />
                                           <ResponsiveTableCell mobileLabel="操作" className="text-right" onClick={(e) => e.stopPropagation()}>
-                                            <div className="flex flex-col sm:flex-row gap-1 justify-end">
+                                            <div className="flex flex-row flex-wrap gap-1 justify-end">
                                               <Button
                                                 variant="ghost"
                                                 size="sm"
@@ -852,7 +852,7 @@ export default function AccountsPage() {
                                               <ResponsiveTableCell />
                                               <ResponsiveTableCell />
                                               <ResponsiveTableCell mobileLabel="操作" className="text-right" onClick={(e) => e.stopPropagation()}>
-                                                <div className="flex flex-col sm:flex-row gap-1 justify-end">
+                                                <div className="flex flex-row flex-wrap gap-1 justify-end">
                                                   <Button
                                                     variant="ghost"
                                                     size="sm"

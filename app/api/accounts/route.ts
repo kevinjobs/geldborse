@@ -32,28 +32,16 @@ export async function GET(request: NextRequest) {
     let totalAmount = 0
 
     if (account.assets.length > 0) {
-      let latestBalanceDate: Date | null = null
       for (const asset of account.assets) {
         const latestBalance = asset.balances[0]
         if (latestBalance) {
-          const balanceDate = new Date(latestBalance.recordedAt)
-          if (!latestBalanceDate || balanceDate > latestBalanceDate) {
-            latestBalanceDate = balanceDate
-          }
+          totalAmount += latestBalance.amount
+        } else {
+          totalAmount += asset.amount || 0
         }
-        const baseAmount = latestBalance ? latestBalance.amount : (asset.amount || 0)
-        totalAmount += baseAmount
       }
-
-      let recordsAfterBalance = 0
-      if (latestBalanceDate) {
-        recordsAfterBalance = account.records
-          .filter((r) => new Date(r.date) > latestBalanceDate!)
-          .reduce((sum, r) => sum + r.amount, 0)
-      } else {
-        recordsAfterBalance = account.records.reduce((sum, r) => sum + r.amount, 0)
-      }
-      totalAmount += recordsAfterBalance
+      const recordsTotal = account.records.reduce((sum, r) => sum + r.amount, 0)
+      totalAmount += recordsTotal
     } else {
       const recordsTotal = account.records.reduce((sum, r) => sum + r.amount, 0)
       totalAmount = account.initialBalance + recordsTotal
