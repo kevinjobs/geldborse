@@ -13,6 +13,7 @@ import {
   getAssetTypeConfig,
   AccountDisplay
 } from "@/lib/account-config"
+import { useAuth } from "@/lib/auth-context"
 
 interface Account {
   id: string
@@ -21,6 +22,7 @@ interface Account {
   initialBalance: number
   createdAt: string
   updatedAt: string
+  userId: string
 }
 
 interface Asset {
@@ -57,6 +59,7 @@ interface Balance {
 import { ProtectedRoute } from "@/components/protected-route"
 
 function OverviewPageContent() {
+  const { user } = useAuth()
   const [accounts, setAccounts] = useState<Account[]>([])
   const [assets, setAssets] = useState<Asset[]>([])
   const [records, setRecords] = useState<Record[]>([])
@@ -65,25 +68,52 @@ function OverviewPageContent() {
   const [expandedAccounts, setExpandedAccounts] = useState<Set<string>>(new Set())
 
   useEffect(() => {
-    fetchData()
-  }, [])
+    if (user) {
+      fetchData()
+    } else {
+      setLoading(false)
+    }
+  }, [user])
 
   const fetchData = async () => {
     try {
+      // 获取用户认证信息
+      const storedUser = typeof window !== 'undefined' ? localStorage.getItem('geldborse_user') : null
+      const userData = storedUser ? JSON.parse(storedUser) : null
+      const authToken = userData?.id // 使用用户ID作为临时token
+
+      // 构建请求头
+      const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : undefined
+
       const [accountsRes, assetsRes, recordsRes, balancesRes] = await Promise.all([
-        fetch("/api/accounts"),
-        fetch("/api/assets"),
-        fetch("/api/records"),
-        fetch("/api/balances"),
+        fetch("/api/accounts", headers ? { headers } : {}),
+        fetch("/api/assets", headers ? { headers } : {}),
+        fetch("/api/records", headers ? { headers } : {}),
+        fetch("/api/balances", headers ? { headers } : {}),
       ])
       const accountsData = await accountsRes.json()
       const assetsData = await assetsRes.json()
       const recordsData = await recordsRes.json()
       const balancesData = await balancesRes.json()
-      setAccounts(accountsData)
-      setAssets(assetsData)
-      setRecords(recordsData)
-      setBalances(balancesData)
+
+      // 过滤出当前用户的账户
+      const userAccounts = accountsData.filter((account: Account) => account.userId === user?.id)
+      const userAccountIds = new Set(userAccounts.map((account: Account) => account.id))
+
+      // 过滤出当前用户账户相关的资产
+      const userAssets = assetsData.filter((asset: Asset) => userAccountIds.has(asset.accountId))
+      const userAssetIds = new Set(userAssets.map((asset: Asset) => asset.id))
+
+      // 过滤出当前用户账户相关的记录
+      const userRecords = recordsData.filter((record: Record) => userAccountIds.has(record.accountId))
+
+      // 过滤出当前用户资产相关的余额
+      const userBalances = balancesData.filter((balance: Balance) => userAssetIds.has(balance.assetId))
+
+      setAccounts(userAccounts)
+      setAssets(userAssets)
+      setRecords(userRecords)
+      setBalances(userBalances)
     } catch (error) {
       console.error("获取数据失败:", error)
     } finally {

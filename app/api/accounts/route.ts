@@ -1,13 +1,16 @@
-import { NextResponse } from "next/server"
+import { NextResponse, NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { getCurrentUserId } from "@/lib/auth"
 
-// Mock user ID for testing purposes
-const MOCK_USER_ID = "cmniu7l7u0000k6lyrogpnkt5"
+export async function GET(request: NextRequest) {
+  const userId = await getCurrentUserId(request)
+  if (!userId) {
+    return NextResponse.json({ error: "未授权" }, { status: 401 })
+  }
 
-export async function GET() {
   const accounts = await prisma.account.findMany({
     where: {
-      userId: MOCK_USER_ID
+      userId
     },
     orderBy: { name: "asc" },
     include: {
@@ -64,7 +67,12 @@ export async function GET() {
   return NextResponse.json(accountsWithTotal)
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const userId = await getCurrentUserId(request)
+  if (!userId) {
+    return NextResponse.json({ error: "未授权" }, { status: 401 })
+  }
+
   const { name, type, accountNumber, initialBalance } = await request.json()
 
   if (!name || !name.trim()) {
@@ -77,7 +85,7 @@ export async function POST(request: Request) {
       type: type || "CASH",
       accountNumber: accountNumber?.trim() || null,
       initialBalance: parseFloat(initialBalance) || 0,
-      userId: MOCK_USER_ID,
+      userId,
     },
   })
   return NextResponse.json(account)

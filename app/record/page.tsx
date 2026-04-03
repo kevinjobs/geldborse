@@ -67,10 +67,24 @@ export default function RecordsPage() {
       ])
       const recordsData = await recordsRes.json()
       const accountsData = await accountsRes.json()
-      setRecords(recordsData)
-      setAccounts(accountsData)
+      // 确保recordsData是一个数组
+      if (Array.isArray(recordsData)) {
+        setRecords(recordsData)
+      } else {
+        console.error("获取记录列表失败: 响应数据不是数组")
+        setRecords([])
+      }
+      // 确保accountsData是一个数组
+      if (Array.isArray(accountsData)) {
+        setAccounts(accountsData)
+      } else {
+        console.error("获取账户列表失败: 响应数据不是数组")
+        setAccounts([])
+      }
     } catch (error) {
       console.error("获取数据失败:", error)
+      setRecords([])
+      setAccounts([])
     } finally {
       setLoading(false)
     }

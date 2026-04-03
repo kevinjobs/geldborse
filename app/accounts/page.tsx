@@ -102,11 +102,26 @@ export default function AccountsPage() {
 
   const fetchAccounts = async () => {
     try {
-      const res = await fetch("/api/accounts")
+      // 获取用户认证信息
+      const storedUser = typeof window !== 'undefined' ? localStorage.getItem('geldborse_user') : null
+      const userData = storedUser ? JSON.parse(storedUser) : null
+      const authToken = userData?.id // 使用用户ID作为临时token
+
+      // 构建请求头
+      const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : undefined
+
+      const res = await fetch("/api/accounts", headers ? { headers } : {})
       const data = await res.json()
-      setAccounts(data)
+      // 确保data是一个数组
+      if (Array.isArray(data)) {
+        setAccounts(data)
+      } else {
+        console.error("获取账户列表失败: 响应数据不是数组")
+        setAccounts([])
+      }
     } catch (error) {
       console.error("获取账户列表失败:", error)
+      setAccounts([])
     } finally {
       setLoading(false)
     }
@@ -114,21 +129,51 @@ export default function AccountsPage() {
 
   const fetchAssets = async (accountId: string) => {
     try {
-      const res = await fetch(`/api/assets?accountId=${accountId}`)
+      // 获取用户认证信息
+      const storedUser = typeof window !== 'undefined' ? localStorage.getItem('geldborse_user') : null
+      const userData = storedUser ? JSON.parse(storedUser) : null
+      const authToken = userData?.id // 使用用户ID作为临时token
+
+      // 构建请求头
+      const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : undefined
+
+      const res = await fetch(`/api/assets?accountId=${accountId}`, headers ? { headers } : {})
       const data = await res.json()
-      setAssets(data)
+      // 确保data是一个数组
+      if (Array.isArray(data)) {
+        setAssets(data)
+      } else {
+        console.error("获取资产列表失败: 响应数据不是数组")
+        setAssets([])
+      }
     } catch (error) {
       console.error("获取资产列表失败:", error)
+      setAssets([])
     }
   }
 
   const fetchBalances = async (assetId: string) => {
     try {
-      const res = await fetch(`/api/balances?assetId=${assetId}`)
+      // 获取用户认证信息
+      const storedUser = typeof window !== 'undefined' ? localStorage.getItem('geldborse_user') : null
+      const userData = storedUser ? JSON.parse(storedUser) : null
+      const authToken = userData?.id // 使用用户ID作为临时token
+
+      // 构建请求头
+      const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : undefined
+
+      const res = await fetch(`/api/balances?assetId=${assetId}`, headers ? { headers } : {})
       const data = await res.json()
-      setBalances(data)
+      // 确保data是一个数组
+      if (Array.isArray(data)) {
+        setBalances(data)
+      } else {
+        console.error("获取余额快照列表失败: 响应数据不是数组")
+        setBalances([])
+      }
     } catch (error) {
       console.error("获取余额快照列表失败:", error)
+      setBalances([])
     }
   }
 
@@ -140,10 +185,28 @@ export default function AccountsPage() {
       } else {
         newSet.add(accountId)
         if (!accountAssets[accountId]) {
-          fetch(`/api/assets?accountId=${accountId}`)
+          // 获取用户认证信息
+          const storedUser = typeof window !== 'undefined' ? localStorage.getItem('geldborse_user') : null
+          const userData = storedUser ? JSON.parse(storedUser) : null
+          const authToken = userData?.id // 使用用户ID作为临时token
+
+          // 构建请求头
+          const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : undefined
+
+          fetch(`/api/assets?accountId=${accountId}`, headers ? { headers } : {})
             .then((res) => res.json())
             .then((data) => {
-              setAccountAssets((prev) => ({ ...prev, [accountId]: data }))
+              // 确保data是一个数组
+              if (Array.isArray(data)) {
+                setAccountAssets((prev) => ({ ...prev, [accountId]: data }))
+              } else {
+                console.error("获取资产列表失败: 响应数据不是数组")
+                setAccountAssets((prev) => ({ ...prev, [accountId]: [] }))
+              }
+            })
+            .catch((error) => {
+              console.error("获取资产列表失败:", error)
+              setAccountAssets((prev) => ({ ...prev, [accountId]: [] }))
             })
         }
       }
@@ -159,10 +222,28 @@ export default function AccountsPage() {
       } else {
         newSet.add(assetId)
         if (!assetBalances[assetId]) {
-          fetch(`/api/balances?assetId=${assetId}`)
+          // 获取用户认证信息
+          const storedUser = typeof window !== 'undefined' ? localStorage.getItem('geldborse_user') : null
+          const userData = storedUser ? JSON.parse(storedUser) : null
+          const authToken = userData?.id // 使用用户ID作为临时token
+
+          // 构建请求头
+          const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : undefined
+
+          fetch(`/api/balances?assetId=${assetId}`, headers ? { headers } : {})
             .then((res) => res.json())
             .then((data) => {
-              setAssetBalances((prev) => ({ ...prev, [assetId]: data }))
+              // 确保data是一个数组
+              if (Array.isArray(data)) {
+                setAssetBalances((prev) => ({ ...prev, [assetId]: data }))
+              } else {
+                console.error("获取余额快照列表失败: 响应数据不是数组")
+                setAssetBalances((prev) => ({ ...prev, [assetId]: [] }))
+              }
+            })
+            .catch((error) => {
+              console.error("获取余额快照列表失败:", error)
+              setAssetBalances((prev) => ({ ...prev, [assetId]: [] }))
             })
         }
       }
@@ -199,12 +280,25 @@ export default function AccountsPage() {
       return
     }
 
+    // 获取用户认证信息
+    const storedUser = typeof window !== 'undefined' ? localStorage.getItem('geldborse_user') : null
+    const userData = storedUser ? JSON.parse(storedUser) : null
+    const authToken = userData?.id // 使用用户ID作为临时token
+
+    // 构建请求头
+    const headers: HeadersInit = authToken ? {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${authToken}`
+    } : {
+      'Content-Type': 'application/json'
+    }
+
     setSaving(true)
     try {
       if (editingAccount) {
         const res = await fetch(`/api/accounts/${editingAccount.id}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify({ name: accountName, type: accountType, accountNumber, initialBalance }),
         })
         if (res.ok) {
@@ -216,7 +310,7 @@ export default function AccountsPage() {
       } else {
         const res = await fetch("/api/accounts", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify({ name: accountName, type: accountType, accountNumber, initialBalance }),
         })
         if (res.ok) {
@@ -237,10 +331,19 @@ export default function AccountsPage() {
   const handleConfirmDelete = async () => {
     if (!deletingAccount) return
 
+    // 获取用户认证信息
+    const storedUser = typeof window !== 'undefined' ? localStorage.getItem('geldborse_user') : null
+    const userData = storedUser ? JSON.parse(storedUser) : null
+    const authToken = userData?.id // 使用用户ID作为临时token
+
+    // 构建请求头
+    const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : undefined
+
     setSaving(true)
     try {
       const res = await fetch(`/api/accounts/${deletingAccount.id}`, {
         method: "DELETE",
+        headers
       })
       if (res.ok) {
         fetchAccounts()
@@ -277,7 +380,15 @@ export default function AccountsPage() {
     setAssetType(asset.type)
     setAssetAmount(asset.amount.toString())
     if (!assetBalances[asset.id]) {
-      const res = await fetch(`/api/balances?assetId=${asset.id}`)
+      // 获取用户认证信息
+      const storedUser = typeof window !== 'undefined' ? localStorage.getItem('geldborse_user') : null
+      const userData = storedUser ? JSON.parse(storedUser) : null
+      const authToken = userData?.id // 使用用户ID作为临时token
+
+      // 构建请求头
+      const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : undefined
+
+      const res = await fetch(`/api/balances?assetId=${asset.id}`, headers ? { headers } : {})
       const data = await res.json()
       setAssetBalances((prev) => ({ ...prev, [asset.id]: data }))
     }
@@ -287,15 +398,24 @@ export default function AccountsPage() {
   const handleDeleteAsset = async (asset: Asset) => {
     if (!confirm(`确定要删除资产 "${asset.name}" 吗？`)) return
 
+    // 获取用户认证信息
+    const storedUser = typeof window !== 'undefined' ? localStorage.getItem('geldborse_user') : null
+    const userData = storedUser ? JSON.parse(storedUser) : null
+    const authToken = userData?.id // 使用用户ID作为临时token
+
+    // 构建请求头
+    const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : undefined
+
     try {
       const res = await fetch(`/api/assets/${asset.id}`, {
         method: "DELETE",
+        headers
       })
       if (res.ok) {
         if (selectedAccount) {
           fetchAssets(selectedAccount.id)
         }
-        const assetsRes = await fetch(`/api/assets?accountId=${asset.accountId}`)
+        const assetsRes = await fetch(`/api/assets?accountId=${asset.accountId}`, headers ? { headers } : {})
         const assetsData = await assetsRes.json()
         setAccountAssets((prev) => ({ ...prev, [asset.accountId]: assetsData }))
         fetchAccounts()
@@ -317,12 +437,25 @@ export default function AccountsPage() {
       return
     }
 
+    // 获取用户认证信息
+    const storedUser = typeof window !== 'undefined' ? localStorage.getItem('geldborse_user') : null
+    const userData = storedUser ? JSON.parse(storedUser) : null
+    const authToken = userData?.id // 使用用户ID作为临时token
+
+    // 构建请求头
+    const headers: HeadersInit = authToken ? {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${authToken}`
+    } : {
+      'Content-Type': 'application/json'
+    }
+
     setSaving(true)
     try {
       if (editingAsset) {
         const res = await fetch(`/api/assets/${editingAsset.id}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify({ name: assetName, type: assetType, amount: assetAmount }),
         })
         if (res.ok) {
@@ -330,11 +463,11 @@ export default function AccountsPage() {
             fetchAssets(selectedAccount.id)
           }
           if (editingAsset.accountId) {
-            const assetsRes = await fetch(`/api/assets?accountId=${editingAsset.accountId}`)
+            const assetsRes = await fetch(`/api/assets?accountId=${editingAsset.accountId}`, authToken ? { headers: { 'Authorization': `Bearer ${authToken}` } } : {})
             const assetsData = await assetsRes.json()
             setAccountAssets((prev) => ({ ...prev, [editingAsset.accountId]: assetsData }))
           }
-          const balancesRes = await fetch(`/api/balances?assetId=${editingAsset.id}`)
+          const balancesRes = await fetch(`/api/balances?assetId=${editingAsset.id}`, authToken ? { headers: { 'Authorization': `Bearer ${authToken}` } } : {})
           const balancesData = await balancesRes.json()
           setAssetBalances((prev) => ({ ...prev, [editingAsset.id]: balancesData }))
           fetchAccounts()
@@ -345,12 +478,12 @@ export default function AccountsPage() {
       } else {
         const res = await fetch("/api/assets", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify({ name: assetName, type: assetType, amount: assetAmount, accountId: selectedAccount!.id }),
         })
         if (res.ok) {
           fetchAssets(selectedAccount!.id)
-          const assetsRes = await fetch(`/api/assets?accountId=${selectedAccount!.id}`)
+          const assetsRes = await fetch(`/api/assets?accountId=${selectedAccount!.id}`, authToken ? { headers: { 'Authorization': `Bearer ${authToken}` } } : {})
           const assetsData = await assetsRes.json()
           setAccountAssets((prev) => ({ ...prev, [selectedAccount!.id]: assetsData }))
           fetchAccounts()
@@ -389,15 +522,24 @@ export default function AccountsPage() {
   const handleDeleteBalance = async (balance: Balance) => {
     if (!confirm("确定要删除此余额快照吗？")) return
 
+    // 获取用户认证信息
+    const storedUser = typeof window !== 'undefined' ? localStorage.getItem('geldborse_user') : null
+    const userData = storedUser ? JSON.parse(storedUser) : null
+    const authToken = userData?.id // 使用用户ID作为临时token
+
+    // 构建请求头
+    const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : undefined
+
     try {
       const res = await fetch(`/api/balances/${balance.id}`, {
         method: "DELETE",
+        headers
       })
       if (res.ok) {
         if (selectedAsset) {
           fetchBalances(selectedAsset.id)
         }
-        const balancesRes = await fetch(`/api/balances?assetId=${balance.assetId}`)
+        const balancesRes = await fetch(`/api/balances?assetId=${balance.assetId}`, headers ? { headers } : {})
         const balancesData = await balancesRes.json()
         setAssetBalances((prev) => ({ ...prev, [balance.assetId]: balancesData }))
       } else {
@@ -415,12 +557,25 @@ export default function AccountsPage() {
       return
     }
 
+    // 获取用户认证信息
+    const storedUser = typeof window !== 'undefined' ? localStorage.getItem('geldborse_user') : null
+    const userData = storedUser ? JSON.parse(storedUser) : null
+    const authToken = userData?.id // 使用用户ID作为临时token
+
+    // 构建请求头
+    const headers: HeadersInit = authToken ? {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${authToken}`
+    } : {
+      'Content-Type': 'application/json'
+    }
+
     setSaving(true)
     try {
       if (editingBalance) {
         const res = await fetch(`/api/balances/${editingBalance.id}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify({ amount: balanceAmount, recordedAt: balanceDate }),
         })
         if (res.ok) {
@@ -428,7 +583,7 @@ export default function AccountsPage() {
             fetchBalances(selectedAsset.id)
           }
           if (editingBalance.assetId) {
-            const balancesRes = await fetch(`/api/balances?assetId=${editingBalance.assetId}`)
+            const balancesRes = await fetch(`/api/balances?assetId=${editingBalance.assetId}`, authToken ? { headers: { 'Authorization': `Bearer ${authToken}` } } : {})
             const balancesData = await balancesRes.json()
             setAssetBalances((prev) => ({ ...prev, [editingBalance.assetId]: balancesData }))
           }
@@ -439,13 +594,13 @@ export default function AccountsPage() {
       } else {
         const res = await fetch("/api/balances", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify({ amount: balanceAmount, recordedAt: balanceDate, assetId: selectedAsset!.id }),
         })
         if (res.ok) {
           if (selectedAsset) {
             fetchBalances(selectedAsset.id)
-            const balancesRes = await fetch(`/api/balances?assetId=${selectedAsset.id}`)
+            const balancesRes = await fetch(`/api/balances?assetId=${selectedAsset.id}`, authToken ? { headers: { 'Authorization': `Bearer ${authToken}` } } : {})
             const balancesData = await balancesRes.json()
             setAssetBalances((prev) => ({ ...prev, [selectedAsset.id]: balancesData }))
           }
