@@ -38,7 +38,15 @@ export default function AddRecordPage() {
 
   const fetchAccounts = async () => {
     try {
-      const res = await fetch("/api/accounts")
+      // 获取用户认证信息
+      const storedUser = typeof window !== 'undefined' ? localStorage.getItem('geldborse_user') : null
+      const userData = storedUser ? JSON.parse(storedUser) : null
+      const authToken = userData?.id
+
+      // 构建请求头
+      const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : undefined
+
+      const res = await fetch("/api/accounts", headers ? { headers } : {})
       const data = await res.json()
       // 确保data是一个数组
       if (Array.isArray(data)) {
@@ -62,9 +70,17 @@ export default function AddRecordPage() {
 
     setLoading(true)
     try {
+      // 获取用户认证信息
+      const storedUser = typeof window !== 'undefined' ? localStorage.getItem('geldborse_user') : null
+      const userData = storedUser ? JSON.parse(storedUser) : null
+      const authToken = userData?.id
+
       const res = await fetch("/api/records", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+        },
         body: JSON.stringify({ date, accountId: account, amount, type }),
       })
       if (res.ok) {
