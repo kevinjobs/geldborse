@@ -78,6 +78,11 @@ export default function AccountsPage() {
   const [initialBalance, setInitialBalance] = useState("")
   const [saving, setSaving] = useState(false)
 
+  // 新建账户时的资产信息
+  const [newAssetName, setNewAssetName] = useState("")
+  const [newAssetType, setNewAssetType] = useState("DEPOSIT")
+  const [newAssetAmount, setNewAssetAmount] = useState("")
+
   const [expandedAccounts, setExpandedAccounts] = useState<Set<string>>(new Set())
   const [expandedAssets, setExpandedAssets] = useState<Set<string>>(new Set())
   const [accountAssets, setAccountAssets] = useState<Record<string, Asset[]>>({})
@@ -257,6 +262,9 @@ export default function AccountsPage() {
     setAccountType("CASH")
     setAccountNumber("")
     setInitialBalance("")
+    setNewAssetName("")
+    setNewAssetType("DEPOSIT")
+    setNewAssetAmount("")
     setDialogOpen(true)
   }
 
@@ -278,6 +286,18 @@ export default function AccountsPage() {
     if (!accountName.trim()) {
       alert("请输入账户名称")
       return
+    }
+
+    // 新建账户时必须填写资产信息
+    if (!editingAccount) {
+      if (!newAssetName.trim()) {
+        alert("请至少添加一个资产，填写资产名称")
+        return
+      }
+      if (!newAssetAmount || parseFloat(newAssetAmount) === 0) {
+        alert("请填写资产金额")
+        return
+      }
     }
 
     // 获取用户认证信息
@@ -308,10 +328,21 @@ export default function AccountsPage() {
           alert("更新失败")
         }
       } else {
+        // 创建账户并同时创建资产
         const res = await fetch("/api/accounts", {
           method: "POST",
           headers,
-          body: JSON.stringify({ name: accountName, type: accountType, accountNumber, initialBalance }),
+          body: JSON.stringify({
+            name: accountName,
+            type: accountType,
+            accountNumber,
+            initialBalance,
+            assets: [{
+              name: newAssetName,
+              type: newAssetType,
+              amount: parseFloat(newAssetAmount) || 0
+            }]
+          }),
         })
         if (res.ok) {
           fetchAccounts()
@@ -1148,11 +1179,11 @@ export default function AccountsPage() {
       </SidebarInset>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-xs max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingAccount ? "编辑账户" : "添加账户"}</DialogTitle>
             <DialogDescription>
-              {editingAccount ? "修改账户信息" : "创建一个新的财务账户"}
+              {editingAccount ? "修改账户信息" : "创建一个新的财务账户，并添加至少一个资产"}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -1206,6 +1237,58 @@ export default function AccountsPage() {
                 onChange={(e) => setInitialBalance(e.target.value)}
               />
             </div>
+
+            {/* 新建账户时显示资产信息输入 */}
+            {!editingAccount && (
+              <>
+                <div className="border-t pt-4 mt-4">
+                  <h4 className="font-medium mb-3">初始资产（必填）</h4>
+                  <div className="space-y-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="newAssetName">资产名称</Label>
+                      <Input
+                        id="newAssetName"
+                        placeholder="如：现金、余额宝、定期存款"
+                        value={newAssetName}
+                        onChange={(e) => setNewAssetName(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="newAssetType">资产类型</Label>
+                      <Select value={newAssetType} onValueChange={setNewAssetType}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="选择资产类型" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(ASSET_TYPE_CONFIG).map(([value, config]) => {
+                            const Icon = config.icon
+                            return (
+                              <SelectItem key={value} value={value}>
+                                <span className="flex items-center gap-2">
+                                  <Icon className="h-4 w-4" />
+                                  {config.label}
+                                </span>
+                              </SelectItem>
+                            )
+                          })}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="newAssetAmount">资产金额</Label>
+                      <Input
+                        id="newAssetAmount"
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        value={newAssetAmount}
+                        onChange={(e) => setNewAssetAmount(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>

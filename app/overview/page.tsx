@@ -77,13 +77,8 @@ function OverviewPageContent() {
 
   const fetchData = async () => {
     try {
-      // 获取用户认证信息
-      const storedUser = typeof window !== 'undefined' ? localStorage.getItem('geldborse_user') : null
-      const userData = storedUser ? JSON.parse(storedUser) : null
-      const authToken = userData?.id // 使用用户ID作为临时token
-
       // 构建请求头
-      const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : undefined
+      const headers = user?.id ? { 'Authorization': `Bearer ${user.id}` } : undefined
 
       const [accountsRes, assetsRes, recordsRes, balancesRes] = await Promise.all([
         fetch("/api/accounts", headers ? { headers } : {}),
@@ -91,6 +86,13 @@ function OverviewPageContent() {
         fetch("/api/records", headers ? { headers } : {}),
         fetch("/api/balances", headers ? { headers } : {}),
       ])
+
+      // 检查响应状态
+      if (!accountsRes.ok) throw new Error(`Accounts API error: ${accountsRes.status}`)
+      if (!assetsRes.ok) throw new Error(`Assets API error: ${assetsRes.status}`)
+      if (!recordsRes.ok) throw new Error(`Records API error: ${recordsRes.status}`)
+      if (!balancesRes.ok) throw new Error(`Balances API error: ${balancesRes.status}`)
+
       const accountsData = await accountsRes.json()
       const assetsData = await assetsRes.json()
       const recordsData = await recordsRes.json()

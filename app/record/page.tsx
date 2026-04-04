@@ -343,61 +343,67 @@ export default function RecordsPage() {
                               </ResponsiveTableBody>
                             </ResponsiveTable>
                           </div>
-                          {/* 移动端卡片视图 */}
+                          {/* 移动端卡片视图 - 使用总览页面同款设计 */}
                           <div className="md:hidden space-y-3">
-                            {sortedRecords.map((record) => {
-                              const nameColor = getAccountNameColor(record.account.name)
-                              // 检测当前是否为深色模式
-                              const isDarkMode = typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
-                              // 根据主题选择背景颜色
-                              const bgColor = isDarkMode ? nameColor.darkBgColor : nameColor.bgColor
-                              // 根据主题选择边框颜色
-                              const borderColor = isDarkMode ? nameColor.darkBorderColor : nameColor.borderColor
-                              return (
-                                <div key={record.id} className={`rounded-lg p-4 ${bgColor} ${borderColor} border shadow-sm`}>
-                                  <div className="flex justify-between items-start mb-3">
-                                    <div>
-                                      <div className="text-sm text-muted-foreground">{formatDate(record.date)}</div>
-                                      <div className="flex items-center gap-2 mt-1">
-                                        <AccountDisplay name={record.account.name} type={record.account.type} variant="compact" />
-                                        <Badge variant={record.type === "INCOME" ? "default" : "secondary"}>
-                                          {record.type === "INCOME" ? "收入" : "支出"}
-                                        </Badge>
-                                      </div>
-                                      {record.asset && (
-                                        <div className="text-sm text-muted-foreground mt-1">
-                                          资产: {record.asset.name}
-                                        </div>
-                                      )}
-                                      {record.note && (
-                                        <div className="text-sm text-muted-foreground mt-1">
-                                          备注: {record.note}
-                                        </div>
-                                      )}
+                            {sortedRecords.length === 0 ? (
+                              <div className="text-center text-muted-foreground py-8">
+                                暂无收支记录
+                              </div>
+                            ) : (
+                              sortedRecords.map((record) => (
+                                <div key={record.id} className="rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm p-4">
+                                  <div className="flex justify-between items-start mb-2">
+                                    <div className="flex items-center gap-2">
+                                      <Badge variant={record.type === "INCOME" ? "default" : "destructive"}>
+                                        {record.type === "INCOME" ? "收入" : "支出"}
+                                      </Badge>
+                                      <span className="text-sm text-muted-foreground">{formatDate(record.date)}</span>
                                     </div>
-                                    <div className={`text-lg font-medium ${record.amount >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
+                                    <div className={"text-lg font-medium " + (record.amount >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400")}>
                                       {formatAmount(record.amount)}
                                     </div>
                                   </div>
-                                  <div className="flex gap-2 justify-end">
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => handleEdit(record)}
-                                    >
-                                      编辑
-                                    </Button>
-                                    <Button
-                                      variant="destructive"
-                                      size="sm"
-                                      onClick={() => handleDelete(record)}
-                                    >
-                                      删除
-                                    </Button>
+                                  {/* 账户名和操作按钮放在同一行 */}
+                                  <div className="flex justify-between items-center mb-2">
+                                    <div className="text-sm text-muted-foreground">
+                                      <AccountDisplay name={record.account.name} type={record.account.type} variant="compact" />
+                                    </div>
+                                    <div className="flex gap-1">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-7 px-2 text-xs"
+                                        onClick={() => handleEdit(record)}
+                                      >
+                                        编辑
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-7 px-2 text-xs text-destructive hover:text-destructive"
+                                        onClick={() => handleDelete(record)}
+                                      >
+                                        删除
+                                      </Button>
+                                    </div>
                                   </div>
+                                  {/* 资产/备注信息 */}
+                                  {(record.asset || record.note) && (
+                                    <div className="text-xs text-muted-foreground">
+                                      {record.asset && (
+                                        <span>资产: {record.asset.name}</span>
+                                      )}
+                                      {record.asset && record.note && (
+                                        <span className="mx-1">|</span>
+                                      )}
+                                      {record.note && (
+                                        <span>备注: {record.note}</span>
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
-                              )
-                            })}
+                              ))
+                            )}
                           </div>
                         </>
                       )}
