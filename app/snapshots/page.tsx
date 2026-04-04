@@ -252,7 +252,7 @@ export default function SnapshotsPage() {
       const accountMap = new Map<string, { account: Account; snapshots: DailySnapshot[]; total: number }>()
 
       timeSnapshots.forEach((snapshot) => {
-        const key = snapshot.accountId
+        const key = snapshot.account.name // 按账户名称分组，而不是accountId
         if (!accountMap.has(key)) {
           accountMap.set(key, {
             account: snapshot.account,
@@ -510,7 +510,7 @@ export default function SnapshotsPage() {
                                           const typeConfig = getAccountTypeConfig(accountData.account.type)
                                           const TypeIcon = typeConfig.icon
                                           const LogoComponent = getAccountLogo(accountData.account.name)
-                                          const accountKey = `${group.snapshotAt}-${accountData.account.id}`
+                                          const accountKey = `${group.snapshotAt}-${accountData.account.name}`
                                           const isAccountExpanded = expandedAccounts.has(accountKey)
                                           const hasMultipleAssets = accountData.snapshots.length > 1
 
@@ -640,8 +640,7 @@ export default function SnapshotsPage() {
                                       const typeConfig = getAccountTypeConfig(accountData.account.type)
                                       const TypeIcon = typeConfig.icon
                                       const LogoComponent = getAccountLogo(accountData.account.name)
-                                      const accountKey = `${group.snapshotAt}-${accountData.account.id}`
-                                      const isAccountExpanded = expandedAccounts.has(accountKey)
+                                      const accountKey = `${group.snapshotAt}-${accountData.account.name}`
                                       const hasMultipleAssets = accountData.snapshots.length > 1
                                       const isDarkMode = typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
                                       const bgColor = isDarkMode ? nameColor.darkBgColor : nameColor.bgColor
@@ -649,18 +648,9 @@ export default function SnapshotsPage() {
                                       return (
                                         <div key={accountKey} className={`rounded-lg ${bgColor} border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden`}>
                                           {/* 账户卡片 */}
-                                          <div className={`p-4 ${hasMultipleAssets ? "cursor-pointer hover:brightness-95 transition-all" : ""}`} onClick={() => hasMultipleAssets && toggleAccountExpand(accountKey)}>
+                                          <div className="p-4">
                                             <div className="flex justify-between items-start mb-2">
                                               <div className="flex items-center gap-2">
-                                                {hasMultipleAssets && (
-                                                  <span className="w-4 h-4 flex items-center justify-center shrink-0">
-                                                    {isAccountExpanded ? (
-                                                      <ChevronDown className="h-4 w-4" />
-                                                    ) : (
-                                                      <ChevronRight className="h-4 w-4" />
-                                                    )}
-                                                  </span>
-                                                )}
                                                 {LogoComponent ? (
                                                   <LogoComponent size={20} className={nameColor.color} />
                                                 ) : (
@@ -675,23 +665,8 @@ export default function SnapshotsPage() {
                                                   )}
                                                 </div>
                                               </div>
-                                              <div className="flex items-center gap-2">
-                                                <div className={`text-lg font-medium ${accountData.total >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
-                                                  {formatAmount(accountData.total)}
-                                                </div>
-                                                {!hasMultipleAssets && accountData.snapshots[0] && (
-                                                  <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                                                    onClick={(e) => {
-                                                      e.stopPropagation()
-                                                      confirmDeleteSingle(accountData.snapshots[0].id)
-                                                    }}
-                                                  >
-                                                    <Trash2 className="h-4 w-4" />
-                                                  </Button>
-                                                )}
+                                              <div className={`text-lg font-medium ${accountData.total >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
+                                                {formatAmount(accountData.total)}
                                               </div>
                                             </div>
                                             <div className="flex items-center gap-2">
@@ -707,7 +682,7 @@ export default function SnapshotsPage() {
                                             </div>
                                           </div>
                                           {/* 资产列表 */}
-                                          {isAccountExpanded && hasMultipleAssets && (
+                                          {hasMultipleAssets && (
                                             <div className="border-t border-slate-200 dark:border-slate-700">
                                               {accountData.snapshots.map((snapshot, snapshotIndex) => {
                                                 const assetTypeConfig = snapshot.asset ? getAssetTypeConfig(snapshot.asset.type) : null
@@ -715,20 +690,18 @@ export default function SnapshotsPage() {
                                                 const isLast = snapshotIndex === accountData.snapshots.length - 1
 
                                                 return (
-                                                  <div key={snapshot.id} className={`p-4 ${!isLast ? "border-b border-slate-200 dark:border-slate-700" : ""}`}>
-                                                    <div className="flex justify-between items-start">
-                                                      <div>
-                                                        <div className="flex items-center gap-2">
-                                                          <span className="text-sm text-slate-600 dark:text-slate-300">
-                                                            {snapshot.asset?.name || "默认资产"}
-                                                          </span>
-                                                          {assetTypeConfig && (
-                                                            <Badge className="gap-1 text-xs font-normal">
-                                                              {AssetIcon && <AssetIcon className="h-3 w-3" />}
-                                                              {assetTypeConfig.label}
-                                                            </Badge>
-                                                          )}
-                                                        </div>
+                                                  <div key={snapshot.id} className={`p-3 ${!isLast ? "border-b border-slate-200 dark:border-slate-700" : ""}`}>
+                                                    <div className="flex justify-between items-center">
+                                                      <div className="flex items-center gap-2">
+                                                        <span className="text-sm text-slate-600 dark:text-slate-300">
+                                                          {snapshot.asset?.name || "默认资产"}
+                                                        </span>
+                                                        {assetTypeConfig && (
+                                                          <Badge className="gap-1 text-xs font-normal">
+                                                            {AssetIcon && <AssetIcon className="h-3 w-3" />}
+                                                            {assetTypeConfig.label}
+                                                          </Badge>
+                                                        )}
                                                       </div>
                                                       <div className="flex items-center gap-2">
                                                         <div className={`text-sm font-medium ${snapshot.amount >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
