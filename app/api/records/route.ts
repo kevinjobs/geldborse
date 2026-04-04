@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
         userId
       }
     },
-    include: { account: true },
+    include: { account: true, asset: true },
     orderBy: { date: "desc" },
   })
   return NextResponse.json(records)
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "未授权" }, { status: 401 })
   }
 
-  const { date, accountId, amount, type } = await request.json()
+  const { date, accountId, assetId, amount, type, note } = await request.json()
 
   // 验证账户是否属于当前用户
   const account = await prisma.account.findFirst({
@@ -40,6 +40,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "账户不存在或不属于当前用户" }, { status: 400 })
   }
 
+  // 如果提供了assetId，验证资产是否属于该账户
+  if (assetId) {
+    const asset = await prisma.asset.findFirst({
+      where: {
+        id: assetId,
+        accountId
+      }
+    })
+
+    if (!asset) {
+      return NextResponse.json({ error: "资产不存在或不属于该账户" }, { status: 400 })
+    }
+  }
+
   let finalAmount = parseFloat(amount)
   if (type === "EXPENSE") {
     finalAmount = -Math.abs(finalAmount)
@@ -50,8 +64,10 @@ export async function POST(request: NextRequest) {
     data: {
       date: new Date(date),
       accountId,
+      assetId: assetId || null,
       amount: finalAmount,
       type: type || "EXPENSE",
+      note: note || null,
     },
     include: { account: true },
   })

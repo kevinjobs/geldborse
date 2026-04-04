@@ -22,12 +22,22 @@ interface Account {
   type: string
 }
 
+interface Asset {
+  id: string
+  name: string
+  type: string
+  amount: number
+}
+
 export default function AddRecordPage() {
   const [date, setDate] = useState("")
   const [account, setAccount] = useState("")
+  const [asset, setAsset] = useState("")
   const [amount, setAmount] = useState("")
+  const [note, setNote] = useState("")
   const [type, setType] = useState("EXPENSE")
   const [accounts, setAccounts] = useState<Account[]>([])
+  const [assets, setAssets] = useState<Asset[]>([])
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -61,6 +71,38 @@ export default function AddRecordPage() {
     }
   }
 
+  const fetchAssets = async (accountId: string) => {
+    try {
+      const storedUser = typeof window !== 'undefined' ? localStorage.getItem('geldborse_user') : null
+      const userData = storedUser ? JSON.parse(storedUser) : null
+      const authToken = userData?.id
+
+      const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : undefined
+
+      const res = await fetch(`/api/accounts/${accountId}/assets`, headers ? { headers } : {})
+      const data = await res.json()
+      if (Array.isArray(data)) {
+        setAssets(data)
+      } else {
+        console.error("获取资产列表失败: 响应数据不是数组")
+        setAssets([])
+      }
+    } catch (error) {
+      console.error("获取资产列表失败:", error)
+      setAssets([])
+    }
+  }
+
+  useEffect(() => {
+    if (account) {
+      fetchAssets(account)
+      setAsset("")
+    } else {
+      setAssets([])
+      setAsset("")
+    }
+  }, [account])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!date || !account || !amount) {
@@ -81,11 +123,13 @@ export default function AddRecordPage() {
           "Content-Type": "application/json",
           ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
         },
-        body: JSON.stringify({ date, accountId: account, amount, type }),
+        body: JSON.stringify({ date, accountId: account, assetId: asset || null, amount, type, note: note || null }),
       })
       if (res.ok) {
         alert("收支保存成功")
         setAmount("")
+        setNote("")
+        setAsset("")
       } else {
         alert("保存失败")
       }
@@ -146,6 +190,25 @@ export default function AddRecordPage() {
                         </Select>
                       </div>
 
+                      {assets.length > 0 && (
+                        <div className="space-y-2">
+                          <Label htmlFor="asset">资产（可选）</Label>
+                          <Select value={asset || "none"} onValueChange={(value) => setAsset(value === "none" ? "" : value)}>
+                            <SelectTrigger id="asset" className="w-full">
+                              <SelectValue placeholder="选择资产" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">不选择资产</SelectItem>
+                              {assets.map((ast) => (
+                                <SelectItem key={ast.id} value={ast.id}>
+                                  {ast.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+
                       <div className="space-y-2">
                         <Label htmlFor="type">类型</Label>
                         <Select value={type} onValueChange={setType}>
@@ -168,6 +231,18 @@ export default function AddRecordPage() {
                           placeholder="请输入金额（正数）"
                           value={amount}
                           onChange={(e) => setAmount(e.target.value)}
+                          className="w-full"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="note">备注（可选）</Label>
+                        <Input
+                          id="note"
+                          type="text"
+                          placeholder="请输入备注"
+                          value={note}
+                          onChange={(e) => setNote(e.target.value)}
                           className="w-full"
                         />
                       </div>

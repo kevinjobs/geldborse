@@ -38,6 +38,13 @@ interface Record {
   type: string
   accountId: string
   account: Account
+  assetId: string | null
+  asset: {
+    id: string
+    name: string
+    type: string
+  } | null
+  note: string | null
   createdAt: string
   updatedAt: string
 }
@@ -51,13 +58,48 @@ export default function RecordsPage() {
   const [selectedRecord, setSelectedRecord] = useState<Record | null>(null)
   const [editDate, setEditDate] = useState("")
   const [editAccount, setEditAccount] = useState("")
+  const [editAsset, setEditAsset] = useState("")
   const [editAmount, setEditAmount] = useState("")
+  const [editNote, setEditNote] = useState("")
   const [editType, setEditType] = useState("EXPENSE")
+  const [editAssets, setEditAssets] = useState<{ id: string; name: string; type: string; amount: number }[]>([])
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     fetchData()
   }, [])
+
+  const fetchAssets = async (accountId: string) => {
+    try {
+      const storedUser = typeof window !== 'undefined' ? localStorage.getItem('geldborse_user') : null
+      const userData = storedUser ? JSON.parse(storedUser) : null
+      const authToken = userData?.id
+
+      const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : undefined
+
+      const res = await fetch(`/api/accounts/${accountId}/assets`, headers ? { headers } : {})
+      const data = await res.json()
+      if (Array.isArray(data)) {
+        setEditAssets(data)
+      } else {
+        console.error("获取资产列表失败: 响应数据不是数组")
+        setEditAssets([])
+      }
+    } catch (error) {
+      console.error("获取资产列表失败:", error)
+      setEditAssets([])
+    }
+  }
+
+  useEffect(() => {
+    if (editAccount) {
+      fetchAssets(editAccount)
+      setEditAsset("")
+    } else {
+      setEditAssets([])
+      setEditAsset("")
+    }
+  }, [editAccount])
 
   const fetchData = async () => {
     try {
@@ -113,6 +155,8 @@ export default function RecordsPage() {
     setSelectedRecord(record)
     setEditDate(record.date.split("T")[0])
     setEditAccount(record.accountId)
+    setEditAsset(record.assetId || "")
+    setEditNote(record.note || "")
     setEditAmount(Math.abs(record.amount).toString())
     setEditType(record.type)
     setEditDialogOpen(true)
@@ -145,8 +189,10 @@ export default function RecordsPage() {
         body: JSON.stringify({
           date: editDate,
           accountId: editAccount,
+          assetId: editAsset || null,
           amount: editAmount,
           type: editType,
+          note: editNote || null,
         }),
       })
       if (res.ok) {
@@ -235,8 +281,10 @@ export default function RecordsPage() {
                                 <ResponsiveTableRow>
                                   <ResponsiveTableHeader>日期</ResponsiveTableHeader>
                                   <ResponsiveTableHeader>账户</ResponsiveTableHeader>
+                                  <ResponsiveTableHeader>资产</ResponsiveTableHeader>
                                   <ResponsiveTableHeader>类型</ResponsiveTableHeader>
                                   <ResponsiveTableHeader className="text-right">金额</ResponsiveTableHeader>
+                                  <ResponsiveTableHeader>备注</ResponsiveTableHeader>
                                   <ResponsiveTableHeader className="text-right">操作</ResponsiveTableHeader>
                                 </ResponsiveTableRow>
                               </thead>
@@ -249,6 +297,13 @@ export default function RecordsPage() {
                                       <ResponsiveTableCell mobileLabel="账户">
                                         <AccountDisplay name={record.account.name} type={record.account.type} variant="compact" />
                                       </ResponsiveTableCell>
+                                      <ResponsiveTableCell mobileLabel="资产">
+                                        {record.asset ? (
+                                          <span className="text-sm">{record.asset.name}</span>
+                                        ) : (
+                                          <span className="text-sm text-muted-foreground">-</span>
+                                        )}
+                                      </ResponsiveTableCell>
                                       <ResponsiveTableCell mobileLabel="类型">
                                         <Badge variant={record.type === "INCOME" ? "default" : "secondary"}>
                                           {record.type === "INCOME" ? "收入" : "支出"}
@@ -256,6 +311,13 @@ export default function RecordsPage() {
                                       </ResponsiveTableCell>
                                       <ResponsiveTableCell mobileLabel="金额" className={`text-right font-medium ${record.amount >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
                                         {formatAmount(record.amount)}
+                                      </ResponsiveTableCell>
+                                      <ResponsiveTableCell mobileLabel="备注">
+                                        {record.note ? (
+                                          <span className="text-sm">{record.note}</span>
+                                        ) : (
+                                          <span className="text-sm text-muted-foreground">-</span>
+                                        )}
                                       </ResponsiveTableCell>
                                       <ResponsiveTableCell mobileLabel="操作" className="text-right">
                                         <div className="flex flex-col sm:flex-row gap-1 justify-end">
@@ -302,6 +364,16 @@ export default function RecordsPage() {
                                           {record.type === "INCOME" ? "收入" : "支出"}
                                         </Badge>
                                       </div>
+                                      {record.asset && (
+                                        <div className="text-sm text-muted-foreground mt-1">
+                                          资产: {record.asset.name}
+                                        </div>
+                                      )}
+                                      {record.note && (
+                                        <div className="text-sm text-muted-foreground mt-1">
+                                          备注: {record.note}
+                                        </div>
+                                      )}
                                     </div>
                                     <div className={`text-lg font-medium ${record.amount >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
                                       {formatAmount(record.amount)}
@@ -369,6 +441,24 @@ export default function RecordsPage() {
                 </SelectContent>
               </Select>
             </div>
+            {editAssets.length > 0 && (
+              <div className="space-y-2">
+                <Label htmlFor="editAsset">资产（可选）</Label>
+                <Select value={editAsset || "none"} onValueChange={(value) => setEditAsset(value === "none" ? "" : value)}>
+                  <SelectTrigger id="editAsset">
+                    <SelectValue placeholder="选择资产" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">不选择资产</SelectItem>
+                    {editAssets.map((ast) => (
+                      <SelectItem key={ast.id} value={ast.id}>
+                        {ast.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="editType">类型</Label>
               <Select value={editType} onValueChange={setEditType}>
@@ -390,6 +480,16 @@ export default function RecordsPage() {
                 placeholder="请输入金额（正数）"
                 value={editAmount}
                 onChange={(e) => setEditAmount(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editNote">备注（可选）</Label>
+              <Input
+                id="editNote"
+                type="text"
+                placeholder="请输入备注"
+                value={editNote}
+                onChange={(e) => setEditNote(e.target.value)}
               />
             </div>
           </div>
