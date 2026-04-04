@@ -77,13 +77,8 @@ function OverviewPageContent() {
 
   const fetchData = async () => {
     try {
-      // 获取用户认证信息
-      const storedUser = typeof window !== 'undefined' ? localStorage.getItem('geldborse_user') : null
-      const userData = storedUser ? JSON.parse(storedUser) : null
-      const authToken = userData?.id // 使用用户ID作为临时token
-
       // 构建请求头
-      const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : undefined
+      const headers = user?.id ? { 'Authorization': `Bearer ${user.id}` } : undefined
 
       const [accountsRes, assetsRes, recordsRes, balancesRes] = await Promise.all([
         fetch("/api/accounts", headers ? { headers } : {}),
@@ -91,6 +86,13 @@ function OverviewPageContent() {
         fetch("/api/records", headers ? { headers } : {}),
         fetch("/api/balances", headers ? { headers } : {}),
       ])
+
+      // 检查响应状态
+      if (!accountsRes.ok) throw new Error(`Accounts API error: ${accountsRes.status}`)
+      if (!assetsRes.ok) throw new Error(`Assets API error: ${assetsRes.status}`)
+      if (!recordsRes.ok) throw new Error(`Records API error: ${recordsRes.status}`)
+      if (!balancesRes.ok) throw new Error(`Balances API error: ${balancesRes.status}`)
+
       const accountsData = await accountsRes.json()
       const assetsData = await assetsRes.json()
       const recordsData = await recordsRes.json()
@@ -322,42 +324,72 @@ function OverviewPageContent() {
                       <CardDescription>最近10条收支记录</CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <ResponsiveTable>
-                        <thead>
-                          <ResponsiveTableRow>
-                            <ResponsiveTableHeader>日期</ResponsiveTableHeader>
-                            <ResponsiveTableHeader>类型</ResponsiveTableHeader>
-                            <ResponsiveTableHeader>账户</ResponsiveTableHeader>
-                            <ResponsiveTableHeader className="text-right">金额</ResponsiveTableHeader>
-                          </ResponsiveTableRow>
-                        </thead>
-                        <ResponsiveTableBody>
-                          {latestRecords.length === 0 ? (
+                      {/* 桌面端表格视图 */}
+                      <div className="hidden md:block">
+                        <ResponsiveTable>
+                          <thead>
                             <ResponsiveTableRow>
-                              <ResponsiveTableCell colSpan={4} className="text-center text-muted-foreground">
-                                暂无收支记录
-                              </ResponsiveTableCell>
+                              <ResponsiveTableHeader>日期</ResponsiveTableHeader>
+                              <ResponsiveTableHeader>类型</ResponsiveTableHeader>
+                              <ResponsiveTableHeader>账户</ResponsiveTableHeader>
+                              <ResponsiveTableHeader className="text-right">金额</ResponsiveTableHeader>
                             </ResponsiveTableRow>
-                          ) : (
-                            latestRecords.map((record) => (
-                              <ResponsiveTableRow key={record.id}>
-                                <ResponsiveTableCell mobileLabel="日期">{formatDate(record.date)}</ResponsiveTableCell>
-                                <ResponsiveTableCell mobileLabel="类型">
+                          </thead>
+                          <ResponsiveTableBody>
+                            {latestRecords.length === 0 ? (
+                              <ResponsiveTableRow>
+                                <ResponsiveTableCell colSpan={4} className="text-center text-muted-foreground">
+                                  暂无收支记录
+                                </ResponsiveTableCell>
+                              </ResponsiveTableRow>
+                            ) : (
+                              latestRecords.map((record) => (
+                                <ResponsiveTableRow key={record.id}>
+                                  <ResponsiveTableCell mobileLabel="日期">{formatDate(record.date)}</ResponsiveTableCell>
+                                  <ResponsiveTableCell mobileLabel="类型">
+                                    <Badge variant={record.type === "INCOME" ? "default" : "destructive"}>
+                                      {record.type === "INCOME" ? "收入" : "支出"}
+                                    </Badge>
+                                  </ResponsiveTableCell>
+                                  <ResponsiveTableCell mobileLabel="账户">
+                                    <AccountDisplay name={record.account.name} type={record.account.type} variant="compact" />
+                                  </ResponsiveTableCell>
+                                  <ResponsiveTableCell mobileLabel="金额" className={"text-right font-medium " + (record.amount >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400")}>
+                                    {formatAmount(record.amount)}
+                                  </ResponsiveTableCell>
+                                </ResponsiveTableRow>
+                              ))
+                            )}
+                          </ResponsiveTableBody>
+                        </ResponsiveTable>
+                      </div>
+                      {/* 移动端卡片视图 */}
+                      <div className="md:hidden space-y-3">
+                        {latestRecords.length === 0 ? (
+                          <div className="text-center text-muted-foreground py-8">
+                            暂无收支记录
+                          </div>
+                        ) : (
+                          latestRecords.map((record) => (
+                            <div key={record.id} className="rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm p-4">
+                              <div className="flex justify-between items-start mb-2">
+                                <div className="flex items-center gap-2">
                                   <Badge variant={record.type === "INCOME" ? "default" : "destructive"}>
                                     {record.type === "INCOME" ? "收入" : "支出"}
                                   </Badge>
-                                </ResponsiveTableCell>
-                                <ResponsiveTableCell mobileLabel="账户">
-                                  <AccountDisplay name={record.account.name} type={record.account.type} variant="compact" />
-                                </ResponsiveTableCell>
-                                <ResponsiveTableCell mobileLabel="金额" className={"text-right font-medium " + (record.amount >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400")}>
+                                  <span className="text-sm text-muted-foreground">{formatDate(record.date)}</span>
+                                </div>
+                                <div className={"text-lg font-medium " + (record.amount >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400")}>
                                   {formatAmount(record.amount)}
-                                </ResponsiveTableCell>
-                              </ResponsiveTableRow>
-                            ))
-                          )}
-                        </ResponsiveTableBody>
-                      </ResponsiveTable>
+                                </div>
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                <AccountDisplay name={record.account.name} type={record.account.type} variant="compact" />
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
                     </CardContent>
                   </Card>
                 </div>
@@ -369,30 +401,132 @@ function OverviewPageContent() {
                       <CardDescription>各账户及资产余额统计</CardDescription>
                     </CardHeader>
                     <CardContent className="min-h-[300px]">
-                      <ResponsiveTable className="select-none">
-                        <thead>
-                          <ResponsiveTableRow>
-                            <ResponsiveTableHeader>名称</ResponsiveTableHeader>
-                            <ResponsiveTableHeader>类型</ResponsiveTableHeader>
-                            <ResponsiveTableHeader className="text-right">基准金额</ResponsiveTableHeader>
-                            <ResponsiveTableHeader className="text-right">实时余额</ResponsiveTableHeader>
-                          </ResponsiveTableRow>
-                        </thead>
-                        <ResponsiveTableBody>
-                          {accounts.map((account) => {
-                            const { total, hasBalance, baseAmount } = getAccountTotal(account.id)
-                            const accountAssets = getAssetsByAccount(account.id)
-                            const nameColor = getAccountNameColor(account.name)
-                            const isExpanded = expandedAccounts.has(account.id)
-                            const hasAssets = accountAssets.length > 0
-                            const rowClassName = nameColor.bgColor + ' ' + nameColor.darkBgColor + ' ' + (hasAssets ? "cursor-pointer hover:brightness-95 transition-all" : "")
-                            return (
-                              <Fragment key={account.id}>
-                                <ResponsiveTableRow
-                                  className={rowClassName}
-                                  onClick={() => hasAssets && toggleAccountExpand(account.id)}
-                                >
-                                  <ResponsiveTableCell mobileLabel="名称" className="py-3">
+                      {/* 桌面端表格视图 */}
+                      <div className="hidden md:block">
+                        <ResponsiveTable className="select-none">
+                          <thead>
+                            <ResponsiveTableRow>
+                              <ResponsiveTableHeader>名称</ResponsiveTableHeader>
+                              <ResponsiveTableHeader>类型</ResponsiveTableHeader>
+                              <ResponsiveTableHeader className="text-right">基准金额</ResponsiveTableHeader>
+                              <ResponsiveTableHeader className="text-right">实时余额</ResponsiveTableHeader>
+                            </ResponsiveTableRow>
+                          </thead>
+                          <ResponsiveTableBody>
+                            {accounts.map((account) => {
+                              const { total, hasBalance, baseAmount } = getAccountTotal(account.id)
+                              const accountAssets = getAssetsByAccount(account.id)
+                              const nameColor = getAccountNameColor(account.name)
+                              const isExpanded = expandedAccounts.has(account.id)
+                              const hasAssets = accountAssets.length > 0
+                              // 检测当前是否为深色模式
+                              const isDarkMode = typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
+                              // 根据主题选择背景颜色
+                              const bgColor = isDarkMode ? nameColor.darkBgColor : nameColor.bgColor
+                              const rowClassName = bgColor + ' ' + (hasAssets ? "cursor-pointer hover:brightness-95 transition-all" : "")
+                              return (
+                                <Fragment key={account.id}>
+                                  <ResponsiveTableRow
+                                    className={rowClassName}
+                                    onClick={() => hasAssets && toggleAccountExpand(account.id)}
+                                  >
+                                    <ResponsiveTableCell mobileLabel="名称" className="py-3">
+                                      <div className="flex items-center gap-2">
+                                        {hasAssets && (
+                                          <span className="w-4 h-4 flex items-center justify-center shrink-0">
+                                            {isExpanded ? (
+                                              <ChevronDown className="h-4 w-4" />
+                                            ) : (
+                                              <ChevronRight className="h-4 w-4" />
+                                            )}
+                                          </span>
+                                        )}
+                                        {!hasAssets && <span className="w-4 shrink-0" />}
+                                        <AccountDisplay name={account.name} type={account.type} variant="table" />
+                                      </div>
+                                    </ResponsiveTableCell>
+                                    <ResponsiveTableCell mobileLabel="类型">
+                                      <span className="text-xs text-muted-foreground">
+                                        {hasAssets ? accountAssets.length + ' 个资产' : "无资产"}
+                                      </span>
+                                    </ResponsiveTableCell>
+                                    <ResponsiveTableCell mobileLabel="基准金额" className="text-right">
+                                      {hasAssets ? (
+                                        <span className="text-xs text-muted-foreground">资产汇总</span>
+                                      ) : (
+                                        <>
+                                          <span className="text-xs text-muted-foreground mr-1">
+                                            {hasBalance ? "(快照)" : "(初始)"}
+                                          </span>
+                                          {formatAmount(baseAmount)}
+                                        </>
+                                      )}
+                                    </ResponsiveTableCell>
+                                    <ResponsiveTableCell mobileLabel="实时余额" className={"text-right font-bold " + (total >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400")}>
+                                      {formatAmount(total)}
+                                    </ResponsiveTableCell>
+                                  </ResponsiveTableRow>
+                                  {isExpanded && accountAssets.map((asset, index) => {
+                                    const assetTotal = getAssetRealTimeTotal(asset.id)
+                                    const assetTypeConfig = getAssetTypeConfig(asset.type)
+                                    const AssetIcon = assetTypeConfig.icon
+                                    const isLast = index === accountAssets.length - 1
+                                    return (
+                                      <ResponsiveTableRow key={asset.id} className="bg-slate-50/50 dark:bg-slate-800/50 hover:bg-slate-100/50 dark:hover:bg-slate-700/50 transition-colors">
+                                        <ResponsiveTableCell mobileLabel="名称" className="relative py-3">
+                                          {!isLast && (
+                                            <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200 dark:bg-slate-700" />
+                                          )}
+                                          {isLast && (
+                                            <div className="absolute left-4 top-0 h-1/2 w-px bg-slate-200 dark:bg-slate-700" />
+                                          )}
+                                          <div className="absolute left-4 top-1/2 w-3 h-px bg-slate-200 dark:bg-slate-700" />
+                                          <div className="pl-10">
+                                            <span className="text-sm text-slate-600 dark:text-slate-300">{asset.name}</span>
+                                          </div>
+                                        </ResponsiveTableCell>
+                                        <ResponsiveTableCell mobileLabel="类型" className="py-3">
+                                          <Badge className="gap-1 text-xs font-normal">
+                                            <AssetIcon className="h-3 w-3" />
+                                            {assetTypeConfig.label}
+                                          </Badge>
+                                        </ResponsiveTableCell>
+                                        <ResponsiveTableCell mobileLabel="基准金额" className="text-right py-3">
+                                          <span className="text-xs text-muted-foreground mr-1">
+                                            {assetTotal.baseType === "balance" ? "(快照)" : "(初始)"}
+                                          </span>
+                                          {formatAmount(assetTotal.baseAmount)}
+                                        </ResponsiveTableCell>
+                                        <ResponsiveTableCell mobileLabel="实时余额" className={"text-right font-medium py-3 " + (assetTotal.total >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400")}>
+                                          {formatAmount(assetTotal.total)}
+                                        </ResponsiveTableCell>
+                                      </ResponsiveTableRow>
+                                    )
+                                  })}
+                                </Fragment>
+                              )
+                            })}
+                          </ResponsiveTableBody>
+                        </ResponsiveTable>
+                      </div>
+                      {/* 移动端卡片视图 */}
+                      <div className="md:hidden space-y-4">
+                        {accounts.map((account) => {
+                          const { total, hasBalance, baseAmount } = getAccountTotal(account.id)
+                          const accountAssets = getAssetsByAccount(account.id)
+                          const nameColor = getAccountNameColor(account.name)
+                          const isExpanded = expandedAccounts.has(account.id)
+                          const hasAssets = accountAssets.length > 0
+                          // 检测当前是否为深色模式
+                          const isDarkMode = typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
+                          // 根据主题选择背景颜色
+                          const bgColor = isDarkMode ? nameColor.darkBgColor : nameColor.bgColor
+                          return (
+                            <div key={account.id} className={`rounded-lg ${bgColor} border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden`}>
+                              {/* 账户卡片 */}
+                              <div className={`p-4 ${hasAssets ? "cursor-pointer hover:brightness-95 transition-all" : ""}`} onClick={() => hasAssets && toggleAccountExpand(account.id)}>
+                                <div className="flex justify-between items-start mb-3">
+                                  <div>
                                     <div className="flex items-center gap-2">
                                       {hasAssets && (
                                         <span className="w-4 h-4 flex items-center justify-center shrink-0">
@@ -403,73 +537,56 @@ function OverviewPageContent() {
                                           )}
                                         </span>
                                       )}
-                                      {!hasAssets && <span className="w-4 shrink-0" />}
-                                      <AccountDisplay name={account.name} type={account.type} variant="table" />
+                                      <AccountDisplay name={account.name} type={account.type} variant="card" />
                                     </div>
-                                  </ResponsiveTableCell>
-                                  <ResponsiveTableCell mobileLabel="类型">
-                                    <span className="text-xs text-muted-foreground">
+                                    <div className="text-sm text-muted-foreground mt-1">
                                       {hasAssets ? accountAssets.length + ' 个资产' : "无资产"}
-                                    </span>
-                                  </ResponsiveTableCell>
-                                  <ResponsiveTableCell mobileLabel="基准金额" className="text-right">
-                                    {hasAssets ? (
-                                      <span className="text-xs text-muted-foreground">资产汇总</span>
-                                    ) : (
-                                      <>
-                                        <span className="text-xs text-muted-foreground mr-1">
-                                          {hasBalance ? "(快照)" : "(初始)"}
-                                        </span>
-                                        {formatAmount(baseAmount)}
-                                      </>
-                                    )}
-                                  </ResponsiveTableCell>
-                                  <ResponsiveTableCell mobileLabel="实时余额" className={"text-right font-bold " + (total >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400")}>
+                                    </div>
+                                  </div>
+                                  <div className={`text-lg font-medium ${total >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
                                     {formatAmount(total)}
-                                  </ResponsiveTableCell>
-                                </ResponsiveTableRow>
-                                {isExpanded && accountAssets.map((asset, index) => {
-                                  const assetTotal = getAssetRealTimeTotal(asset.id)
-                                  const assetTypeConfig = getAssetTypeConfig(asset.type)
-                                  const AssetIcon = assetTypeConfig.icon
-                                  const isLast = index === accountAssets.length - 1
-                                  return (
-                                    <ResponsiveTableRow key={asset.id} className="bg-slate-50/50 dark:bg-slate-800/50 hover:bg-slate-100/50 dark:hover:bg-slate-700/50 transition-colors">
-                                      <ResponsiveTableCell mobileLabel="名称" className="relative py-3">
-                                        {!isLast && (
-                                          <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200 dark:bg-slate-700" />
-                                        )}
-                                        {isLast && (
-                                          <div className="absolute left-4 top-0 h-1/2 w-px bg-slate-200 dark:bg-slate-700" />
-                                        )}
-                                        <div className="absolute left-4 top-1/2 w-3 h-px bg-slate-200 dark:bg-slate-700" />
-                                        <div className="pl-10">
-                                          <span className="text-sm text-slate-600 dark:text-slate-300">{asset.name}</span>
+                                  </div>
+                                </div>
+                                <div className="text-sm text-muted-foreground">
+                                  基准金额: {hasAssets ? "资产汇总" : formatAmount(baseAmount)}
+                                </div>
+                              </div>
+                              {/* 资产列表 */}
+                              {isExpanded && hasAssets && (
+                                <div className="border-t border-slate-200 dark:border-slate-700">
+                                  {accountAssets.map((asset, index) => {
+                                    const assetTotal = getAssetRealTimeTotal(asset.id)
+                                    const assetTypeConfig = getAssetTypeConfig(asset.type)
+                                    const AssetIcon = assetTypeConfig.icon
+                                    const isLast = index === accountAssets.length - 1
+                                    return (
+                                      <div key={asset.id} className={`p-4 ${!isLast ? "border-b border-slate-200 dark:border-slate-700" : ""}`}>
+                                        <div className="flex justify-between items-start">
+                                          <div>
+                                            <div className="flex items-center gap-2">
+                                              <span className="text-sm text-slate-600 dark:text-slate-300">{asset.name}</span>
+                                              <Badge className="gap-1 text-xs font-normal">
+                                                <AssetIcon className="h-3 w-3" />
+                                                {assetTypeConfig.label}
+                                              </Badge>
+                                            </div>
+                                            <div className="text-xs text-muted-foreground mt-1">
+                                              基准金额: {assetTotal.baseType === "balance" ? "(快照) " : "(初始) "}{formatAmount(assetTotal.baseAmount)}
+                                            </div>
+                                          </div>
+                                          <div className={`text-sm font-medium ${assetTotal.total >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
+                                            {formatAmount(assetTotal.total)}
+                                          </div>
                                         </div>
-                                      </ResponsiveTableCell>
-                                      <ResponsiveTableCell mobileLabel="类型" className="py-3">
-                                        <Badge className="gap-1 text-xs font-normal">
-                                          <AssetIcon className="h-3 w-3" />
-                                          {assetTypeConfig.label}
-                                        </Badge>
-                                      </ResponsiveTableCell>
-                                      <ResponsiveTableCell mobileLabel="基准金额" className="text-right py-3">
-                                        <span className="text-xs text-muted-foreground mr-1">
-                                          {assetTotal.baseType === "balance" ? "(快照)" : "(初始)"}
-                                        </span>
-                                        {formatAmount(assetTotal.baseAmount)}
-                                      </ResponsiveTableCell>
-                                      <ResponsiveTableCell mobileLabel="实时余额" className={"text-right font-medium py-3 " + (assetTotal.total >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400")}>
-                                        {formatAmount(assetTotal.total)}
-                                      </ResponsiveTableCell>
-                                    </ResponsiveTableRow>
-                                  )
-                                })}
-                              </Fragment>
-                            )
-                          })}
-                        </ResponsiveTableBody>
-                      </ResponsiveTable>
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
                     </CardContent>
                   </Card>
                 </div>

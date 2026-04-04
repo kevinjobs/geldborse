@@ -33,6 +33,7 @@ model Asset {
   accountId String
   account   Account    @relation(fields: [accountId], references: [id])
   balances  Balance[]
+  records   Record[]
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
@@ -60,11 +61,15 @@ model Record {
   type      String   @default("EXPENSE")
   accountId String
   account   Account  @relation(fields: [accountId], references: [id])
+  assetId   String?
+  asset     Asset?    @relation(fields: [assetId], references: [id])
+  note      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([accountId])
   @@index([date])
+  @@index([assetId])
 }
 
 model DailySnapshot {

@@ -15,6 +15,8 @@ import {
   getAccountTypeConfig,
   AccountDisplay
 } from "@/lib/account-config"
+import { useAuth } from "@/lib/auth-context"
+import Link from "next/link"
 
 interface Account {
   id: string
@@ -22,23 +24,44 @@ interface Account {
   type: string
 }
 
+interface Asset {
+  id: string
+  name: string
+  type: string
+  amount: number
+}
+
 export default function AddRecordPage() {
+  const { user } = useAuth()
   const [date, setDate] = useState("")
   const [account, setAccount] = useState("")
+  const [asset, setAsset] = useState("")
   const [amount, setAmount] = useState("")
+  const [note, setNote] = useState("")
   const [type, setType] = useState("EXPENSE")
   const [accounts, setAccounts] = useState<Account[]>([])
+  const [assets, setAssets] = useState<Asset[]>([])
   const [loading, setLoading] = useState(false)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    fetchAccounts()
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (user) {
+      fetchAccounts()
+    }
     const today = new Date().toISOString().split("T")[0]
     setDate(today)
-  }, [])
+  }, [user])
 
   const fetchAccounts = async () => {
     try {
-      const res = await fetch("/api/accounts")
+      // 构建请求头
+      const headers = user?.id ? { 'Authorization': `Bearer ${user.id}` } : undefined
+
+      const res = await fetch("/api/accounts", headers ? { headers } : {})
       const data = await res.json()
       // 确保data是一个数组
       if (Array.isArray(data)) {
@@ -53,6 +76,34 @@ export default function AddRecordPage() {
     }
   }
 
+  const fetchAssets = async (accountId: string) => {
+    try {
+      const headers = user?.id ? { 'Authorization': `Bearer ${user.id}` } : undefined
+
+      const res = await fetch(`/api/accounts/${accountId}/assets`, headers ? { headers } : {})
+      const data = await res.json()
+      if (Array.isArray(data)) {
+        setAssets(data)
+      } else {
+        console.error("获取资产列表失败: 响应数据不是数组")
+        setAssets([])
+      }
+    } catch (error) {
+      console.error("获取资产列表失败:", error)
+      setAssets([])
+    }
+  }
+
+  useEffect(() => {
+    if (account) {
+      fetchAssets(account)
+      setAsset("")
+    } else {
+      setAssets([])
+      setAsset("")
+    }
+  }, [account])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!date || !account || !amount) {
@@ -64,14 +115,20 @@ export default function AddRecordPage() {
     try {
       const res = await fetch("/api/records", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date, accountId: account, amount, type }),
+        headers: {
+          "Content-Type": "application/json",
+          ...(user?.id ? { 'Authorization': `Bearer ${user.id}` } : {})
+        },
+        body: JSON.stringify({ date, accountId: account, assetId: asset || null, amount, type, note: note || null }),
       })
       if (res.ok) {
         alert("收支保存成功")
         setAmount("")
+        setNote("")
+        setAsset("")
       } else {
-        alert("保存失败")
+        const errorData = await res.json().catch(() => ({ error: "保存失败" }))
+        alert(errorData.error || "保存失败")
       }
     } catch (error) {
       console.error("保存收支失败:", error)
@@ -98,68 +155,112 @@ export default function AddRecordPage() {
                     <CardDescription>记录一笔收入或支出</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="date">日期</Label>
-                        <Input
-                          id="date"
-                          type="date"
-                          value={date}
-                          onChange={(e) => setDate(e.target.value)}
-                          className="w-full"
-                        />
+                    {!mounted ? (
+                      <div className="text-center py-8">
+                        <p className="text-muted-foreground">加载中...</p>
                       </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="account">账户</Label>
-                        <Select value={account} onValueChange={setAccount}>
-                          <SelectTrigger id="account" className="w-full">
-                            <SelectValue placeholder="选择账户">
-                              {selectedAccount && (
-                                <AccountDisplay name={selectedAccount.name} type={selectedAccount.type} variant="compact" />
-                              )}
-                            </SelectValue>
-                          </SelectTrigger>
-                          <SelectContent>
-                            {accounts.map((acc) => (
-                              <SelectItem key={acc.id} value={acc.id}>
-                                <AccountDisplay name={acc.name} type={acc.type} variant="compact" />
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                    ) : accounts.length === 0 ? (
+                      <div className="text-center py-8">
+                        <p className="text-muted-foreground mb-4">您还没有创建任何账户</p>
+                        <Link href="/accounts">
+                          <Button>前往创建账户</Button>
+                        </Link>
                       </div>
+                    ) : (
+                      <form onSubmit={handleSubmit} className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="date">日期</Label>
+                          <Input
+                            id="date"
+                            type="date"
+                            value={date}
+                            onChange={(e) => setDate(e.target.value)}
+                            className="w-full"
+                          />
+                        </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="type">类型</Label>
-                        <Select value={type} onValueChange={setType}>
-                          <SelectTrigger id="type" className="w-full">
-                            <SelectValue placeholder="选择类型" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="EXPENSE">支出</SelectItem>
-                            <SelectItem value="INCOME">收入</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="account">账户</Label>
+                          <Select value={account} onValueChange={setAccount}>
+                            <SelectTrigger id="account" className="w-full">
+                              <SelectValue placeholder="选择账户">
+                                {selectedAccount && (
+                                  <AccountDisplay name={selectedAccount.name} type={selectedAccount.type} variant="compact" />
+                                )}
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                              {accounts.map((acc) => (
+                                <SelectItem key={acc.id} value={acc.id}>
+                                  <AccountDisplay name={acc.name} type={acc.type} variant="compact" />
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="amount">金额</Label>
-                        <Input
-                          id="amount"
-                          type="number"
-                          step="0.01"
-                          placeholder="请输入金额（正数）"
-                          value={amount}
-                          onChange={(e) => setAmount(e.target.value)}
-                          className="w-full"
-                        />
-                      </div>
+                        {assets.length > 0 && (
+                          <div className="space-y-2">
+                            <Label htmlFor="asset">资产（可选）</Label>
+                            <Select value={asset || "none"} onValueChange={(value) => setAsset(value === "none" ? "" : value)}>
+                              <SelectTrigger id="asset" className="w-full">
+                                <SelectValue placeholder="选择资产" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">不选择资产</SelectItem>
+                                {assets.map((ast) => (
+                                  <SelectItem key={ast.id} value={ast.id}>
+                                    {ast.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
 
-                      <Button type="submit" className="w-full" disabled={loading}>
-                        {loading ? "保存中..." : "保存收支"}
-                      </Button>
-                    </form>
+                        <div className="space-y-2">
+                          <Label htmlFor="type">类型</Label>
+                          <Select value={type} onValueChange={setType}>
+                            <SelectTrigger id="type" className="w-full">
+                              <SelectValue placeholder="选择类型" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="EXPENSE">支出</SelectItem>
+                              <SelectItem value="INCOME">收入</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="amount">金额</Label>
+                          <Input
+                            id="amount"
+                            type="number"
+                            step="0.01"
+                            placeholder="请输入金额（正数）"
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                            className="w-full"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="note">备注（可选）</Label>
+                          <Input
+                            id="note"
+                            type="text"
+                            placeholder="请输入备注"
+                            value={note}
+                            onChange={(e) => setNote(e.target.value)}
+                            className="w-full"
+                          />
+                        </div>
+
+                        <Button type="submit" className="w-full" disabled={loading}>
+                          {loading ? "保存中..." : "保存收支"}
+                        </Button>
+                      </form>
+                    )}
                   </CardContent>
                 </Card>
               </div>

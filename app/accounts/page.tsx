@@ -78,6 +78,11 @@ export default function AccountsPage() {
   const [initialBalance, setInitialBalance] = useState("")
   const [saving, setSaving] = useState(false)
 
+  // 新建账户时的资产信息
+  const [newAssetName, setNewAssetName] = useState("")
+  const [newAssetType, setNewAssetType] = useState("DEPOSIT")
+  const [newAssetAmount, setNewAssetAmount] = useState("")
+
   const [expandedAccounts, setExpandedAccounts] = useState<Set<string>>(new Set())
   const [expandedAssets, setExpandedAssets] = useState<Set<string>>(new Set())
   const [accountAssets, setAccountAssets] = useState<Record<string, Asset[]>>({})
@@ -257,6 +262,9 @@ export default function AccountsPage() {
     setAccountType("CASH")
     setAccountNumber("")
     setInitialBalance("")
+    setNewAssetName("")
+    setNewAssetType("DEPOSIT")
+    setNewAssetAmount("")
     setDialogOpen(true)
   }
 
@@ -278,6 +286,18 @@ export default function AccountsPage() {
     if (!accountName.trim()) {
       alert("请输入账户名称")
       return
+    }
+
+    // 新建账户时必须填写资产信息
+    if (!editingAccount) {
+      if (!newAssetName.trim()) {
+        alert("请至少添加一个资产，填写资产名称")
+        return
+      }
+      if (!newAssetAmount || parseFloat(newAssetAmount) === 0) {
+        alert("请填写资产金额")
+        return
+      }
     }
 
     // 获取用户认证信息
@@ -308,10 +328,21 @@ export default function AccountsPage() {
           alert("更新失败")
         }
       } else {
+        // 创建账户并同时创建资产
         const res = await fetch("/api/accounts", {
           method: "POST",
           headers,
-          body: JSON.stringify({ name: accountName, type: accountType, accountNumber, initialBalance }),
+          body: JSON.stringify({
+            name: accountName,
+            type: accountType,
+            accountNumber,
+            initialBalance,
+            assets: [{
+              name: newAssetName,
+              type: newAssetType,
+              amount: parseFloat(newAssetAmount) || 0
+            }]
+          }),
         })
         if (res.ok) {
           fetchAccounts()
@@ -666,39 +697,312 @@ export default function AccountsPage() {
                       <Button onClick={handleAdd}>添加账户</Button>
                     </CardHeader>
                     <CardContent className="min-h-[300px]">
-                      <ResponsiveTable className="select-none">
-                        <thead>
-                          <ResponsiveTableRow>
-                            <ResponsiveTableHeader>名称</ResponsiveTableHeader>
-                            <ResponsiveTableHeader>账户号码</ResponsiveTableHeader>
-                            <ResponsiveTableHeader className="text-right">总资产</ResponsiveTableHeader>
-                            <ResponsiveTableHeader className="text-center">收支数</ResponsiveTableHeader>
-                            <ResponsiveTableHeader className="text-center">资产数</ResponsiveTableHeader>
-                            <ResponsiveTableHeader className="text-right">操作</ResponsiveTableHeader>
-                          </ResponsiveTableRow>
-                        </thead>
-                        <ResponsiveTableBody>
-                          {accounts.length === 0 ? (
+                      {/* 桌面端表格视图 */}
+                      <div className="hidden md:block">
+                        <ResponsiveTable className="select-none">
+                          <thead>
                             <ResponsiveTableRow>
-                              <ResponsiveTableCell colSpan={6} className="text-center text-muted-foreground">
-                                暂无账户
-                              </ResponsiveTableCell>
+                              <ResponsiveTableHeader>名称</ResponsiveTableHeader>
+                              <ResponsiveTableHeader>账户号码</ResponsiveTableHeader>
+                              <ResponsiveTableHeader className="text-right">总资产</ResponsiveTableHeader>
+                              <ResponsiveTableHeader className="text-center">收支数</ResponsiveTableHeader>
+                              <ResponsiveTableHeader className="text-center">资产数</ResponsiveTableHeader>
+                              <ResponsiveTableHeader className="text-right">操作</ResponsiveTableHeader>
                             </ResponsiveTableRow>
-                          ) : (
-                            accounts.map((account) => {
-                              const nameColor = getAccountNameColor(account.name)
-                              const isExpanded = expandedAccounts.has(account.id)
-                              const hasAssets = (account._count?.assets || 0) > 0
-                              const accountAssetList = accountAssets[account.id] || []
-                              const totalAmount = (account as { totalAmount?: number }).totalAmount || 0
-                              const isNegative = totalAmount < 0
-                              return (
-                                <Fragment key={account.id}>
-                                  <ResponsiveTableRow
-                                    className={`${nameColor.bgColor} dark:${nameColor.darkBgColor} ${hasAssets ? "cursor-pointer hover:brightness-95 transition-all" : ""}`}
-                                    onClick={() => hasAssets && toggleAccountExpand(account.id)}
-                                  >
-                                    <ResponsiveTableCell mobileLabel="名称" className="py-3">
+                          </thead>
+                          <ResponsiveTableBody>
+                            {accounts.length === 0 ? (
+                              <ResponsiveTableRow>
+                                <ResponsiveTableCell colSpan={6} className="text-center text-muted-foreground">
+                                  暂无账户
+                                </ResponsiveTableCell>
+                              </ResponsiveTableRow>
+                            ) : (
+                              accounts.map((account) => {
+                                const nameColor = getAccountNameColor(account.name)
+                                const isExpanded = expandedAccounts.has(account.id)
+                                const hasAssets = (account._count?.assets || 0) > 0
+                                const accountAssetList = accountAssets[account.id] || []
+                                const totalAmount = (account as { totalAmount?: number }).totalAmount || 0
+                                const isNegative = totalAmount < 0
+                                // 检测当前是否为深色模式
+                                const isDarkMode = typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
+                                // 根据主题选择背景颜色
+                                const bgColor = isDarkMode ? nameColor.darkBgColor : nameColor.bgColor
+                                return (
+                                  <Fragment key={account.id}>
+                                    <ResponsiveTableRow
+                                      className={`${bgColor} ${hasAssets ? "cursor-pointer hover:brightness-95 transition-all" : ""}`}
+                                      onClick={() => hasAssets && toggleAccountExpand(account.id)}
+                                    >
+                                      <ResponsiveTableCell mobileLabel="名称" className="py-3">
+                                        <div className="flex items-center gap-2">
+                                          {hasAssets && (
+                                            <span className="w-4 h-4 flex items-center justify-center shrink-0">
+                                              {isExpanded ? (
+                                                <ChevronDown className="h-4 w-4" />
+                                              ) : (
+                                                <ChevronRight className="h-4 w-4" />
+                                              )}
+                                            </span>
+                                          )}
+                                          {!hasAssets && <span className="w-4 shrink-0" />}
+                                          <AccountDisplay name={account.name} type={account.type} variant="table" />
+                                        </div>
+                                      </ResponsiveTableCell>
+                                      <ResponsiveTableCell mobileLabel="账户号码">{account.accountNumber || "-"}</ResponsiveTableCell>
+                                      <ResponsiveTableCell mobileLabel="总资产" className={`text-right font-medium ${isNegative ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
+                                        {formatAmount(totalAmount)}
+                                      </ResponsiveTableCell>
+                                      <ResponsiveTableCell mobileLabel="收支数" className="text-center">{account._count?.records || 0}</ResponsiveTableCell>
+                                      <ResponsiveTableCell mobileLabel="资产数" className="text-center">{account._count?.assets || 0}</ResponsiveTableCell>
+                                      <ResponsiveTableCell mobileLabel="操作" className="text-right" onClick={(e) => e.stopPropagation()}>
+                                        <div className="flex flex-row flex-wrap gap-1 justify-end">
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-700 dark:hover:text-blue-300"
+                                            onClick={() => {
+                                              setSelectedAccount(account)
+                                              handleAddAsset()
+                                            }}
+                                          >
+                                            <Plus className="h-3.5 w-3.5 mr-1" />
+                                            添加资产
+                                          </Button>
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => handleEdit(account)}
+                                          >
+                                            <Pencil className="h-3.5 w-3.5 mr-1" />
+                                            编辑
+                                          </Button>
+                                          <Button
+                                            variant="destructive"
+                                            size="sm"
+                                            onClick={() => handleDelete(account)}
+                                          >
+                                            <Trash2 className="h-3.5 w-3.5 mr-1" />
+                                            删除
+                                          </Button>
+                                        </div>
+                                      </ResponsiveTableCell>
+                                    </ResponsiveTableRow>
+                                    {isExpanded && accountAssetList.map((asset, assetIndex) => {
+                                      const assetTypeConfig = getAssetTypeConfig(asset.type)
+                                      const AssetIcon = assetTypeConfig.icon
+                                      const isAssetExpanded = expandedAssets.has(asset.id)
+                                      const isLastAsset = assetIndex === accountAssetList.length - 1
+                                      const assetBalanceList = assetBalances[asset.id] || []
+                                      return (
+                                        <Fragment key={asset.id}>
+                                          <ResponsiveTableRow
+                                            className="bg-slate-50/50 dark:bg-slate-800/50 hover:bg-slate-100/50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
+                                            onClick={() => toggleAssetExpand(asset.id)}
+                                          >
+                                            <ResponsiveTableCell mobileLabel="名称" className="relative py-3">
+                                              {!isLastAsset && (
+                                                <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200 dark:bg-slate-700" />
+                                              )}
+                                              {isLastAsset && (
+                                                <div className="absolute left-4 top-0 h-1/2 w-px bg-slate-200 dark:bg-slate-700" />
+                                              )}
+                                              <div className="absolute left-4 top-1/2 w-3 h-px bg-slate-200 dark:bg-slate-700" />
+                                              <div className="pl-10 flex items-center gap-2">
+                                                <span className="w-4 h-4 flex items-center justify-center shrink-0">
+                                                  {isAssetExpanded ? (
+                                                    <ChevronDown className="h-3 w-3" />
+                                                  ) : (
+                                                    <ChevronRight className="h-3 w-3" />
+                                                  )}
+                                                </span>
+                                                <span className="text-sm text-slate-600 dark:text-slate-300">{asset.name}</span>
+                                                <Badge className="gap-1 text-xs font-normal">
+                                                  <AssetIcon className="h-3 w-3" />
+                                                  {assetTypeConfig.label}
+                                                </Badge>
+                                              </div>
+                                            </ResponsiveTableCell>
+                                            <ResponsiveTableCell mobileLabel="金额" className="text-right">{formatAmount(getLatestBalanceAmount(asset.id, asset.amount))}</ResponsiveTableCell>
+                                            <ResponsiveTableCell />
+                                            <ResponsiveTableCell />
+                                            <ResponsiveTableCell />
+                                            <ResponsiveTableCell mobileLabel="操作" className="text-right" onClick={(e) => e.stopPropagation()}>
+                                              <div className="flex flex-row flex-wrap gap-1 justify-end">
+                                                <Button
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                                                  onClick={() => {
+                                                    setSelectedAccount(account)
+                                                    setSelectedAsset(asset)
+                                                    handleAddBalance()
+                                                  }}
+                                                >
+                                                  <Plus className="h-3 w-3 mr-1" />
+                                                  快照
+                                                </Button>
+                                                <Button
+                                                  variant="outline"
+                                                  size="sm"
+                                                  onClick={() => handleEditAsset(asset)}
+                                                >
+                                                  <Pencil className="h-3.5 w-3.5 mr-1" />
+                                                  编辑
+                                                </Button>
+                                                <Button
+                                                  variant="destructive"
+                                                  size="sm"
+                                                  onClick={() => handleDeleteAsset(asset)}
+                                                >
+                                                  <Trash2 className="h-3.5 w-3.5 mr-1" />
+                                                  删除
+                                                </Button>
+                                              </div>
+                                            </ResponsiveTableCell>
+                                          </ResponsiveTableRow>
+                                          {isAssetExpanded && assetBalanceList.map((balance, balanceIndex) => {
+                                            const isLastBalance = balanceIndex === assetBalanceList.length - 1
+                                            return (
+                                              <ResponsiveTableRow key={balance.id} className="bg-slate-100/50 dark:bg-slate-700/50 hover:bg-slate-200/50 dark:hover:bg-slate-600/50 transition-colors">
+                                                <ResponsiveTableCell mobileLabel="时间" className="relative py-2">
+                                                  {!isLastAsset && (
+                                                    <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200 dark:bg-slate-700" />
+                                                  )}
+                                                  {!isLastBalance && (
+                                                    <div className="absolute left-8 top-0 bottom-0 w-px bg-slate-200 dark:bg-slate-700" />
+                                                  )}
+                                                  {isLastBalance && (
+                                                    <div className="absolute left-8 top-0 h-1/2 w-px bg-slate-200 dark:bg-slate-700" />
+                                                  )}
+                                                  <div className="absolute left-8 top-1/2 w-2 h-px bg-slate-200 dark:bg-slate-700" />
+                                                  <div className="pl-12 flex items-center gap-2">
+                                                    <span className="text-xs text-muted-foreground">
+                                                      {formatDateTime(balance.recordedAt)}
+                                                    </span>
+                                                    <span className="text-xs text-slate-500 dark:text-slate-400">快照</span>
+                                                  </div>
+                                                </ResponsiveTableCell>
+                                                <ResponsiveTableCell mobileLabel="金额" className="text-right text-sm">{formatAmount(balance.amount)}</ResponsiveTableCell>
+                                                <ResponsiveTableCell />
+                                                <ResponsiveTableCell />
+                                                <ResponsiveTableCell />
+                                                <ResponsiveTableCell mobileLabel="操作" className="text-right" onClick={(e) => e.stopPropagation()}>
+                                                  <div className="flex flex-row flex-wrap gap-1 justify-end">
+                                                    <Button
+                                                      variant="ghost"
+                                                      size="sm"
+                                                      onClick={() => handleEditBalance(balance)}
+                                                    >
+                                                      <Pencil className="h-3 w-3 mr-1" />
+                                                      编辑
+                                                    </Button>
+                                                    <Button
+                                                      variant="ghost"
+                                                      size="sm"
+                                                      className="text-destructive hover:text-destructive"
+                                                      onClick={() => handleDeleteBalance(balance)}
+                                                    >
+                                                      <Trash2 className="h-3 w-3 mr-1" />
+                                                      删除
+                                                    </Button>
+                                                  </div>
+                                                </ResponsiveTableCell>
+                                              </ResponsiveTableRow>
+                                            )
+                                          })}
+                                          {isAssetExpanded && assetBalanceList.length === 0 && (
+                                            <ResponsiveTableRow className="bg-slate-100/50 dark:bg-slate-700/50">
+                                              <ResponsiveTableCell mobileLabel="提示" className="relative py-2">
+                                                {!isLastAsset && (
+                                                  <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200 dark:bg-slate-700" />
+                                                )}
+                                                <div className="absolute left-8 top-1/2 w-2 h-px bg-slate-200 dark:bg-slate-700" />
+                                                <div className="pl-12 text-xs text-muted-foreground">暂无快照</div>
+                                              </ResponsiveTableCell>
+                                              <ResponsiveTableCell />
+                                              <ResponsiveTableCell />
+                                              <ResponsiveTableCell />
+                                              <ResponsiveTableCell />
+                                              <ResponsiveTableCell mobileLabel="操作" className="text-right" onClick={(e) => e.stopPropagation()}>
+                                                <Button
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  className="h-7 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                                                  onClick={() => {
+                                                    setSelectedAccount(account)
+                                                    setSelectedAsset(asset)
+                                                    handleAddBalance()
+                                                  }}
+                                                >
+                                                  <Plus className="h-3 w-3 mr-1" />
+                                                  添加
+                                                </Button>
+                                              </ResponsiveTableCell>
+                                            </ResponsiveTableRow>
+                                          )}
+                                        </Fragment>
+                                      )
+                                    })}
+                                    {isExpanded && accountAssetList.length === 0 && (
+                                      <ResponsiveTableRow className="bg-slate-50/50 dark:bg-slate-800/50">
+                                        <ResponsiveTableCell mobileLabel="提示" className="relative py-2">
+                                          <div className="absolute left-4 top-0 h-1/2 w-px bg-slate-200 dark:bg-slate-700" />
+                                          <div className="absolute left-4 top-1/2 w-3 h-px bg-slate-200 dark:bg-slate-700" />
+                                          <div className="pl-10 text-xs text-muted-foreground">暂无资产</div>
+                                        </ResponsiveTableCell>
+                                        <ResponsiveTableCell />
+                                        <ResponsiveTableCell />
+                                        <ResponsiveTableCell />
+                                        <ResponsiveTableCell />
+                                        <ResponsiveTableCell mobileLabel="操作" className="text-right" onClick={(e) => e.stopPropagation()}>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-7 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                                            onClick={() => {
+                                              setSelectedAccount(account)
+                                              handleAddAsset()
+                                            }}
+                                          >
+                                            <Plus className="h-3 w-3 mr-1" />
+                                            添加
+                                          </Button>
+                                        </ResponsiveTableCell>
+                                      </ResponsiveTableRow>
+                                    )}
+                                  </Fragment>
+                                )
+                              })
+                            )}
+                          </ResponsiveTableBody>
+                        </ResponsiveTable>
+                      </div>
+                      {/* 移动端卡片视图 */}
+                      <div className="md:hidden space-y-4">
+                        {accounts.length === 0 ? (
+                          <div className="text-center text-muted-foreground py-8">
+                            暂无账户
+                          </div>
+                        ) : (
+                          accounts.map((account) => {
+                            const nameColor = getAccountNameColor(account.name)
+                            const isExpanded = expandedAccounts.has(account.id)
+                            const hasAssets = (account._count?.assets || 0) > 0
+                            const accountAssetList = accountAssets[account.id] || []
+                            const totalAmount = (account as { totalAmount?: number }).totalAmount || 0
+                            const isNegative = totalAmount < 0
+                            // 检测当前是否为深色模式
+                            const isDarkMode = typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
+                            // 根据主题选择背景颜色
+                            const bgColor = isDarkMode ? nameColor.darkBgColor : nameColor.bgColor
+                            return (
+                              <div key={account.id} className={`rounded-lg ${bgColor} border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden`}>
+                                {/* 账户卡片 */}
+                                <div className={`p-4 ${hasAssets ? "cursor-pointer hover:brightness-95 transition-all" : ""}`} onClick={() => hasAssets && toggleAccountExpand(account.id)}>
+                                  <div className="flex justify-between items-start mb-3">
+                                    <div>
                                       <div className="flex items-center gap-2">
                                         {hasAssets && (
                                           <span className="w-4 h-4 flex items-center justify-center shrink-0">
@@ -709,90 +1013,83 @@ export default function AccountsPage() {
                                             )}
                                           </span>
                                         )}
-                                        {!hasAssets && <span className="w-4 shrink-0" />}
-                                        <AccountDisplay name={account.name} type={account.type} variant="table" />
+                                        <AccountDisplay name={account.name} type={account.type} variant="card" />
                                       </div>
-                                    </ResponsiveTableCell>
-                                    <ResponsiveTableCell mobileLabel="账户号码">{account.accountNumber || "-"}</ResponsiveTableCell>
-                                    <ResponsiveTableCell mobileLabel="总资产" className={`text-right font-medium ${isNegative ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
+                                      <div className="text-sm text-muted-foreground mt-1">
+                                        账户号码: {account.accountNumber || "-"}
+                                      </div>
+                                    </div>
+                                    <div className={`text-lg font-medium ${isNegative ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
                                       {formatAmount(totalAmount)}
-                                    </ResponsiveTableCell>
-                                    <ResponsiveTableCell mobileLabel="收支数" className="text-center">{account._count?.records || 0}</ResponsiveTableCell>
-                                    <ResponsiveTableCell mobileLabel="资产数" className="text-center">{account._count?.assets || 0}</ResponsiveTableCell>
-                                    <ResponsiveTableCell mobileLabel="操作" className="text-right" onClick={(e) => e.stopPropagation()}>
-                                      <div className="flex flex-row flex-wrap gap-1 justify-end">
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          className="text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-700 dark:hover:text-blue-300"
-                                          onClick={() => {
-                                            setSelectedAccount(account)
-                                            handleAddAsset()
-                                          }}
-                                        >
-                                          <Plus className="h-3.5 w-3.5 mr-1" />
-                                          添加资产
-                                        </Button>
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={() => handleEdit(account)}
-                                        >
-                                          <Pencil className="h-3.5 w-3.5 mr-1" />
-                                          编辑
-                                        </Button>
-                                        <Button
-                                          variant="destructive"
-                                          size="sm"
-                                          onClick={() => handleDelete(account)}
-                                        >
-                                          <Trash2 className="h-3.5 w-3.5 mr-1" />
-                                          删除
-                                        </Button>
-                                      </div>
-                                    </ResponsiveTableCell>
-                                  </ResponsiveTableRow>
-                                  {isExpanded && accountAssetList.map((asset, assetIndex) => {
-                                    const assetTypeConfig = getAssetTypeConfig(asset.type)
-                                    const AssetIcon = assetTypeConfig.icon
-                                    const isAssetExpanded = expandedAssets.has(asset.id)
-                                    const isLastAsset = assetIndex === accountAssetList.length - 1
-                                    const assetBalanceList = assetBalances[asset.id] || []
-                                    return (
-                                      <Fragment key={asset.id}>
-                                        <ResponsiveTableRow
-                                          className="bg-slate-50/50 dark:bg-slate-800/50 hover:bg-slate-100/50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
-                                          onClick={() => toggleAssetExpand(asset.id)}
-                                        >
-                                          <ResponsiveTableCell mobileLabel="名称" className="relative py-3">
-                                            {!isLastAsset && (
-                                              <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200 dark:bg-slate-700" />
-                                            )}
-                                            {isLastAsset && (
-                                              <div className="absolute left-4 top-0 h-1/2 w-px bg-slate-200 dark:bg-slate-700" />
-                                            )}
-                                            <div className="absolute left-4 top-1/2 w-3 h-px bg-slate-200 dark:bg-slate-700" />
-                                            <div className="pl-10 flex items-center gap-2">
-                                              <span className="w-4 h-4 flex items-center justify-center shrink-0">
-                                                {isAssetExpanded ? (
-                                                  <ChevronDown className="h-3 w-3" />
-                                                ) : (
-                                                  <ChevronRight className="h-3 w-3" />
-                                                )}
-                                              </span>
-                                              <span className="text-sm text-slate-600 dark:text-slate-300">{asset.name}</span>
-                                              <Badge className="gap-1 text-xs font-normal">
-                                                <AssetIcon className="h-3 w-3" />
-                                                {assetTypeConfig.label}
-                                              </Badge>
+                                    </div>
+                                  </div>
+                                  <div className="flex justify-between text-sm text-muted-foreground">
+                                    <span>收支数: {account._count?.records || 0}</span>
+                                    <span>资产数: {account._count?.assets || 0}</span>
+                                  </div>
+                                  <div className="flex gap-2 mt-3" onClick={(e) => e.stopPropagation()}>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-700 dark:hover:text-blue-300"
+                                      onClick={() => {
+                                        setSelectedAccount(account)
+                                        handleAddAsset()
+                                      }}
+                                    >
+                                      <Plus className="h-3.5 w-3.5 mr-1" />
+                                      添加资产
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleEdit(account)}
+                                    >
+                                      <Pencil className="h-3.5 w-3.5 mr-1" />
+                                      编辑
+                                    </Button>
+                                    <Button
+                                      variant="destructive"
+                                      size="sm"
+                                      onClick={() => handleDelete(account)}
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5 mr-1" />
+                                      删除
+                                    </Button>
+                                  </div>
+                                </div>
+                                {/* 资产列表 */}
+                                {isExpanded && hasAssets && (
+                                  <div className="border-t border-slate-200 dark:border-slate-700">
+                                    {accountAssetList.map((asset, assetIndex) => {
+                                      const assetTypeConfig = getAssetTypeConfig(asset.type)
+                                      const AssetIcon = assetTypeConfig.icon
+                                      const isAssetExpanded = expandedAssets.has(asset.id)
+                                      const assetBalanceList = assetBalances[asset.id] || []
+                                      return (
+                                        <div key={asset.id} className="border-b border-slate-200 dark:border-slate-700 last:border-b-0">
+                                          {/* 资产卡片 */}
+                                          <div className="p-4 cursor-pointer hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors" onClick={() => toggleAssetExpand(asset.id)}>
+                                            <div className="flex justify-between items-start">
+                                              <div className="flex items-center gap-2">
+                                                <span className="w-4 h-4 flex items-center justify-center shrink-0">
+                                                  {isAssetExpanded ? (
+                                                    <ChevronDown className="h-3 w-3" />
+                                                  ) : (
+                                                    <ChevronRight className="h-3 w-3" />
+                                                  )}
+                                                </span>
+                                                <span className="text-sm text-slate-600 dark:text-slate-300">{asset.name}</span>
+                                                <Badge className="gap-1 text-xs font-normal">
+                                                  <AssetIcon className="h-3 w-3" />
+                                                  {assetTypeConfig.label}
+                                                </Badge>
+                                              </div>
+                                              <div className="text-sm font-medium">
+                                                {formatAmount(getLatestBalanceAmount(asset.id, asset.amount))}
+                                              </div>
                                             </div>
-                                          </ResponsiveTableCell>
-                                          <ResponsiveTableCell mobileLabel="金额" className="text-right">{formatAmount(getLatestBalanceAmount(asset.id, asset.amount))}</ResponsiveTableCell>
-                                          <ResponsiveTableCell />
-                                          <ResponsiveTableCell />
-                                          <ResponsiveTableCell />
-                                          <ResponsiveTableCell mobileLabel="操作" className="text-right" onClick={(e) => e.stopPropagation()}>
-                                            <div className="flex flex-row flex-wrap gap-1 justify-end">
+                                            <div className="flex gap-2 mt-3" onClick={(e) => e.stopPropagation()}>
                                               <Button
                                                 variant="ghost"
                                                 size="sm"
@@ -823,124 +1120,55 @@ export default function AccountsPage() {
                                                 删除
                                               </Button>
                                             </div>
-                                          </ResponsiveTableCell>
-                                        </ResponsiveTableRow>
-                                        {isAssetExpanded && assetBalanceList.map((balance, balanceIndex) => {
-                                          const isLastBalance = balanceIndex === assetBalanceList.length - 1
-                                          return (
-                                            <ResponsiveTableRow key={balance.id} className="bg-slate-100/50 dark:bg-slate-700/50 hover:bg-slate-200/50 dark:hover:bg-slate-600/50 transition-colors">
-                                              <ResponsiveTableCell mobileLabel="时间" className="relative py-2">
-                                                {!isLastAsset && (
-                                                  <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200 dark:bg-slate-700" />
-                                                )}
-                                                {!isLastBalance && (
-                                                  <div className="absolute left-8 top-0 bottom-0 w-px bg-slate-200 dark:bg-slate-700" />
-                                                )}
-                                                {isLastBalance && (
-                                                  <div className="absolute left-8 top-0 h-1/2 w-px bg-slate-200 dark:bg-slate-700" />
-                                                )}
-                                                <div className="absolute left-8 top-1/2 w-2 h-px bg-slate-200 dark:bg-slate-700" />
-                                                <div className="pl-12 flex items-center gap-2">
-                                                  <span className="text-xs text-muted-foreground">
+                                          </div>
+                                          {/* 余额快照列表 */}
+                                          {isAssetExpanded && assetBalanceList.length > 0 && (
+                                            <div className="bg-slate-50/30 dark:bg-slate-800/30">
+                                              {assetBalanceList.map((balance) => (
+                                                <div key={balance.id} className="p-3 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                                                  <div className="text-xs text-muted-foreground">
                                                     {formatDateTime(balance.recordedAt)}
-                                                  </span>
-                                                  <span className="text-xs text-slate-500 dark:text-slate-400">快照</span>
+                                                  </div>
+                                                  <div className="flex items-center gap-2">
+                                                    <span className="text-sm">{formatAmount(balance.amount)}</span>
+                                                    <div className="flex gap-1">
+                                                      <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => handleEditBalance(balance)}
+                                                      >
+                                                        <Pencil className="h-3 w-3" />
+                                                      </Button>
+                                                      <Button
+                                                        variant="destructive"
+                                                        size="sm"
+                                                        onClick={() => handleDeleteBalance(balance)}
+                                                      >
+                                                        <Trash2 className="h-3 w-3" />
+                                                      </Button>
+                                                    </div>
+                                                  </div>
                                                 </div>
-                                              </ResponsiveTableCell>
-                                              <ResponsiveTableCell mobileLabel="金额" className="text-right text-sm">{formatAmount(balance.amount)}</ResponsiveTableCell>
-                                              <ResponsiveTableCell />
-                                              <ResponsiveTableCell />
-                                              <ResponsiveTableCell />
-                                              <ResponsiveTableCell mobileLabel="操作" className="text-right" onClick={(e) => e.stopPropagation()}>
-                                                <div className="flex flex-row flex-wrap gap-1 justify-end">
-                                                  <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => handleEditBalance(balance)}
-                                                  >
-                                                    <Pencil className="h-3 w-3 mr-1" />
-                                                    编辑
-                                                  </Button>
-                                                  <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="text-destructive hover:text-destructive"
-                                                    onClick={() => handleDeleteBalance(balance)}
-                                                  >
-                                                    <Trash2 className="h-3 w-3 mr-1" />
-                                                    删除
-                                                  </Button>
-                                                </div>
-                                              </ResponsiveTableCell>
-                                            </ResponsiveTableRow>
-                                          )
-                                        })}
-                                        {isAssetExpanded && assetBalanceList.length === 0 && (
-                                          <ResponsiveTableRow className="bg-slate-100/50 dark:bg-slate-700/50">
-                                            <ResponsiveTableCell mobileLabel="提示" className="relative py-2">
-                                              {!isLastAsset && (
-                                                <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200 dark:bg-slate-700" />
-                                              )}
-                                              <div className="absolute left-8 top-1/2 w-2 h-px bg-slate-200 dark:bg-slate-700" />
-                                              <div className="pl-12 text-xs text-muted-foreground">暂无快照</div>
-                                            </ResponsiveTableCell>
-                                            <ResponsiveTableCell />
-                                            <ResponsiveTableCell />
-                                            <ResponsiveTableCell />
-                                            <ResponsiveTableCell />
-                                            <ResponsiveTableCell mobileLabel="操作" className="text-right" onClick={(e) => e.stopPropagation()}>
-                                              <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-7 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
-                                                onClick={() => {
-                                                  setSelectedAccount(account)
-                                                  setSelectedAsset(asset)
-                                                  handleAddBalance()
-                                                }}
-                                              >
-                                                <Plus className="h-3 w-3 mr-1" />
-                                                添加
-                                              </Button>
-                                            </ResponsiveTableCell>
-                                          </ResponsiveTableRow>
-                                        )}
-                                      </Fragment>
-                                    )
-                                  })}
-                                  {isExpanded && accountAssetList.length === 0 && (
-                                    <ResponsiveTableRow className="bg-slate-50/50 dark:bg-slate-800/50">
-                                      <ResponsiveTableCell mobileLabel="提示" className="relative py-2">
-                                        <div className="absolute left-4 top-0 h-1/2 w-px bg-slate-200 dark:bg-slate-700" />
-                                        <div className="absolute left-4 top-1/2 w-3 h-px bg-slate-200 dark:bg-slate-700" />
-                                        <div className="pl-10 text-xs text-muted-foreground">暂无资产</div>
-                                      </ResponsiveTableCell>
-                                      <ResponsiveTableCell />
-                                      <ResponsiveTableCell />
-                                      <ResponsiveTableCell />
-                                      <ResponsiveTableCell />
-                                      <ResponsiveTableCell mobileLabel="操作" className="text-right" onClick={(e) => e.stopPropagation()}>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          className="h-7 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
-                                          onClick={() => {
-                                            setSelectedAccount(account)
-                                            handleAddAsset()
-                                          }}
-                                        >
-                                          <Plus className="h-3 w-3 mr-1" />
-                                          添加
-                                        </Button>
-                                      </ResponsiveTableCell>
-                                    </ResponsiveTableRow>
-                                  )}
-                                </Fragment>
-                              )
-                            })
-                          )}
-                        </ResponsiveTableBody>
-                      </ResponsiveTable>
+                                              ))}
+                                            </div>
+                                          )}
+                                          {isAssetExpanded && assetBalanceList.length === 0 && (
+                                            <div className="p-3 border-t border-slate-200 dark:border-slate-700">
+                                              <div className="text-xs text-muted-foreground">
+                                                暂无快照
+                                              </div>
+                                            </div>
+                                          )}
+                                        </div>
+                                      )
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })
+                        )}
+                      </div>
                     </CardContent>
                   </Card>
                 </div>
@@ -951,11 +1179,11 @@ export default function AccountsPage() {
       </SidebarInset>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-xs max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingAccount ? "编辑账户" : "添加账户"}</DialogTitle>
             <DialogDescription>
-              {editingAccount ? "修改账户信息" : "创建一个新的财务账户"}
+              {editingAccount ? "修改账户信息" : "创建一个新的财务账户，并添加至少一个资产"}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -1009,6 +1237,58 @@ export default function AccountsPage() {
                 onChange={(e) => setInitialBalance(e.target.value)}
               />
             </div>
+
+            {/* 新建账户时显示资产信息输入 */}
+            {!editingAccount && (
+              <>
+                <div className="border-t pt-4 mt-4">
+                  <h4 className="font-medium mb-3">初始资产（必填）</h4>
+                  <div className="space-y-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="newAssetName">资产名称</Label>
+                      <Input
+                        id="newAssetName"
+                        placeholder="如：现金、余额宝、定期存款"
+                        value={newAssetName}
+                        onChange={(e) => setNewAssetName(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="newAssetType">资产类型</Label>
+                      <Select value={newAssetType} onValueChange={setNewAssetType}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="选择资产类型" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(ASSET_TYPE_CONFIG).map(([value, config]) => {
+                            const Icon = config.icon
+                            return (
+                              <SelectItem key={value} value={value}>
+                                <span className="flex items-center gap-2">
+                                  <Icon className="h-4 w-4" />
+                                  {config.label}
+                                </span>
+                              </SelectItem>
+                            )
+                          })}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="newAssetAmount">资产金额</Label>
+                      <Input
+                        id="newAssetAmount"
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        value={newAssetAmount}
+                        onChange={(e) => setNewAssetAmount(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
