@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useMemo } from "react"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
+import { useAuth } from "@/lib/auth-context"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
@@ -76,6 +77,7 @@ const formatDateTime = (dateStr: string) => {
 }
 
 export default function ExportPage() {
+  const { user } = useAuth()
   const [snapshots, setSnapshots] = useState<DailySnapshot[]>([])
   const [accounts, setAccounts] = useState<(Account & { assets: Asset[]; totalAmount: number })[]>([])
   const [records, setRecords] = useState<Record[]>([])
@@ -90,16 +92,25 @@ export default function ExportPage() {
   const accountPreviewRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    fetchData()
-  }, [])
+    if (user) {
+      fetchData()
+    }
+  }, [user])
 
   const fetchData = async () => {
     try {
+      const headers = user?.id ? { 'Authorization': `Bearer ${user.id}` } : undefined
       const [snapshotsRes, accountsRes, recordsRes] = await Promise.all([
-        fetch("/api/daily-snapshots"),
-        fetch("/api/accounts"),
-        fetch("/api/records"),
+        fetch("/api/daily-snapshots", headers ? { headers } : {}),
+        fetch("/api/accounts", headers ? { headers } : {}),
+        fetch("/api/records", headers ? { headers } : {}),
       ])
+
+      // 检查响应状态
+      if (!snapshotsRes.ok) throw new Error(`Snapshots API error: ${snapshotsRes.status}`)
+      if (!accountsRes.ok) throw new Error(`Accounts API error: ${accountsRes.status}`)
+      if (!recordsRes.ok) throw new Error(`Records API error: ${recordsRes.status}`)
+
       const snapshotsData = await snapshotsRes.json()
       const accountsData = await accountsRes.json()
       const recordsData = await recordsRes.json()
@@ -386,7 +397,7 @@ export default function ExportPage() {
                   <CardDescription>选择要导出的快照和导出格式</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="grid grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                     <div className="space-y-2">
                       <Label>选择快照</Label>
                       <Select value={selectedSnapshot} onValueChange={setSelectedSnapshot}>
@@ -408,25 +419,25 @@ export default function ExportPage() {
                       <RadioGroup
                         value={snapshotFormat}
                         onValueChange={(v) => setSnapshotFormat(v as ExportFormat)}
-                        className="flex gap-4"
+                        className="flex flex-wrap gap-3 sm:gap-4"
                       >
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="xlsx" id="snapshot-xlsx" />
-                          <Label htmlFor="snapshot-xlsx" className="flex items-center gap-1 cursor-pointer">
+                          <Label htmlFor="snapshot-xlsx" className="flex items-center gap-1 cursor-pointer text-sm">
                             <FileXlsIcon className="h-4 w-4 text-green-600" />
                             Excel
                           </Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="pdf" id="snapshot-pdf" />
-                          <Label htmlFor="snapshot-pdf" className="flex items-center gap-1 cursor-pointer">
+                          <Label htmlFor="snapshot-pdf" className="flex items-center gap-1 cursor-pointer text-sm">
                             <FilePdfIcon className="h-4 w-4 text-red-600" />
                             PDF
                           </Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="jpg" id="snapshot-jpg" />
-                          <Label htmlFor="snapshot-jpg" className="flex items-center gap-1 cursor-pointer">
+                          <Label htmlFor="snapshot-jpg" className="flex items-center gap-1 cursor-pointer text-sm">
                             <ImageIcon className="h-4 w-4 text-blue-600" />
                             图片
                           </Label>
@@ -447,11 +458,11 @@ export default function ExportPage() {
                   <Label>预览</Label>
                   <div
                     ref={snapshotPreviewRef}
-                    style={{ width: "100%", maxWidth: "800px", margin: "0 auto", backgroundColor: "#ffffff", padding: "24px", borderRadius: "8px", border: "1px solid #e5e7eb" }}
+                    className="w-full max-w-[800px] mx-auto bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700"
                   >
-                    <div style={{ textAlign: "center", marginBottom: "24px" }}>
-                      <h2 style={{ fontSize: "24px", fontWeight: "bold", color: "#1f2937" }}>资产快照报告</h2>
-                      <p style={{ color: "#6b7280", marginTop: "4px" }}>
+                    <div className="text-center mb-6">
+                      <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">资产快照报告</h2>
+                      <p className="text-slate-500 dark:text-slate-400 mt-1">
                         生成时间：{new Date().toLocaleString("zh-CN")}
                       </p>
                     </div>
@@ -459,11 +470,11 @@ export default function ExportPage() {
                     {snapshotGroups
                       .filter((g) => selectedSnapshot === "all" || g.snapshotAt === selectedSnapshot)
                       .map((group) => (
-                        <div key={group.snapshotAt} style={{ marginBottom: "24px" }}>
-                          <div style={{ background: "linear-gradient(to right, #3b82f6, #8b5cf6)", color: "#ffffff", padding: "12px", borderRadius: "8px 8px 0 0" }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                              <span style={{ fontWeight: "600" }}>{formatDateTime(group.snapshotAt)}</span>
-                              <span style={{ fontSize: "18px", fontWeight: "bold" }}>
+                        <div key={group.snapshotAt} className="mb-6">
+                          <div className="bg-gradient-to-r from-blue-500 to-purple-500 text-white p-3 rounded-t-lg">
+                            <div className="flex justify-between items-center">
+                              <span className="font-semibold">{formatDateTime(group.snapshotAt)}</span>
+                              <span className="text-lg font-bold">
                                 总计: {formatAmount(group.total)}
                               </span>
                             </div>
@@ -486,7 +497,7 @@ export default function ExportPage() {
                                 const isRecordAdjustment = !item.assetId && (item.account.assets?.length ?? 0) > 0
                                 const LogoComponent = getAccountLogo(item.account.name)
                                 return (
-                                  <ResponsiveTableRow key={item.id} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                                  <ResponsiveTableRow key={item.id} className={index % 2 === 0 ? "bg-white dark:bg-slate-800" : "bg-slate-50 dark:bg-slate-700/50"}>
                                     <ResponsiveTableCell mobileLabel="账户">
                                       <div className="flex items-center gap-2">
                                         {LogoComponent ? (
@@ -533,25 +544,25 @@ export default function ExportPage() {
                     <RadioGroup
                       value={accountFormat}
                       onValueChange={(v) => setAccountFormat(v as ExportFormat)}
-                      className="flex gap-4"
+                      className="flex flex-wrap gap-3 sm:gap-4"
                     >
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="xlsx" id="account-xlsx" />
-                        <Label htmlFor="account-xlsx" className="flex items-center gap-1 cursor-pointer">
+                        <Label htmlFor="account-xlsx" className="flex items-center gap-1 cursor-pointer text-sm">
                           <FileXlsIcon className="h-4 w-4 text-green-600" />
                           Excel
                         </Label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="pdf" id="account-pdf" />
-                        <Label htmlFor="account-pdf" className="flex items-center gap-1 cursor-pointer">
+                        <Label htmlFor="account-pdf" className="flex items-center gap-1 cursor-pointer text-sm">
                           <FilePdfIcon className="h-4 w-4 text-red-600" />
                           PDF
                         </Label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="jpg" id="account-jpg" />
-                        <Label htmlFor="account-jpg" className="flex items-center gap-1 cursor-pointer">
+                        <Label htmlFor="account-jpg" className="flex items-center gap-1 cursor-pointer text-sm">
                           <ImageIcon className="h-4 w-4 text-blue-600" />
                           图片
                         </Label>
@@ -571,20 +582,20 @@ export default function ExportPage() {
                   <Label>预览</Label>
                   <div
                     ref={accountPreviewRef}
-                    style={{ width: "100%", maxWidth: "800px", margin: "0 auto", backgroundColor: "#ffffff", padding: "24px", borderRadius: "8px", border: "1px solid #e5e7eb" }}
+                    className="w-full max-w-[800px] mx-auto bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700"
                   >
-                    <div style={{ textAlign: "center", marginBottom: "24px" }}>
-                      <h2 style={{ fontSize: "24px", fontWeight: "bold", color: "#1f2937" }}>账户明细报告</h2>
-                      <p style={{ color: "#6b7280", marginTop: "4px" }}>
+                    <div className="text-center mb-6">
+                      <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">账户明细报告</h2>
+                      <p className="text-slate-500 dark:text-slate-400 mt-1">
                         生成时间：{new Date().toLocaleString("zh-CN")}
                       </p>
                     </div>
 
-                    <div style={{ background: "linear-gradient(to right, #10b981, #14b8a6)", color: "#ffffff", padding: "16px", borderRadius: "8px", marginBottom: "24px" }}>
-                      <div style={{ textAlign: "center" }}>
-                        <p style={{ fontSize: "14px", opacity: "0.8" }}>总资产</p>
-                        <p style={{ fontSize: "30px", fontWeight: "bold" }}>{formatAmount(totalAssets)}</p>
-                        <p style={{ fontSize: "14px", opacity: "0.8", marginTop: "4px" }}>共 {accounts.length} 个账户</p>
+                    <div className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white p-4 rounded-lg mb-6">
+                      <div className="text-center">
+                        <p className="text-sm opacity-80">总资产</p>
+                        <p className="text-3xl font-bold">{formatAmount(totalAssets)}</p>
+                        <p className="text-sm opacity-80 mt-1">共 {accounts.length} 个账户</p>
                       </div>
                     </div>
 
@@ -609,7 +620,7 @@ export default function ExportPage() {
 
                           if (assets.length === 0) {
                             return (
-                              <ResponsiveTableRow key={account.id} className={accountIndex % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                              <ResponsiveTableRow key={account.id} className={accountIndex % 2 === 0 ? "bg-white dark:bg-slate-800" : "bg-slate-50 dark:bg-slate-700/50"}>
                                 <ResponsiveTableCell mobileLabel="账户">
                                   <div className="flex items-center gap-2">
                                     {LogoComponent ? (
@@ -642,7 +653,7 @@ export default function ExportPage() {
                             return (
                               <ResponsiveTableRow
                                 key={`${account.id}-${asset.id}`}
-                                className={accountIndex % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                                className={accountIndex % 2 === 0 ? "bg-white dark:bg-slate-800" : "bg-slate-50 dark:bg-slate-700/50"}
                               >
                                 {assetIndex === 0 && (
                                   <>
@@ -705,18 +716,18 @@ export default function ExportPage() {
                     <RadioGroup
                       value={recordFormat}
                       onValueChange={(v) => setRecordFormat(v as ExportFormat)}
-                      className="flex gap-4"
+                      className="flex flex-wrap gap-3 sm:gap-4"
                     >
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="xlsx" id="record-xlsx" />
-                        <Label htmlFor="record-xlsx" className="flex items-center gap-1 cursor-pointer">
+                        <Label htmlFor="record-xlsx" className="flex items-center gap-1 cursor-pointer text-sm">
                           <FileXlsIcon className="h-4 w-4 text-green-600" />
                           Excel
                         </Label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="pdf" id="record-pdf" />
-                        <Label htmlFor="record-pdf" className="flex items-center gap-1 cursor-pointer">
+                        <Label htmlFor="record-pdf" className="flex items-center gap-1 cursor-pointer text-sm">
                           <FilePdfIcon className="h-4 w-4 text-red-600" />
                           PDF
                         </Label>
@@ -736,27 +747,27 @@ export default function ExportPage() {
                   <Label>预览</Label>
                   <div
                     id="record-preview"
-                    style={{ width: "100%", maxWidth: "800px", margin: "0 auto", backgroundColor: "#ffffff", padding: "24px", borderRadius: "8px", border: "1px solid #e5e7eb" }}
+                    className="w-full max-w-[800px] mx-auto bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700"
                   >
-                    <div style={{ textAlign: "center", marginBottom: "24px" }}>
-                      <h2 style={{ fontSize: "24px", fontWeight: "bold", color: "#1f2937" }}>收支记录报告</h2>
-                      <p style={{ color: "#6b7280", marginTop: "4px" }}>
+                    <div className="text-center mb-6">
+                      <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">收支记录报告</h2>
+                      <p className="text-slate-500 dark:text-slate-400 mt-1">
                         生成时间：{new Date().toLocaleString("zh-CN")}
                       </p>
                     </div>
 
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "24px" }}>
-                      <div style={{ backgroundColor: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "8px", padding: "16px", textAlign: "center" }}>
-                        <p style={{ fontSize: "14px", color: "#16a34a" }}>总收入</p>
-                        <p style={{ fontSize: "24px", fontWeight: "bold", color: "#16a34a" }}>{formatAmount(incomeTotal)}</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4 text-center">
+                        <p className="text-sm text-green-600 mb-1">总收入</p>
+                        <p className="text-xl sm:text-2xl font-bold text-green-600">{formatAmount(incomeTotal)}</p>
                       </div>
-                      <div style={{ backgroundColor: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", padding: "16px", textAlign: "center" }}>
-                        <p style={{ fontSize: "14px", color: "#dc2626" }}>总支出</p>
-                        <p style={{ fontSize: "24px", fontWeight: "bold", color: "#dc2626" }}>{formatAmount(Math.abs(expenseTotal))}</p>
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 text-center">
+                        <p className="text-sm text-red-600 mb-1">总支出</p>
+                        <p className="text-xl sm:text-2xl font-bold text-red-600">{formatAmount(Math.abs(expenseTotal))}</p>
                       </div>
-                      <div style={{ backgroundColor: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: "8px", padding: "16px", textAlign: "center" }}>
-                        <p style={{ fontSize: "14px", color: "#2563eb" }}>净收入</p>
-                        <p style={{ fontSize: "24px", fontWeight: "bold", color: "#2563eb" }}>
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 text-center">
+                        <p className="text-sm text-blue-600 mb-1">净收入</p>
+                        <p className="text-xl sm:text-2xl font-bold text-blue-600">
                           {formatAmount(incomeTotal + expenseTotal)}
                         </p>
                       </div>
@@ -777,7 +788,7 @@ export default function ExportPage() {
                           const nameColor = getAccountNameColor(record.account.name)
                           const LogoComponent = getAccountLogo(record.account.name)
                           return (
-                            <ResponsiveTableRow key={record.id} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                            <ResponsiveTableRow key={record.id} className={index % 2 === 0 ? "bg-white dark:bg-slate-800" : "bg-slate-50 dark:bg-slate-700/50"}>
                               <ResponsiveTableCell mobileLabel="日期">
                                 {new Date(record.date).toLocaleDateString("zh-CN")}
                               </ResponsiveTableCell>
