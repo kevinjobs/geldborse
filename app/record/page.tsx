@@ -227,56 +227,107 @@ export default function RecordsPage() {
                           暂无收支记录
                         </p>
                       ) : (
-                        <ResponsiveTable>
-                          <thead>
-                            <ResponsiveTableRow>
-                              <ResponsiveTableHeader>日期</ResponsiveTableHeader>
-                              <ResponsiveTableHeader>账户</ResponsiveTableHeader>
-                              <ResponsiveTableHeader>类型</ResponsiveTableHeader>
-                              <ResponsiveTableHeader className="text-right">金额</ResponsiveTableHeader>
-                              <ResponsiveTableHeader className="text-right">操作</ResponsiveTableHeader>
-                            </ResponsiveTableRow>
-                          </thead>
-                          <ResponsiveTableBody>
+                        <>
+                          {/* 桌面端表格视图 */}
+                          <div className="hidden md:block">
+                            <ResponsiveTable>
+                              <thead>
+                                <ResponsiveTableRow>
+                                  <ResponsiveTableHeader>日期</ResponsiveTableHeader>
+                                  <ResponsiveTableHeader>账户</ResponsiveTableHeader>
+                                  <ResponsiveTableHeader>类型</ResponsiveTableHeader>
+                                  <ResponsiveTableHeader className="text-right">金额</ResponsiveTableHeader>
+                                  <ResponsiveTableHeader className="text-right">操作</ResponsiveTableHeader>
+                                </ResponsiveTableRow>
+                              </thead>
+                              <ResponsiveTableBody>
+                                {sortedRecords.map((record) => {
+                                  const nameColor = getAccountNameColor(record.account.name)
+                                  return (
+                                    <ResponsiveTableRow key={record.id} className={`${nameColor.bgColor} dark:${nameColor.darkBgColor}`}>
+                                      <ResponsiveTableCell mobileLabel="日期">{formatDate(record.date)}</ResponsiveTableCell>
+                                      <ResponsiveTableCell mobileLabel="账户">
+                                        <AccountDisplay name={record.account.name} type={record.account.type} variant="compact" />
+                                      </ResponsiveTableCell>
+                                      <ResponsiveTableCell mobileLabel="类型">
+                                        <Badge variant={record.type === "INCOME" ? "default" : "secondary"}>
+                                          {record.type === "INCOME" ? "收入" : "支出"}
+                                        </Badge>
+                                      </ResponsiveTableCell>
+                                      <ResponsiveTableCell mobileLabel="金额" className={`text-right font-medium ${record.amount >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
+                                        {formatAmount(record.amount)}
+                                      </ResponsiveTableCell>
+                                      <ResponsiveTableCell mobileLabel="操作" className="text-right">
+                                        <div className="flex flex-col sm:flex-row gap-1 justify-end">
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => handleEdit(record)}
+                                          >
+                                            编辑
+                                          </Button>
+                                          <Button
+                                            variant="destructive"
+                                            size="sm"
+                                            onClick={() => handleDelete(record)}
+                                          >
+                                            删除
+                                          </Button>
+                                        </div>
+                                      </ResponsiveTableCell>
+                                    </ResponsiveTableRow>
+                                  )
+                                })}
+                              </ResponsiveTableBody>
+                            </ResponsiveTable>
+                          </div>
+                          {/* 移动端卡片视图 */}
+                          <div className="md:hidden space-y-3">
                             {sortedRecords.map((record) => {
                               const nameColor = getAccountNameColor(record.account.name)
+                              // 检测当前是否为深色模式
+                              const isDarkMode = typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
+                              // 根据主题选择背景颜色
+                              const bgColor = isDarkMode ? nameColor.darkBgColor : nameColor.bgColor
+                              // 根据主题选择边框颜色
+                              const borderColor = isDarkMode ? nameColor.darkBorderColor : nameColor.borderColor
                               return (
-                                <ResponsiveTableRow key={record.id} className={`${nameColor.bgColor} dark:${nameColor.darkBgColor}`}>
-                                  <ResponsiveTableCell mobileLabel="日期">{formatDate(record.date)}</ResponsiveTableCell>
-                                  <ResponsiveTableCell mobileLabel="账户">
-                                    <AccountDisplay name={record.account.name} type={record.account.type} variant="compact" />
-                                  </ResponsiveTableCell>
-                                  <ResponsiveTableCell mobileLabel="类型">
-                                    <Badge variant={record.type === "INCOME" ? "default" : "secondary"}>
-                                      {record.type === "INCOME" ? "收入" : "支出"}
-                                    </Badge>
-                                  </ResponsiveTableCell>
-                                  <ResponsiveTableCell mobileLabel="金额" className={`text-right font-medium ${record.amount >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
-                                    {formatAmount(record.amount)}
-                                  </ResponsiveTableCell>
-                                  <ResponsiveTableCell mobileLabel="操作" className="text-right">
-                                    <div className="flex flex-col sm:flex-row gap-1 justify-end">
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => handleEdit(record)}
-                                      >
-                                        编辑
-                                      </Button>
-                                      <Button
-                                        variant="destructive"
-                                        size="sm"
-                                        onClick={() => handleDelete(record)}
-                                      >
-                                        删除
-                                      </Button>
+                                <div key={record.id} className={`rounded-lg p-4 ${bgColor} ${borderColor} border shadow-sm`}>
+                                  <div className="flex justify-between items-start mb-3">
+                                    <div>
+                                      <div className="text-sm text-muted-foreground">{formatDate(record.date)}</div>
+                                      <div className="flex items-center gap-2 mt-1">
+                                        <AccountDisplay name={record.account.name} type={record.account.type} variant="compact" />
+                                        <Badge variant={record.type === "INCOME" ? "default" : "secondary"}>
+                                          {record.type === "INCOME" ? "收入" : "支出"}
+                                        </Badge>
+                                      </div>
                                     </div>
-                                  </ResponsiveTableCell>
-                                </ResponsiveTableRow>
+                                    <div className={`text-lg font-medium ${record.amount >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
+                                      {formatAmount(record.amount)}
+                                    </div>
+                                  </div>
+                                  <div className="flex gap-2 justify-end">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleEdit(record)}
+                                    >
+                                      编辑
+                                    </Button>
+                                    <Button
+                                      variant="destructive"
+                                      size="sm"
+                                      onClick={() => handleDelete(record)}
+                                    >
+                                      删除
+                                    </Button>
+                                  </div>
+                                </div>
                               )
                             })}
-                          </ResponsiveTableBody>
-                        </ResponsiveTable>
+                          </div>
+                        </>
                       )}
                     </CardContent>
                   </Card>

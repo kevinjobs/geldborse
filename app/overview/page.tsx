@@ -385,7 +385,11 @@ function OverviewPageContent() {
                             const nameColor = getAccountNameColor(account.name)
                             const isExpanded = expandedAccounts.has(account.id)
                             const hasAssets = accountAssets.length > 0
-                            const rowClassName = nameColor.bgColor + ' ' + nameColor.darkBgColor + ' ' + (hasAssets ? "cursor-pointer hover:brightness-95 transition-all" : "")
+                            // 检测当前是否为深色模式
+                            const isDarkMode = typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
+                            // 根据主题选择背景颜色
+                            const bgColor = isDarkMode ? nameColor.darkBgColor : nameColor.bgColor
+                            const rowClassName = bgColor + ' ' + (hasAssets ? "cursor-pointer hover:brightness-95 transition-all" : "")
                             return (
                               <Fragment key={account.id}>
                                 <ResponsiveTableRow

@@ -22,176 +22,176 @@ export const ACCOUNT_NAME_COLORS: Record<string, { color: string; bgColor: strin
     color: "text-blue-500",
     bgColor: "bg-blue-50",
     borderColor: "border-l-blue-400",
-    darkColor: "text-blue-400",
-    darkBgColor: "bg-blue-900/20",
+    darkColor: "text-blue-300",
+    darkBgColor: "bg-blue-900/40",
     darkBorderColor: "border-l-blue-700"
   },
   "微信": {
     color: "text-green-500",
     bgColor: "bg-green-50",
     borderColor: "border-l-green-400",
-    darkColor: "text-green-400",
-    darkBgColor: "bg-green-900/20",
+    darkColor: "text-green-300",
+    darkBgColor: "bg-green-900/40",
     darkBorderColor: "border-l-green-700"
   },
   "微信支付": {
     color: "text-green-500",
     bgColor: "bg-green-50",
     borderColor: "border-l-green-400",
-    darkColor: "text-green-400",
-    darkBgColor: "bg-green-900/20",
+    darkColor: "text-green-300",
+    darkBgColor: "bg-green-900/40",
     darkBorderColor: "border-l-green-700"
   },
   "中信银行": {
     color: "text-red-600",
     bgColor: "bg-red-50",
     borderColor: "border-l-red-400",
-    darkColor: "text-red-400",
-    darkBgColor: "bg-red-900/20",
+    darkColor: "text-red-300",
+    darkBgColor: "bg-red-900/40",
     darkBorderColor: "border-l-red-700"
   },
   "招商银行": {
     color: "text-red-500",
     bgColor: "bg-red-50",
     borderColor: "border-l-red-400",
-    darkColor: "text-red-400",
-    darkBgColor: "bg-red-900/20",
+    darkColor: "text-red-300",
+    darkBgColor: "bg-red-900/40",
     darkBorderColor: "border-l-red-700"
   },
   "工商银行": {
     color: "text-red-600",
     bgColor: "bg-red-50",
     borderColor: "border-l-red-400",
-    darkColor: "text-red-400",
-    darkBgColor: "bg-red-900/20",
+    darkColor: "text-red-300",
+    darkBgColor: "bg-red-900/40",
     darkBorderColor: "border-l-red-700"
   },
   "建设银行": {
     color: "text-blue-600",
     bgColor: "bg-blue-50",
     borderColor: "border-l-blue-400",
-    darkColor: "text-blue-400",
-    darkBgColor: "bg-blue-900/20",
+    darkColor: "text-blue-300",
+    darkBgColor: "bg-blue-900/40",
     darkBorderColor: "border-l-blue-700"
   },
   "农业银行": {
     color: "text-green-600",
     bgColor: "bg-green-50",
     borderColor: "border-l-green-400",
-    darkColor: "text-green-400",
-    darkBgColor: "bg-green-900/20",
+    darkColor: "text-green-300",
+    darkBgColor: "bg-green-900/40",
     darkBorderColor: "border-l-green-700"
   },
   "中国银行": {
     color: "text-red-500",
     bgColor: "bg-red-50",
     borderColor: "border-l-red-400",
-    darkColor: "text-red-400",
-    darkBgColor: "bg-red-900/20",
+    darkColor: "text-red-300",
+    darkBgColor: "bg-red-900/40",
     darkBorderColor: "border-l-red-700"
   },
   "交通银行": {
     color: "text-blue-500",
     bgColor: "bg-blue-50",
     borderColor: "border-l-blue-400",
-    darkColor: "text-blue-400",
-    darkBgColor: "bg-blue-900/20",
+    darkColor: "text-blue-300",
+    darkBgColor: "bg-blue-900/40",
     darkBorderColor: "border-l-blue-700"
   },
   "浦发银行": {
     color: "text-blue-500",
     bgColor: "bg-blue-50",
     borderColor: "border-l-blue-400",
-    darkColor: "text-blue-400",
-    darkBgColor: "bg-blue-900/20",
+    darkColor: "text-blue-300",
+    darkBgColor: "bg-blue-900/40",
     darkBorderColor: "border-l-blue-700"
   },
   "民生银行": {
     color: "text-teal-500",
     bgColor: "bg-teal-50",
     borderColor: "border-l-teal-400",
-    darkColor: "text-teal-400",
-    darkBgColor: "bg-teal-900/20",
+    darkColor: "text-teal-300",
+    darkBgColor: "bg-teal-900/40",
     darkBorderColor: "border-l-teal-700"
   },
   "光大银行": {
     color: "text-purple-500",
     bgColor: "bg-purple-50",
     borderColor: "border-l-purple-400",
-    darkColor: "text-purple-400",
-    darkBgColor: "bg-purple-900/20",
+    darkColor: "text-purple-300",
+    darkBgColor: "bg-purple-900/40",
     darkBorderColor: "border-l-purple-700"
   },
   "平安银行": {
     color: "text-orange-500",
     bgColor: "bg-orange-50",
     borderColor: "border-l-orange-400",
-    darkColor: "text-orange-400",
-    darkBgColor: "bg-orange-900/20",
+    darkColor: "text-orange-300",
+    darkBgColor: "bg-orange-900/40",
     darkBorderColor: "border-l-orange-700"
   },
   "兴业银行": {
     color: "text-blue-500",
     bgColor: "bg-blue-50",
     borderColor: "border-l-blue-400",
-    darkColor: "text-blue-400",
-    darkBgColor: "bg-blue-900/20",
+    darkColor: "text-blue-300",
+    darkBgColor: "bg-blue-900/40",
     darkBorderColor: "border-l-blue-700"
   },
   "华夏银行": {
     color: "text-red-500",
     bgColor: "bg-red-50",
     borderColor: "border-l-red-400",
-    darkColor: "text-red-400",
-    darkBgColor: "bg-red-900/20",
+    darkColor: "text-red-300",
+    darkBgColor: "bg-red-900/40",
     darkBorderColor: "border-l-red-700"
   },
   "广发银行": {
     color: "text-red-500",
     bgColor: "bg-red-50",
     borderColor: "border-l-red-400",
-    darkColor: "text-red-400",
-    darkBgColor: "bg-red-900/20",
+    darkColor: "text-red-300",
+    darkBgColor: "bg-red-900/40",
     darkBorderColor: "border-l-red-700"
   },
   "邮储银行": {
     color: "text-green-600",
     bgColor: "bg-green-50",
     borderColor: "border-l-green-400",
-    darkColor: "text-green-400",
-    darkBgColor: "bg-green-900/20",
+    darkColor: "text-green-300",
+    darkBgColor: "bg-green-900/40",
     darkBorderColor: "border-l-green-700"
   },
   "京东": {
     color: "text-red-500",
     bgColor: "bg-red-50",
     borderColor: "border-l-red-400",
-    darkColor: "text-red-400",
-    darkBgColor: "bg-red-900/20",
+    darkColor: "text-red-300",
+    darkBgColor: "bg-red-900/40",
     darkBorderColor: "border-l-red-700"
   },
   "京东金融": {
     color: "text-red-500",
     bgColor: "bg-red-50",
     borderColor: "border-l-red-400",
-    darkColor: "text-red-400",
-    darkBgColor: "bg-red-900/20",
+    darkColor: "text-red-300",
+    darkBgColor: "bg-red-900/40",
     darkBorderColor: "border-l-red-700"
   },
   "云闪付": {
     color: "text-red-500",
     bgColor: "bg-red-50",
     borderColor: "border-l-red-400",
-    darkColor: "text-red-400",
-    darkBgColor: "bg-red-900/20",
+    darkColor: "text-red-300",
+    darkBgColor: "bg-red-900/40",
     darkBorderColor: "border-l-red-700"
   },
   "数字人民币": {
     color: "text-amber-500",
     bgColor: "bg-amber-50",
     borderColor: "border-l-amber-400",
-    darkColor: "text-amber-400",
-    darkBgColor: "bg-amber-900/20",
+    darkColor: "text-amber-300",
+    darkBgColor: "bg-amber-900/40",
     darkBorderColor: "border-l-amber-700"
   },
 }
@@ -201,64 +201,64 @@ const FALLBACK_COLORS = [
     color: "text-blue-500",
     bgColor: "bg-blue-50",
     borderColor: "border-l-blue-400",
-    darkColor: "text-blue-400",
-    darkBgColor: "bg-blue-900/20",
+    darkColor: "text-blue-300",
+    darkBgColor: "bg-blue-900/40",
     darkBorderColor: "border-l-blue-700"
   },
   {
     color: "text-green-500",
     bgColor: "bg-green-50",
     borderColor: "border-l-green-400",
-    darkColor: "text-green-400",
-    darkBgColor: "bg-green-900/20",
+    darkColor: "text-green-300",
+    darkBgColor: "bg-green-900/40",
     darkBorderColor: "border-l-green-700"
   },
   {
     color: "text-purple-500",
     bgColor: "bg-purple-50",
     borderColor: "border-l-purple-400",
-    darkColor: "text-purple-400",
-    darkBgColor: "bg-purple-900/20",
+    darkColor: "text-purple-300",
+    darkBgColor: "bg-purple-900/40",
     darkBorderColor: "border-l-purple-700"
   },
   {
     color: "text-orange-500",
     bgColor: "bg-orange-50",
     borderColor: "border-l-orange-400",
-    darkColor: "text-orange-400",
-    darkBgColor: "bg-orange-900/20",
+    darkColor: "text-orange-300",
+    darkBgColor: "bg-orange-900/40",
     darkBorderColor: "border-l-orange-700"
   },
   {
     color: "text-pink-500",
     bgColor: "bg-pink-50",
     borderColor: "border-l-pink-400",
-    darkColor: "text-pink-400",
-    darkBgColor: "bg-pink-900/20",
+    darkColor: "text-pink-300",
+    darkBgColor: "bg-pink-900/40",
     darkBorderColor: "border-l-pink-700"
   },
   {
     color: "text-teal-500",
     bgColor: "bg-teal-50",
     borderColor: "border-l-teal-400",
-    darkColor: "text-teal-400",
-    darkBgColor: "bg-teal-900/20",
+    darkColor: "text-teal-300",
+    darkBgColor: "bg-teal-900/40",
     darkBorderColor: "border-l-teal-700"
   },
   {
     color: "text-indigo-500",
     bgColor: "bg-indigo-50",
     borderColor: "border-l-indigo-400",
-    darkColor: "text-indigo-400",
-    darkBgColor: "bg-indigo-900/20",
+    darkColor: "text-indigo-300",
+    darkBgColor: "bg-indigo-900/40",
     darkBorderColor: "border-l-indigo-700"
   },
   {
     color: "text-cyan-500",
     bgColor: "bg-cyan-50",
     borderColor: "border-l-cyan-400",
-    darkColor: "text-cyan-400",
-    darkBgColor: "bg-cyan-900/20",
+    darkColor: "text-cyan-300",
+    darkBgColor: "bg-cyan-900/40",
     darkBorderColor: "border-l-cyan-700"
   },
 ]

@@ -692,10 +692,14 @@ export default function AccountsPage() {
                               const accountAssetList = accountAssets[account.id] || []
                               const totalAmount = (account as { totalAmount?: number }).totalAmount || 0
                               const isNegative = totalAmount < 0
+                              // 检测当前是否为深色模式
+                              const isDarkMode = typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
+                              // 根据主题选择背景颜色
+                              const bgColor = isDarkMode ? nameColor.darkBgColor : nameColor.bgColor
                               return (
                                 <Fragment key={account.id}>
                                   <ResponsiveTableRow
-                                    className={`${nameColor.bgColor} dark:${nameColor.darkBgColor} ${hasAssets ? "cursor-pointer hover:brightness-95 transition-all" : ""}`}
+                                    className={`${bgColor} ${hasAssets ? "cursor-pointer hover:brightness-95 transition-all" : ""}`}
                                     onClick={() => hasAssets && toggleAccountExpand(account.id)}
                                   >
                                     <ResponsiveTableCell mobileLabel="名称" className="py-3">
