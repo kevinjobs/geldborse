@@ -88,13 +88,28 @@ model DailySnapshot {
 }
 
 model User {
-  id        String    @id @default(cuid())
-  email     String    @unique
+  id        String        @id @default(cuid())
+  email     String        @unique
   password  String
   name      String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
   accounts  Account[]
+  loginHistories LoginHistory[]
 
   @@index([email])
+}
+
+model LoginHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  ip        String
+  userAgent String
+  deviceInfo String
+  loginAt   DateTime @default(now())
+  isCurrent Boolean  @default(false)
+
+  @@index([userId])
+  @@index([loginAt])
 }
