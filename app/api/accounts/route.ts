@@ -40,12 +40,13 @@ export async function GET(request: NextRequest) {
           totalAmount += asset.amount || 0
         }
       }
-      const recordsTotal = account.records.reduce((sum, r) => sum + r.amount, 0)
-      totalAmount += recordsTotal
     } else {
-      const recordsTotal = account.records.reduce((sum, r) => sum + r.amount, 0)
-      totalAmount = account.initialBalance + recordsTotal
+      totalAmount = account.initialBalance
     }
+
+    // 计算所有收支记录的总和
+    const recordsTotal = account.records.reduce((sum, r) => sum + r.amount, 0)
+    totalAmount += recordsTotal
 
     return {
       ...account,
