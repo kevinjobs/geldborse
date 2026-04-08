@@ -421,12 +421,12 @@ export default function SnapshotsPage() {
               <div className="px-4 lg:px-6">
                 <Card>
                   <CardHeader>
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                       <div>
                         <CardTitle>资产快照记录</CardTitle>
                         <CardDescription>查看每次快照的账户资产记录</CardDescription>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Button
                           onClick={generateSnapshot}
                           disabled={generating}
@@ -437,7 +437,7 @@ export default function SnapshotsPage() {
                           {generating ? "生成中..." : "生成快照"}
                         </Button>
                         <Select value={selectedDate} onValueChange={setSelectedDate}>
-                          <SelectTrigger className="w-[180px]">
+                          <SelectTrigger className="w-[140px] sm:w-[180px]">
                             <SelectValue placeholder="选择日期" />
                           </SelectTrigger>
                           <SelectContent>
@@ -462,7 +462,7 @@ export default function SnapshotsPage() {
                           return (
                             <div key={group.snapshotAt} className="border rounded-lg overflow-hidden">
                               <div
-                                className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                                className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 bg-slate-50 dark:bg-slate-800 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors gap-2 sm:gap-0"
                                 onClick={() => toggleSnapshotExpand(group.snapshotAt)}
                               >
                                 <div className="flex items-center gap-2">
@@ -473,8 +473,8 @@ export default function SnapshotsPage() {
                                   )}
                                   <h3 className="font-semibold">{formatDateTime(group.snapshotAt)}</h3>
                                 </div>
-                                <div className="flex items-center gap-4">
-                                  <div className="text-lg font-bold">
+                                <div className="flex items-center justify-between sm:justify-end gap-4 pl-6 sm:pl-0">
+                                  <div className="text-base sm:text-lg font-bold">
                                     总计: <span className={group.total >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}>{formatAmount(group.total)}</span>
                                   </div>
                                   <Button
