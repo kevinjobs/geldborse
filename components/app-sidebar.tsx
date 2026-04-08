@@ -14,41 +14,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { EyeIcon, PlusIcon, WalletIcon, ListIcon, CameraIcon, DownloadSimpleIcon } from "@phosphor-icons/react"
 import { useAuth } from "@/lib/auth-context"
-
-const navMain = [
-  {
-    title: "总览",
-    url: "/overview",
-    icon: <EyeIcon />,
-  },
-  {
-    title: "添加收支",
-    url: "/record/add",
-    icon: <PlusIcon />,
-  },
-  {
-    title: "收支",
-    url: "/record",
-    icon: <ListIcon />,
-  },
-  {
-    title: "账户",
-    url: "/accounts",
-    icon: <WalletIcon />,
-  },
-  {
-    title: "快照",
-    url: "/snapshots",
-    icon: <CameraIcon />,
-  },
-  {
-    title: "导出",
-    url: "/export",
-    icon: <DownloadSimpleIcon />,
-  },
-]
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useAuth()
@@ -83,7 +49,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={navMain} />
+        <NavMain />
       </SidebarContent>
       <SidebarFooter>
         <NavUser />
