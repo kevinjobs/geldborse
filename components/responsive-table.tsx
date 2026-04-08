@@ -33,7 +33,7 @@ function ResponsiveTable({ className, ...props }: ResponsiveTableProps) {
     >
       <table
         data-slot="table"
-        className={cn("w-full caption-bottom text-xs md:table", className)}
+        className={cn("w-full caption-bottom text-xs", className)}
         {...props}
       />
     </div>
@@ -65,7 +65,7 @@ function ResponsiveTableBody({ className, ...props }: React.ComponentProps<"tbod
 
 function ResponsiveTableRow({ className, children, ...props }: ResponsiveTableRowProps) {
   const rowClassName = cn(
-    "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted md:table-row block md:table-row-group",
+    "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
     className
   )
   return (
@@ -89,7 +89,7 @@ function ResponsiveTableCell({ className, children, mobileLabel, ...props }: Res
     <td
       data-slot="table-cell"
       className={cn(
-        "p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 md:table-cell block",
+        "p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0",
         className
       )}
       {...props}
