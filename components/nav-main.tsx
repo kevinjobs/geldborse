@@ -64,9 +64,9 @@ export function NavMain() {
               <SidebarMenuButton 
                 asChild 
                 tooltip={item.title} 
-                className={buttonClass}
+                className={`${buttonClass} animate-transition-all`}
               >
-                <Link href={item.url}>
+                <Link href={item.url} className="w-full h-full flex items-center gap-2 animate-transition-colors">
                   <NavIcon iconKey={item.iconKey} mounted={mounted} />
                   <span>{item.title}</span>
                 </Link>

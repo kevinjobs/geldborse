@@ -764,13 +764,13 @@ export default function AccountsPage() {
                           </thead>
                           <ResponsiveTableBody>
                             {accounts.length === 0 ? (
-                              <ResponsiveTableRow>
+                              <ResponsiveTableRow className="animate-fade-in">
                                 <ResponsiveTableCell colSpan={8} className="text-center text-muted-foreground">
                                   暂无账户
                                 </ResponsiveTableCell>
                               </ResponsiveTableRow>
                             ) : (
-                              accounts.map((account) => {
+                              accounts.map((account, index) => {
                                 const nameColor = getAccountNameColor(account.name)
                                 const isExpanded = expandedAccounts.has(account.id)
                                 const hasAssets = (account._count?.assets || 0) > 0
@@ -786,7 +786,8 @@ export default function AccountsPage() {
                                 return (
                                   <Fragment key={account.id}>
                                     <ResponsiveTableRow
-                                      className={`${bgColor} ${hasAssets ? "cursor-pointer hover:brightness-95 transition-all" : ""}`}
+                                      className={`${bgColor} ${hasAssets ? "cursor-pointer hover:brightness-95 transition-all" : ""} animate-fade-in animate-hover-lift`}
+                                      style={{ animationDelay: `${index * 0.1}s` }}
                                       onClick={() => hasAssets && toggleAccountExpand(account.id)}
                                     >
                                       <ResponsiveTableCell mobileLabel="名称" className="py-3">
@@ -821,7 +822,7 @@ export default function AccountsPage() {
                                           <Button
                                             variant="outline"
                                             size="sm"
-                                            className="text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-700 dark:hover:text-blue-300"
+                                            className="text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-700 dark:hover:text-blue-300 animate-transition-all"
                                             onClick={() => {
                                               setSelectedAccount(account)
                                               handleAddAsset()
@@ -833,6 +834,7 @@ export default function AccountsPage() {
                                           <Button
                                             variant="outline"
                                             size="sm"
+                                            className="animate-transition-all"
                                             onClick={() => handleEdit(account)}
                                           >
                                             <Pencil className="h-3.5 w-3.5 mr-1" />
@@ -841,6 +843,7 @@ export default function AccountsPage() {
                                           <Button
                                             variant="destructive"
                                             size="sm"
+                                            className="animate-transition-all"
                                             onClick={() => handleDelete(account)}
                                           >
                                             <Trash2 className="h-3.5 w-3.5 mr-1" />
@@ -858,7 +861,8 @@ export default function AccountsPage() {
                                       return (
                                         <Fragment key={asset.id}>
                                           <ResponsiveTableRow
-                                            className="bg-slate-50/50 dark:bg-slate-800/50 hover:bg-slate-100/50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
+                                            className="bg-slate-50/50 dark:bg-slate-800/50 hover:bg-slate-100/50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer animate-slide-in animate-hover-lift"
+                                            style={{ animationDelay: `${assetIndex * 0.05}s` }}
                                             onClick={() => toggleAssetExpand(asset.id)}
                                           >
                                             <ResponsiveTableCell mobileLabel="名称" className="relative py-3">
@@ -893,7 +897,7 @@ export default function AccountsPage() {
                                                 <Button
                                                   variant="ghost"
                                                   size="sm"
-                                                  className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                                                  className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 animate-transition-all"
                                                   onClick={() => {
                                                     setSelectedAccount(account)
                                                     setSelectedAsset(asset)
@@ -906,6 +910,7 @@ export default function AccountsPage() {
                                                 <Button
                                                   variant="outline"
                                                   size="sm"
+                                                  className="animate-transition-all"
                                                   onClick={() => handleEditAsset(asset)}
                                                 >
                                                   <Pencil className="h-3.5 w-3.5 mr-1" />
@@ -914,6 +919,7 @@ export default function AccountsPage() {
                                                 <Button
                                                   variant="destructive"
                                                   size="sm"
+                                                  className="animate-transition-all"
                                                   onClick={() => handleDeleteAsset(asset)}
                                                 >
                                                   <Trash2 className="h-3.5 w-3.5 mr-1" />
@@ -925,7 +931,7 @@ export default function AccountsPage() {
                                           {isAssetExpanded && assetBalanceList.map((balance, balanceIndex) => {
                                             const isLastBalance = balanceIndex === assetBalanceList.length - 1
                                             return (
-                                              <ResponsiveTableRow key={balance.id} className="bg-slate-100/50 dark:bg-slate-700/50 hover:bg-slate-200/50 dark:hover:bg-slate-600/50 transition-colors">
+                                              <ResponsiveTableRow key={balance.id} className="bg-slate-100/50 dark:bg-slate-700/50 hover:bg-slate-200/50 dark:hover:bg-slate-600/50 transition-colors animate-scale-in animate-hover-lift" style={{ animationDelay: `${balanceIndex * 0.03}s` }}>
                                                 <ResponsiveTableCell mobileLabel="时间" className="relative py-2">
                                                   {!isLastAsset && (
                                                     <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200 dark:bg-slate-700" />

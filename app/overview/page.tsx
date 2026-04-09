@@ -274,7 +274,7 @@ function OverviewPageContent() {
             <div className="@container/main flex flex-1 flex-col gap-2">
               <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
                 <div className="px-4 lg:px-6">
-                  <Card className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white">
+                  <Card className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white animate-fade-in animate-hover-lift">
                     <CardHeader className="pb-2">
                       <CardDescription className="text-white/80">我的总资产</CardDescription>
                       <CardTitle className="text-4xl font-bold">
@@ -291,13 +291,13 @@ function OverviewPageContent() {
 
                 <div className="px-4 lg:px-6">
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    {accounts.map((account) => {
+                    {accounts.map((account, index) => {
                       const { total, hasBalance, baseAmount } = getAccountTotal(account.id)
                       const accountAssets = getAssetsByAccount(account.id)
                       const nameColor = getAccountNameColor(account.name)
                       const cardClassName = "border-l-4 " + nameColor.borderColor + ' ' + nameColor.darkBorderColor + ' ' + nameColor.bgColor + ' ' + nameColor.darkBgColor
                       return (
-                        <Card key={account.id} className={cardClassName}>
+                        <Card key={account.id} className={`${cardClassName} animate-fade-in animate-hover-lift`} style={{ animationDelay: `${index * 0.1}s` }}>
                           <CardHeader className="pb-2">
                             <AccountDisplay name={account.name} type={account.type} variant="card" />
                             <CardTitle className="text-2xl">
@@ -319,7 +319,7 @@ function OverviewPageContent() {
                 </div>
 
                 <div className="px-4 lg:px-6">
-                  <Card>
+                  <Card className="animate-fade-in">
                     <CardHeader>
                       <CardTitle>最近收支</CardTitle>
                       <CardDescription>最近10条收支记录</CardDescription>
@@ -338,14 +338,14 @@ function OverviewPageContent() {
                           </thead>
                           <ResponsiveTableBody>
                             {latestRecords.length === 0 ? (
-                              <ResponsiveTableRow>
+                              <ResponsiveTableRow className="animate-fade-in">
                                 <ResponsiveTableCell colSpan={4} className="text-center text-muted-foreground">
                                   暂无收支记录
                                 </ResponsiveTableCell>
                               </ResponsiveTableRow>
                             ) : (
-                              latestRecords.map((record) => (
-                                <ResponsiveTableRow key={record.id}>
+                              latestRecords.map((record, index) => (
+                                <ResponsiveTableRow key={record.id} className="animate-fade-in animate-hover-lift" style={{ animationDelay: `${index * 0.05}s` }}>
                                   <ResponsiveTableCell mobileLabel="日期">{formatDate(record.date)}</ResponsiveTableCell>
                                   <ResponsiveTableCell mobileLabel="类型">
                                     <Badge variant={record.type === "INCOME" ? "default" : "destructive"}>
@@ -371,8 +371,8 @@ function OverviewPageContent() {
                             暂无收支记录
                           </div>
                         ) : (
-                          latestRecords.map((record) => (
-                            <div key={record.id} className="rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm p-4">
+                          latestRecords.map((record, index) => (
+                            <div key={record.id} className="rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm p-4 animate-fade-in animate-hover-lift" style={{ animationDelay: `${index * 0.05}s` }}>
                               <div className="flex justify-between items-start mb-2">
                                 <div className="flex items-center gap-2">
                                   <Badge variant={record.type === "INCOME" ? "default" : "destructive"}>
@@ -417,7 +417,7 @@ function OverviewPageContent() {
                             </ResponsiveTableRow>
                           </thead>
                           <ResponsiveTableBody>
-                            {accounts.map((account) => {
+                            {accounts.map((account, index) => {
                               const { total, hasBalance, baseAmount, recordsTotal } = getAccountTotal(account.id)
                               const accountAssets = getAssetsByAccount(account.id)
                               const nameColor = getAccountNameColor(account.name)
@@ -432,7 +432,8 @@ function OverviewPageContent() {
                               return (
                                 <Fragment key={account.id}>
                                   <ResponsiveTableRow
-                                    className={rowClassName}
+                                    className={`${rowClassName} animate-fade-in animate-hover-lift`}
+                                    style={{ animationDelay: `${index * 0.1}s` }}
                                     onClick={() => hasAssets && toggleAccountExpand(account.id)}
                                   >
                                     <ResponsiveTableCell mobileLabel="名称" className="py-3">
@@ -463,13 +464,13 @@ function OverviewPageContent() {
                                     <ResponsiveTableCell mobileLabel="收支数" className="text-center">{records.filter((r) => r.accountId === account.id).length}</ResponsiveTableCell>
                                     <ResponsiveTableCell mobileLabel="资产数" className="text-center">{accountAssets.length}</ResponsiveTableCell>
                                   </ResponsiveTableRow>
-                                  {isExpanded && accountAssets.map((asset, index) => {
+                                  {isExpanded && accountAssets.map((asset, assetIndex) => {
                                     const assetTotal = getAssetRealTimeTotal(asset.id)
                                     const assetTypeConfig = getAssetTypeConfig(asset.type)
                                     const AssetIcon = assetTypeConfig.icon
-                                    const isLast = index === accountAssets.length - 1
+                                    const isLast = assetIndex === accountAssets.length - 1
                                     return (
-                                      <ResponsiveTableRow key={asset.id} className="bg-slate-50/50 dark:bg-slate-800/50 hover:bg-slate-100/50 dark:hover:bg-slate-700/50 transition-colors">
+                                      <ResponsiveTableRow key={asset.id} className="bg-slate-50/50 dark:bg-slate-800/50 hover:bg-slate-100/50 dark:hover:bg-slate-700/50 transition-colors animate-slide-in animate-hover-lift" style={{ animationDelay: `${assetIndex * 0.05}s` }}>
                                         <ResponsiveTableCell mobileLabel="名称" className="relative py-3">
                                           {!isLast && (
                                             <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200 dark:bg-slate-700" />
