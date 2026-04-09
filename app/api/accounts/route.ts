@@ -30,27 +30,59 @@ export async function GET(request: NextRequest) {
   })
   const accountsWithTotal = accounts.map((account) => {
     let totalAmount = 0
+    let latestBalanceTime: Date | null = null
+    let recordsAfterBalanceTotal = 0
+    let latestSnapshotTotal = 0
 
     if (account.assets.length > 0) {
+      // 计算所有资产的最新余额总和，并找到最新的余额时间
       for (const asset of account.assets) {
         const latestBalance = asset.balances[0]
         if (latestBalance) {
+          latestSnapshotTotal += latestBalance.amount
           totalAmount += latestBalance.amount
+          const balanceTime = new Date(latestBalance.recordedAt)
+          if (!latestBalanceTime || balanceTime > latestBalanceTime) {
+            latestBalanceTime = balanceTime
+          }
         } else {
+          latestSnapshotTotal += asset.amount || 0
           totalAmount += asset.amount || 0
         }
       }
+      
+      // 计算在最新余额时间之后的收支记录
+      // 这样可以确保只计算余额快照之后的新收支
+      if (latestBalanceTime) {
+        // 转换为时间戳（秒）进行精确比较
+        const latestBalanceTimeSec = Math.floor(latestBalanceTime.getTime() / 1000)
+        
+        const recordsAfterBalance = account.records.filter(record => {
+          const recordTimeSec = Math.floor(new Date(record.date).getTime() / 1000)
+          return recordTimeSec > latestBalanceTimeSec
+        })
+        
+        recordsAfterBalanceTotal = recordsAfterBalance.reduce((sum, r) => sum + r.amount, 0)
+        totalAmount += recordsAfterBalanceTotal
+      } else {
+        // 对于没有余额记录的资产，计算所有收支记录
+        recordsAfterBalanceTotal = account.records.reduce((sum, r) => sum + r.amount, 0)
+        totalAmount += recordsAfterBalanceTotal
+      }
     } else {
+      // 对于没有资产的账户，使用初始余额 + 所有收支
+      latestSnapshotTotal = account.initialBalance
       totalAmount = account.initialBalance
+      
+      recordsAfterBalanceTotal = account.records.reduce((sum, r) => sum + r.amount, 0)
+      totalAmount += recordsAfterBalanceTotal
     }
-
-    // 计算所有收支记录的总和
-    const recordsTotal = account.records.reduce((sum, r) => sum + r.amount, 0)
-    totalAmount += recordsTotal
 
     return {
       ...account,
       totalAmount,
+      recordsAfterBalanceTotal,
+      latestSnapshotTotal,
     }
   })
   return NextResponse.json(accountsWithTotal)

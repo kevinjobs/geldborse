@@ -120,6 +120,40 @@ export default function AccountsPage() {
       // 确保data是一个数组
       if (Array.isArray(data)) {
         setAccounts(data)
+        
+        // 为每个账户获取资产和余额快照
+        const newAccountAssets: { [key: string]: Asset[] } = {}
+        const newAssetBalances: { [key: string]: Balance[] } = {}
+        
+        for (const account of data) {
+          try {
+            // 获取账户的资产列表
+            const assetsRes = await fetch(`/api/assets?accountId=${account.id}`, headers ? { headers } : {})
+            const assetsData = await assetsRes.json()
+            if (Array.isArray(assetsData)) {
+              newAccountAssets[account.id] = assetsData
+              
+              // 为每个资产获取余额快照列表
+              for (const asset of assetsData) {
+                try {
+                  const balancesRes = await fetch(`/api/balances?assetId=${asset.id}`, headers ? { headers } : {})
+                  const balancesData = await balancesRes.json()
+                  if (Array.isArray(balancesData)) {
+                    newAssetBalances[asset.id] = balancesData
+                  }
+                } catch (error) {
+                  console.error(`获取资产 ${asset.id} 的余额快照失败:`, error)
+                }
+              }
+            }
+          } catch (error) {
+            console.error(`获取账户 ${account.id} 的资产列表失败:`, error)
+          }
+        }
+        
+        // 更新状态
+        setAccountAssets(newAccountAssets)
+        setAssetBalances(newAssetBalances)
       } else {
         console.error("获取账户列表失败: 响应数据不是数组")
         setAccounts([])
@@ -539,14 +573,26 @@ export default function AccountsPage() {
   const handleAddBalance = () => {
     setEditingBalance(null)
     setBalanceAmount("")
-    setBalanceDate(new Date().toISOString().slice(0, 16))
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const day = String(now.getDate()).padStart(2, '0')
+    const hours = String(now.getHours()).padStart(2, '0')
+    const minutes = String(now.getMinutes()).padStart(2, '0')
+    setBalanceDate(`${year}-${month}-${day}T${hours}:${minutes}`)
     setBalanceDialogOpen(true)
   }
 
   const handleEditBalance = (balance: Balance) => {
     setEditingBalance(balance)
     setBalanceAmount(balance.amount.toString())
-    setBalanceDate(new Date(balance.recordedAt).toISOString().slice(0, 16))
+    const date = new Date(balance.recordedAt)
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    const hours = String(date.getHours()).padStart(2, '0')
+    const minutes = String(date.getMinutes()).padStart(2, '0')
+    setBalanceDate(`${year}-${month}-${day}T${hours}:${minutes}`)
     setBalanceDialogOpen(true)
   }
 
@@ -617,6 +663,8 @@ export default function AccountsPage() {
             const balancesRes = await fetch(`/api/balances?assetId=${editingBalance.assetId}`, authToken ? { headers: { 'Authorization': `Bearer ${authToken}` } } : {})
             const balancesData = await balancesRes.json()
             setAssetBalances((prev) => ({ ...prev, [editingBalance.assetId]: balancesData }))
+            // 重新获取账户列表，更新账户总额
+            fetchAccounts()
           }
           setBalanceDialogOpen(false)
         } else {
@@ -634,6 +682,8 @@ export default function AccountsPage() {
             const balancesRes = await fetch(`/api/balances?assetId=${selectedAsset.id}`, authToken ? { headers: { 'Authorization': `Bearer ${authToken}` } } : {})
             const balancesData = await balancesRes.json()
             setAssetBalances((prev) => ({ ...prev, [selectedAsset.id]: balancesData }))
+            // 重新获取账户列表，更新账户总额
+            fetchAccounts()
           }
           setBalanceDialogOpen(false)
         } else {
@@ -705,6 +755,8 @@ export default function AccountsPage() {
                               <ResponsiveTableHeader>名称</ResponsiveTableHeader>
                               <ResponsiveTableHeader>账户号码</ResponsiveTableHeader>
                               <ResponsiveTableHeader className="text-right">总资产</ResponsiveTableHeader>
+                              <ResponsiveTableHeader className="text-right">最新快照总额</ResponsiveTableHeader>
+                              <ResponsiveTableHeader className="text-right">收支总额</ResponsiveTableHeader>
                               <ResponsiveTableHeader className="text-center">收支数</ResponsiveTableHeader>
                               <ResponsiveTableHeader className="text-center">资产数</ResponsiveTableHeader>
                               <ResponsiveTableHeader className="text-right">操作</ResponsiveTableHeader>
@@ -713,7 +765,7 @@ export default function AccountsPage() {
                           <ResponsiveTableBody>
                             {accounts.length === 0 ? (
                               <ResponsiveTableRow>
-                                <ResponsiveTableCell colSpan={6} className="text-center text-muted-foreground">
+                                <ResponsiveTableCell colSpan={8} className="text-center text-muted-foreground">
                                   暂无账户
                                 </ResponsiveTableCell>
                               </ResponsiveTableRow>
@@ -725,6 +777,8 @@ export default function AccountsPage() {
                                 const accountAssetList = accountAssets[account.id] || []
                                 const totalAmount = (account as { totalAmount?: number }).totalAmount || 0
                                 const isNegative = totalAmount < 0
+                                const recordsAfterBalanceTotal = (account as { recordsAfterBalanceTotal?: number }).recordsAfterBalanceTotal || 0
+                                const latestSnapshotTotal = (account as { latestSnapshotTotal?: number }).latestSnapshotTotal || 0
                                 // 检测当前是否为深色模式
                                 const isDarkMode = typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
                                 // 根据主题选择背景颜色
@@ -753,6 +807,12 @@ export default function AccountsPage() {
                                       <ResponsiveTableCell mobileLabel="账户号码">{account.accountNumber || "-"}</ResponsiveTableCell>
                                       <ResponsiveTableCell mobileLabel="总资产" className={`text-right font-medium ${isNegative ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
                                         {formatAmount(totalAmount)}
+                                      </ResponsiveTableCell>
+                                      <ResponsiveTableCell mobileLabel="最新快照总额" className="text-right text-muted-foreground">
+                                        {formatAmount(latestSnapshotTotal)}
+                                      </ResponsiveTableCell>
+                                      <ResponsiveTableCell mobileLabel="收支总额" className={`text-right ${recordsAfterBalanceTotal < 0 ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
+                                        {formatAmount(recordsAfterBalanceTotal)}
                                       </ResponsiveTableCell>
                                       <ResponsiveTableCell mobileLabel="收支数" className="text-center">{account._count?.records || 0}</ResponsiveTableCell>
                                       <ResponsiveTableCell mobileLabel="资产数" className="text-center">{account._count?.assets || 0}</ResponsiveTableCell>
@@ -992,6 +1052,8 @@ export default function AccountsPage() {
                             const hasAssets = (account._count?.assets || 0) > 0
                             const accountAssetList = accountAssets[account.id] || []
                             const totalAmount = (account as { totalAmount?: number }).totalAmount || 0
+                            const recordsAfterBalanceTotal = (account as { recordsAfterBalanceTotal?: number }).recordsAfterBalanceTotal || 0
+                            const latestSnapshotTotal = (account as { latestSnapshotTotal?: number }).latestSnapshotTotal || 0
                             const isNegative = totalAmount < 0
                             // 检测当前是否为深色模式
                             const isDarkMode = typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
@@ -1022,6 +1084,16 @@ export default function AccountsPage() {
                                     <div className={`text-lg font-medium ${isNegative ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
                                       {formatAmount(totalAmount)}
                                     </div>
+                                  </div>
+                                  <div className="flex justify-between text-sm text-muted-foreground">
+                                    <span>最新快照总额:</span>
+                                    <span>{formatAmount(latestSnapshotTotal)}</span>
+                                  </div>
+                                  <div className="flex justify-between text-sm">
+                                    <span className="text-muted-foreground">收支总额:</span>
+                                    <span className={`${recordsAfterBalanceTotal < 0 ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
+                                      {formatAmount(recordsAfterBalanceTotal)}
+                                    </span>
                                   </div>
                                   <div className="flex justify-between text-sm text-muted-foreground">
                                     <span>收支数: {account._count?.records || 0}</span>

@@ -20,6 +20,7 @@ interface Account {
   name: string
   type: string
   initialBalance: number
+  accountNumber?: string
   createdAt: string
   updatedAt: string
   userId: string
@@ -407,18 +408,22 @@ function OverviewPageContent() {
                           <thead>
                             <ResponsiveTableRow>
                               <ResponsiveTableHeader>名称</ResponsiveTableHeader>
-                              <ResponsiveTableHeader>类型</ResponsiveTableHeader>
-                              <ResponsiveTableHeader className="text-right">基准金额</ResponsiveTableHeader>
-                              <ResponsiveTableHeader className="text-right">实时余额</ResponsiveTableHeader>
+                              <ResponsiveTableHeader>账户号码</ResponsiveTableHeader>
+                              <ResponsiveTableHeader className="text-right">总资产</ResponsiveTableHeader>
+                              <ResponsiveTableHeader className="text-right">最新快照总额</ResponsiveTableHeader>
+                              <ResponsiveTableHeader className="text-right">收支总额</ResponsiveTableHeader>
+                              <ResponsiveTableHeader className="text-center">收支数</ResponsiveTableHeader>
+                              <ResponsiveTableHeader className="text-center">资产数</ResponsiveTableHeader>
                             </ResponsiveTableRow>
                           </thead>
                           <ResponsiveTableBody>
                             {accounts.map((account) => {
-                              const { total, hasBalance, baseAmount } = getAccountTotal(account.id)
+                              const { total, hasBalance, baseAmount, recordsTotal } = getAccountTotal(account.id)
                               const accountAssets = getAssetsByAccount(account.id)
                               const nameColor = getAccountNameColor(account.name)
                               const isExpanded = expandedAccounts.has(account.id)
                               const hasAssets = accountAssets.length > 0
+                              const isNegative = total < 0
                               // 检测当前是否为深色模式
                               const isDarkMode = typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
                               // 根据主题选择背景颜色
@@ -445,26 +450,18 @@ function OverviewPageContent() {
                                         <AccountDisplay name={account.name} type={account.type} variant="table" />
                                       </div>
                                     </ResponsiveTableCell>
-                                    <ResponsiveTableCell mobileLabel="类型">
-                                      <span className="text-xs text-muted-foreground">
-                                        {hasAssets ? accountAssets.length + ' 个资产' : "无资产"}
-                                      </span>
-                                    </ResponsiveTableCell>
-                                    <ResponsiveTableCell mobileLabel="基准金额" className="text-right">
-                                      {hasAssets ? (
-                                        <span className="text-xs text-muted-foreground">资产汇总</span>
-                                      ) : (
-                                        <>
-                                          <span className="text-xs text-muted-foreground mr-1">
-                                            {hasBalance ? "(快照)" : "(初始)"}
-                                          </span>
-                                          {formatAmount(baseAmount)}
-                                        </>
-                                      )}
-                                    </ResponsiveTableCell>
-                                    <ResponsiveTableCell mobileLabel="实时余额" className={"text-right font-bold " + (total >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400")}>
+                                    <ResponsiveTableCell mobileLabel="账户号码">{account.accountNumber || "-"}</ResponsiveTableCell>
+                                    <ResponsiveTableCell mobileLabel="总资产" className={`text-right font-medium ${isNegative ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
                                       {formatAmount(total)}
                                     </ResponsiveTableCell>
+                                    <ResponsiveTableCell mobileLabel="最新快照总额" className="text-right text-muted-foreground">
+                                      {formatAmount(baseAmount)}
+                                    </ResponsiveTableCell>
+                                    <ResponsiveTableCell mobileLabel="收支总额" className={`text-right ${recordsTotal < 0 ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
+                                      {formatAmount(recordsTotal)}
+                                    </ResponsiveTableCell>
+                                    <ResponsiveTableCell mobileLabel="收支数" className="text-center">{records.filter((r) => r.accountId === account.id).length}</ResponsiveTableCell>
+                                    <ResponsiveTableCell mobileLabel="资产数" className="text-center">{accountAssets.length}</ResponsiveTableCell>
                                   </ResponsiveTableRow>
                                   {isExpanded && accountAssets.map((asset, index) => {
                                     const assetTotal = getAssetRealTimeTotal(asset.id)
@@ -512,15 +509,16 @@ function OverviewPageContent() {
                       {/* 移动端卡片视图 */}
                       <div className="md:hidden space-y-4">
                         {accounts.map((account) => {
-                          const { total, hasBalance, baseAmount } = getAccountTotal(account.id)
-                          const accountAssets = getAssetsByAccount(account.id)
-                          const nameColor = getAccountNameColor(account.name)
-                          const isExpanded = expandedAccounts.has(account.id)
-                          const hasAssets = accountAssets.length > 0
-                          // 检测当前是否为深色模式
-                          const isDarkMode = typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
-                          // 根据主题选择背景颜色
-                          const bgColor = isDarkMode ? nameColor.darkBgColor : nameColor.bgColor
+                          const { total, hasBalance, baseAmount, recordsTotal } = getAccountTotal(account.id)
+                            const accountAssets = getAssetsByAccount(account.id)
+                            const nameColor = getAccountNameColor(account.name)
+                            const isExpanded = expandedAccounts.has(account.id)
+                            const hasAssets = accountAssets.length > 0
+                            const isNegative = total < 0
+                            // 检测当前是否为深色模式
+                            const isDarkMode = typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
+                            // 根据主题选择背景颜色
+                            const bgColor = isDarkMode ? nameColor.darkBgColor : nameColor.bgColor
                           return (
                             <div key={account.id} className={`rounded-lg ${bgColor} border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden`}>
                               {/* 账户卡片 */}
@@ -540,15 +538,26 @@ function OverviewPageContent() {
                                       <AccountDisplay name={account.name} type={account.type} variant="card" />
                                     </div>
                                     <div className="text-sm text-muted-foreground mt-1">
-                                      {hasAssets ? accountAssets.length + ' 个资产' : "无资产"}
+                                      账户号码: {account.accountNumber || "-"}
                                     </div>
                                   </div>
-                                  <div className={`text-lg font-medium ${total >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
+                                  <div className={`text-lg font-medium ${isNegative ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
                                     {formatAmount(total)}
                                   </div>
                                 </div>
-                                <div className="text-sm text-muted-foreground">
-                                  基准金额: {hasAssets ? "资产汇总" : formatAmount(baseAmount)}
+                                <div className="flex justify-between text-sm text-muted-foreground">
+                                  <span>最新快照总额:</span>
+                                  <span>{formatAmount(baseAmount)}</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-muted-foreground">收支总额:</span>
+                                  <span className={`${recordsTotal < 0 ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
+                                    {formatAmount(recordsTotal)}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between text-sm text-muted-foreground">
+                                  <span>收支数: {records.filter((r) => r.accountId === account.id).length}</span>
+                                  <span>资产数: {accountAssets.length}</span>
                                 </div>
                               </div>
                               {/* 资产列表 */}
