@@ -263,7 +263,7 @@ function OverviewPageContent() {
   return (
     <SidebarProvider>
       <AppSidebar variant="sidebar" />
-      <SidebarInset>
+      <SidebarInset className="flex flex-col h-svh">
         <SiteHeader />
         {loading ? (
           <div className="flex flex-1 items-center justify-center">
@@ -511,15 +511,15 @@ function OverviewPageContent() {
                       <div className="md:hidden space-y-4">
                         {accounts.map((account) => {
                           const { total, hasBalance, baseAmount, recordsTotal } = getAccountTotal(account.id)
-                            const accountAssets = getAssetsByAccount(account.id)
-                            const nameColor = getAccountNameColor(account.name)
-                            const isExpanded = expandedAccounts.has(account.id)
-                            const hasAssets = accountAssets.length > 0
-                            const isNegative = total < 0
-                            // 检测当前是否为深色模式
-                            const isDarkMode = typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
-                            // 根据主题选择背景颜色
-                            const bgColor = isDarkMode ? nameColor.darkBgColor : nameColor.bgColor
+                          const accountAssets = getAssetsByAccount(account.id)
+                          const nameColor = getAccountNameColor(account.name)
+                          const isExpanded = expandedAccounts.has(account.id)
+                          const hasAssets = accountAssets.length > 0
+                          const isNegative = total < 0
+                          // 检测当前是否为深色模式
+                          const isDarkMode = typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
+                          // 根据主题选择背景颜色
+                          const bgColor = isDarkMode ? nameColor.darkBgColor : nameColor.bgColor
                           return (
                             <div key={account.id} className={`rounded-lg ${bgColor} border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden`}>
                               {/* 账户卡片 */}

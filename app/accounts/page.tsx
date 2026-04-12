@@ -120,11 +120,11 @@ export default function AccountsPage() {
       // 确保data是一个数组
       if (Array.isArray(data)) {
         setAccounts(data)
-        
+
         // 为每个账户获取资产和余额快照
         const newAccountAssets: { [key: string]: Asset[] } = {}
         const newAssetBalances: { [key: string]: Balance[] } = {}
-        
+
         for (const account of data) {
           try {
             // 获取账户的资产列表
@@ -132,7 +132,7 @@ export default function AccountsPage() {
             const assetsData = await assetsRes.json()
             if (Array.isArray(assetsData)) {
               newAccountAssets[account.id] = assetsData
-              
+
               // 为每个资产获取余额快照列表
               for (const asset of assetsData) {
                 try {
@@ -150,7 +150,7 @@ export default function AccountsPage() {
             console.error(`获取账户 ${account.id} 的资产列表失败:`, error)
           }
         }
-        
+
         // 更新状态
         setAccountAssets(newAccountAssets)
         setAssetBalances(newAssetBalances)
@@ -727,7 +727,7 @@ export default function AccountsPage() {
   return (
     <SidebarProvider>
       <AppSidebar variant="sidebar" />
-      <SidebarInset>
+      <SidebarInset className="flex flex-col h-svh">
         <SiteHeader />
         {loading ? (
           <div className="flex flex-1 items-center justify-center">
