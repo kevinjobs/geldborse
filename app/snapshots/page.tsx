@@ -278,7 +278,7 @@ export default function SnapshotsPage() {
     return (
       <SidebarProvider>
         <AppSidebar variant="sidebar" />
-        <SidebarInset>
+        <SidebarInset className="flex flex-col h-svh">
           <SiteHeader />
           <div className="flex flex-1 items-center justify-center">
             <p>加载中...</p>
@@ -293,7 +293,7 @@ export default function SnapshotsPage() {
   return (
     <SidebarProvider>
       <AppSidebar variant="sidebar" />
-      <SidebarInset>
+      <SidebarInset className="flex flex-col h-svh">
         <SiteHeader />
         <div className="flex flex-1 flex-col overflow-y-auto" style={{ scrollbarGutter: "stable" }}>
           <div className="@container/main flex flex-1 flex-col gap-2">

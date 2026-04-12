@@ -235,7 +235,7 @@ export default function ExportPage() {
 
     setImportStatus('loading')
     setImportError('')
-    setImportStats({ accounts: 0, assets: 0, records: 0 })
+    setImportStats({ accounts: 0, assets: 0, records: 0, duplicates: 0, invalid: 0 })
 
     try {
       const reader = new FileReader()
@@ -323,7 +323,7 @@ export default function ExportPage() {
     setImportStatus('idle')
     setPreviewData(null)
     setImportError('')
-    setImportStats({ accounts: 0, assets: 0, records: 0 })
+    setImportStats({ accounts: 0, assets: 0, records: 0, duplicates: 0, invalid: 0 })
   }
 
   const exportSnapshotXLSX = () => {

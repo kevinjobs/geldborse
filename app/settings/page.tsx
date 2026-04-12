@@ -271,13 +271,13 @@ function SettingsContent() {
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset>
+      <SidebarInset className="flex flex-col h-svh">
         <SiteHeader />
-        <div className="flex flex-1 flex-col p-6">
+        <div className="flex-1 overflow-y-auto p-6">
           <div className="max-w-6xl mx-auto w-full flex flex-col md:flex-row gap-6">
             {/* 侧边栏菜单 */}
             <div className="md:w-64 flex-shrink-0">
-              <div className="bg-card rounded-lg border p-4 sticky top-6">
+              <div className="bg-card rounded-lg border p-4">
                 <h2 className="text-lg font-semibold mb-4">设置</h2>
                 <nav className="space-y-1">
                   {menuItems.map((item) => (
