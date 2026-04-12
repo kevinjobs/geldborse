@@ -5,6 +5,7 @@ import { useState, useEffect } from "react"
 import {
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -57,6 +58,9 @@ export function NavMain() {
 
   return (
     <SidebarGroup>
+      <SidebarGroupLabel className="px-4 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+        主菜单
+      </SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu className={menuClass}>
           {navItems.map((item) => (
@@ -64,9 +68,9 @@ export function NavMain() {
               <SidebarMenuButton
                 asChild
                 tooltip={item.title}
-                className={`${buttonClass} animate-transition-all`}
+                className={`${buttonClass} animate-transition-all hover:bg-gray-50 dark:hover:bg-gray-800`}
               >
-                <Link href={item.url} className="w-full h-full flex items-center gap-2 animate-transition-colors">
+                <Link href={item.url} className="w-full h-full flex items-center gap-3 px-4 animate-transition-colors">
                   <NavIcon iconKey={item.iconKey} mounted={mounted} />
                   <span>{item.title}</span>
                 </Link>
