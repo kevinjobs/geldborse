@@ -345,7 +345,13 @@ function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
       data-slot="sidebar-rail"
       aria-label="Toggle Sidebar"
       tabIndex={-1}
-      onClick={toggleSidebar}
+      onClick={(e) => {
+        // 只有当collapsible为offcanvas时才触发切换，icon模式下不触发
+        // 这样缩小的侧边栏可以正常点击使用，而不会自动展开
+        if (e.currentTarget.closest('[data-collapsible="offcanvas"]')) {
+          toggleSidebar()
+        }
+      }}
       title="Toggle Sidebar"
       className={cn(
         "absolute inset-y-0 z-20 hidden w-4 transition-all ease-linear group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:start-1/2 after:w-[2px] hover:after:bg-sidebar-border sm:flex ltr:-translate-x-1/2 rtl:-translate-x-1/2",
