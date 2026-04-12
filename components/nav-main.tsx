@@ -9,7 +9,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { EyeIcon, PlusIcon, WalletIcon, ListIcon, CameraIcon, DownloadSimpleIcon } from "@phosphor-icons/react"
+import { EyeIcon, PlusIcon, WalletIcon, ListIcon, CameraIcon, UploadIcon } from "@phosphor-icons/react"
 
 const navIcons = {
   overview: EyeIcon,
@@ -17,7 +17,7 @@ const navIcons = {
   record: ListIcon,
   accounts: WalletIcon,
   snapshots: CameraIcon,
-  export: DownloadSimpleIcon,
+  export: UploadIcon,
 }
 
 interface NavItem {
@@ -32,7 +32,7 @@ const navItems: NavItem[] = [
   { title: "收支", url: "/record", iconKey: "record" },
   { title: "账户", url: "/accounts", iconKey: "accounts" },
   { title: "快照", url: "/snapshots", iconKey: "snapshots" },
-  { title: "导出", url: "/export", iconKey: "export" },
+  { title: "导入/导出", url: "/export", iconKey: "export" },
 ]
 
 function NavIcon({ iconKey, mounted }: { iconKey: keyof typeof navIcons; mounted: boolean }) {
@@ -51,8 +51,8 @@ export function NavMain() {
 
   // 服务器端和初始客户端渲染使用相同的默认样式
   const menuClass = mounted ? "gap-1 md:gap-px" : "gap-px"
-  const buttonClass = mounted 
-    ? "h-11 md:h-8 text-sm md:text-xs py-2.5 md:py-2" 
+  const buttonClass = mounted
+    ? "h-11 md:h-8 text-sm md:text-xs py-2.5 md:py-2"
     : "h-8 text-xs py-2"
 
   return (
@@ -61,9 +61,9 @@ export function NavMain() {
         <SidebarMenu className={menuClass}>
           {navItems.map((item) => (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton 
-                asChild 
-                tooltip={item.title} 
+              <SidebarMenuButton
+                asChild
+                tooltip={item.title}
                 className={`${buttonClass} animate-transition-all`}
               >
                 <Link href={item.url} className="w-full h-full flex items-center gap-2 animate-transition-colors">

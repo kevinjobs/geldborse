@@ -14,7 +14,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { ResponsiveTable, ResponsiveTableBody, ResponsiveTableCell, ResponsiveTableHeader, ResponsiveTableRow } from "@/components/responsive-table"
 import { getAccountNameColor, getAccountTypeConfig, getAssetTypeConfig } from "@/lib/account-config"
 import { getAccountLogo } from "@/lib/account-logos"
-import { DownloadSimpleIcon, FilePdfIcon, FileXlsIcon, ImageIcon, CameraIcon, WalletIcon, ListIcon } from "@phosphor-icons/react"
+import { DownloadSimpleIcon, UploadIcon, FilePdfIcon, FileXlsIcon, ImageIcon, CameraIcon, WalletIcon, ListIcon } from "@phosphor-icons/react"
 import * as XLSX from "xlsx"
 import jsPDF from "jspdf"
 import { domToPng, domToJpeg } from "modern-screenshot"
@@ -87,6 +87,10 @@ export default function ExportPage() {
   const [snapshotFormat, setSnapshotFormat] = useState<ExportFormat>("xlsx")
   const [accountFormat, setAccountFormat] = useState<ExportFormat>("xlsx")
   const [recordFormat, setRecordFormat] = useState<ExportFormat>("xlsx")
+  const [importStatus, setImportStatus] = useState<'idle' | 'loading' | 'preview' | 'success' | 'error'>('idle')
+  const [importError, setImportError] = useState<string>('')
+  const [importStats, setImportStats] = useState({ accounts: 0, assets: 0, records: 0, duplicates: 0, invalid: 0 })
+  const [previewData, setPreviewData] = useState<any>(null)
 
   const snapshotPreviewRef = useRef<HTMLDivElement>(null)
   const accountPreviewRef = useRef<HTMLDivElement>(null)
@@ -192,6 +196,134 @@ export default function ExportPage() {
     link.download = `${fileName}.jpg`
     link.href = dataUrl
     link.click()
+  }
+
+  const exportAllData = () => {
+    const allData = {
+      exportDate: new Date().toISOString(),
+      version: "1.0",
+      data: {
+        accounts: accounts.map(account => ({
+          id: account.id,
+          name: account.name,
+          type: account.type,
+          accountNumber: account.accountNumber,
+          assets: account.assets.map(asset => ({
+            id: asset.id,
+            name: asset.name,
+            type: asset.type,
+            amount: asset.amount || 0,
+          }))
+        })),
+        snapshots: snapshots,
+        records: records
+      }
+    }
+
+    const blob = new Blob([JSON.stringify(allData, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `geldborse-all-data-${new Date().toISOString().split('T')[0]}.json`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setImportStatus('loading')
+    setImportError('')
+    setImportStats({ accounts: 0, assets: 0, records: 0 })
+
+    try {
+      const reader = new FileReader()
+      reader.onload = async (event) => {
+        try {
+          const jsonString = event.target?.result as string
+          const importData = JSON.parse(jsonString)
+
+          // 验证数据结构
+          if (!importData.data || !importData.data.accounts) {
+            throw new Error('无效的文件格式')
+          }
+
+          // 计算数据统计
+          const stats = {
+            accounts: importData.data.accounts?.length || 0,
+            assets: importData.data.accounts?.reduce((total: number, account: any) => {
+              return total + (account.assets?.length || 0)
+            }, 0) || 0,
+            records: importData.data.records?.length || 0,
+            snapshots: importData.data.snapshots?.length || 0
+          }
+
+          setPreviewData({
+            data: importData,
+            stats
+          })
+          setImportStatus('preview')
+        } catch (error) {
+          setImportError((error as Error).message)
+          setImportStatus('error')
+        }
+      }
+      reader.onerror = () => {
+        setImportError('文件读取失败')
+        setImportStatus('error')
+      }
+      reader.readAsText(file)
+    } catch (error) {
+      setImportError((error as Error).message)
+      setImportStatus('error')
+    }
+  }
+
+  const handleConfirmImport = async () => {
+    if (!previewData) return
+
+    setImportStatus('loading')
+    try {
+      // 发送到API
+      const headers = user?.id ? { 'Authorization': `Bearer ${user.id}` } : undefined
+      const res = await fetch('/api/import', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...headers
+        },
+        body: JSON.stringify(previewData.data)
+      })
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}))
+        throw new Error(errorData.error || '导入失败')
+      }
+
+      const result = await res.json()
+      setImportStats({
+        accounts: result.accounts || 0,
+        assets: result.assets || 0,
+        records: result.records || 0,
+        duplicates: result.duplicates || 0,
+        invalid: result.invalid || 0
+      })
+      setImportStatus('success')
+
+      // 重新获取数据
+      fetchData()
+    } catch (error) {
+      setImportError((error as Error).message)
+      setImportStatus('error')
+    }
+  }
+
+  const handleCancelImport = () => {
+    setImportStatus('idle')
+    setPreviewData(null)
+    setImportError('')
+    setImportStats({ accounts: 0, assets: 0, records: 0 })
   }
 
   const exportSnapshotXLSX = () => {
@@ -375,7 +507,7 @@ export default function ExportPage() {
         <SiteHeader />
         <div className="flex flex-1 flex-col gap-6 p-6">
           <Tabs defaultValue="snapshot" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="snapshot" className="flex items-center gap-2">
                 <CameraIcon className="h-4 w-4" />
                 导出快照
@@ -387,6 +519,14 @@ export default function ExportPage() {
               <TabsTrigger value="record" className="flex items-center gap-2">
                 <ListIcon className="h-4 w-4" />
                 导出收支情况
+              </TabsTrigger>
+              <TabsTrigger value="all" className="flex items-center gap-2">
+                <UploadIcon className="h-4 w-4" />
+                导出全部数据
+              </TabsTrigger>
+              <TabsTrigger value="import" className="flex items-center gap-2">
+                <DownloadSimpleIcon className="h-4 w-4" />
+                导入数据
               </TabsTrigger>
             </TabsList>
 
@@ -822,6 +962,164 @@ export default function ExportPage() {
                   </div>
                 </div>
               )}
+            </TabsContent>
+
+            <TabsContent value="all" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>导出全部数据</CardTitle>
+                  <CardDescription>导出所有账户、资产、快照和收支记录的完整数据，用于批量导入</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-4">
+                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <p className="text-sm text-blue-700 dark:text-blue-300">
+                        导出的文件包含以下数据：
+                      </p>
+                      <ul className="mt-2 space-y-1 text-sm text-blue-700 dark:text-blue-300">
+                        <li>• 所有账户信息（名称、类型、账户号码）</li>
+                        <li>• 所有资产信息（名称、类型、金额）</li>
+                        <li>• 所有资产快照记录</li>
+                        <li>• 所有收支记录（包括备注）</li>
+                      </ul>
+                    </div>
+
+                    <Button
+                      className="w-full"
+                      onClick={exportAllData}
+                      disabled={loading}
+                    >
+                      <DownloadSimpleIcon className="mr-2 h-4 w-4" />
+                      导出全部数据
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="import" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>导入数据</CardTitle>
+                  <CardDescription>通过导出的打包文件批量导入数据</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-4">
+                    {importStatus === 'idle' && (
+                      <>
+                        <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                          <p className="text-sm text-blue-700 dark:text-blue-300">
+                            请选择从其他用户导出的 .json 数据文件
+                          </p>
+                          <ul className="mt-2 space-y-1 text-sm text-blue-700 dark:text-blue-300">
+                            <li>• 支持导入账户、资产、快照和收支记录</li>
+                            <li>• 导入时会自动处理重复数据</li>
+                            <li>• 导入过程可能需要几秒钟时间</li>
+                          </ul>
+                        </div>
+
+                        <input
+                          type="file"
+                          accept=".json"
+                          className="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2"
+                          onChange={handleFileImport}
+                        />
+                      </>
+                    )}
+
+                    {importStatus === 'loading' && (
+                      <div className="text-center py-8">
+                        <p className="text-sm text-slate-500 dark:text-slate-400">正在处理数据...</p>
+                      </div>
+                    )}
+
+                    {importStatus === 'preview' && previewData && (
+                      <div className="space-y-4">
+                        <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                          <h3 className="font-medium text-yellow-700 dark:text-yellow-300 mb-2">数据预览</h3>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-sm text-slate-600 dark:text-slate-300">账户数量: <span className="font-medium">{previewData.stats.accounts}</span></p>
+                              <p className="text-sm text-slate-600 dark:text-slate-300">资产数量: <span className="font-medium">{previewData.stats.assets}</span></p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-slate-600 dark:text-slate-300">收支记录: <span className="font-medium">{previewData.stats.records}</span></p>
+                              <p className="text-sm text-slate-600 dark:text-slate-300">资产快照: <span className="font-medium">{previewData.stats.snapshots}</span></p>
+                            </div>
+                          </div>
+                          <p className="mt-3 text-sm text-yellow-700 dark:text-yellow-300">
+                            点击"确认导入"将开始导入以上数据，导入过程中会自动处理重复数据。
+                          </p>
+                        </div>
+
+                        <div className="flex gap-3">
+                          <Button
+                            variant="default"
+                            onClick={handleConfirmImport}
+                            className="flex-1"
+                          >
+                            确认导入
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={handleCancelImport}
+                          >
+                            取消
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {importStatus === 'success' && (
+                      <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                        <p className="text-sm text-green-700 dark:text-green-300 font-medium">
+                          数据导入成功！
+                        </p>
+                        <div className="mt-3 space-y-2">
+                          <p className="text-sm text-slate-600 dark:text-slate-300">
+                            <span className="font-medium">成功导入：</span>
+                            {importStats.accounts} 个账户，{importStats.assets} 个资产，{importStats.records} 条记录
+                          </p>
+                          {importStats.duplicates > 0 && (
+                            <p className="text-sm text-yellow-600 dark:text-yellow-400">
+                              <span className="font-medium">重复数据：</span>
+                              {importStats.duplicates} 条（已自动处理）
+                            </p>
+                          )}
+                          {importStats.invalid > 0 && (
+                            <p className="text-sm text-red-600 dark:text-red-400">
+                              <span className="font-medium">无效数据：</span>
+                              {importStats.invalid} 条（已跳过）
+                            </p>
+                          )}
+                        </div>
+                        <Button
+                          variant="outline"
+                          onClick={handleCancelImport}
+                          className="mt-4"
+                        >
+                          继续导入
+                        </Button>
+                      </div>
+                    )}
+
+                    {importStatus === 'error' && (
+                      <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                        <p className="text-sm text-red-700 dark:text-red-300">
+                          导入失败：{importError}
+                        </p>
+                        <Button
+                          variant="outline"
+                          onClick={handleCancelImport}
+                          className="mt-3"
+                        >
+                          重新尝试
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         </div>
