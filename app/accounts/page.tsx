@@ -115,41 +115,28 @@ export default function AccountsPage() {
       // 构建请求头
       const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : undefined
 
-      const res = await fetch("/api/accounts", headers ? { headers } : {})
+      // 使用新的API端点一次性获取所有数据
+      const res = await fetch("/api/accounts/full", headers ? { headers } : {})
       const data = await res.json()
       // 确保data是一个数组
       if (Array.isArray(data)) {
         setAccounts(data)
 
-        // 为每个账户获取资产和余额快照
+        // 整理资产和余额数据
         const newAccountAssets: { [key: string]: Asset[] } = {}
         const newAssetBalances: { [key: string]: Balance[] } = {}
 
-        for (const account of data) {
-          try {
-            // 获取账户的资产列表
-            const assetsRes = await fetch(`/api/assets?accountId=${account.id}`, headers ? { headers } : {})
-            const assetsData = await assetsRes.json()
-            if (Array.isArray(assetsData)) {
-              newAccountAssets[account.id] = assetsData
+        data.forEach((account) => {
+          if (account.assets && Array.isArray(account.assets)) {
+            newAccountAssets[account.id] = account.assets
 
-              // 为每个资产获取余额快照列表
-              for (const asset of assetsData) {
-                try {
-                  const balancesRes = await fetch(`/api/balances?assetId=${asset.id}`, headers ? { headers } : {})
-                  const balancesData = await balancesRes.json()
-                  if (Array.isArray(balancesData)) {
-                    newAssetBalances[asset.id] = balancesData
-                  }
-                } catch (error) {
-                  console.error(`获取资产 ${asset.id} 的余额快照失败:`, error)
-                }
+            account.assets.forEach((asset) => {
+              if (asset.balances && Array.isArray(asset.balances)) {
+                newAssetBalances[asset.id] = asset.balances
               }
-            }
-          } catch (error) {
-            console.error(`获取账户 ${account.id} 的资产列表失败:`, error)
+            })
           }
-        }
+        })
 
         // 更新状态
         setAccountAssets(newAccountAssets)
@@ -216,75 +203,25 @@ export default function AccountsPage() {
     }
   }
 
-  const toggleAccountExpand = async (accountId: string) => {
+  const toggleAccountExpand = (accountId: string) => {
     setExpandedAccounts((prev) => {
       const newSet = new Set(prev)
       if (newSet.has(accountId)) {
         newSet.delete(accountId)
       } else {
         newSet.add(accountId)
-        if (!accountAssets[accountId]) {
-          // 获取用户认证信息
-          const storedUser = typeof window !== 'undefined' ? localStorage.getItem('geldborse_user') : null
-          const userData = storedUser ? JSON.parse(storedUser) : null
-          const authToken = userData?.id // 使用用户ID作为临时token
-
-          // 构建请求头
-          const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : undefined
-
-          fetch(`/api/assets?accountId=${accountId}`, headers ? { headers } : {})
-            .then((res) => res.json())
-            .then((data) => {
-              // 确保data是一个数组
-              if (Array.isArray(data)) {
-                setAccountAssets((prev) => ({ ...prev, [accountId]: data }))
-              } else {
-                console.error("获取资产列表失败: 响应数据不是数组")
-                setAccountAssets((prev) => ({ ...prev, [accountId]: [] }))
-              }
-            })
-            .catch((error) => {
-              console.error("获取资产列表失败:", error)
-              setAccountAssets((prev) => ({ ...prev, [accountId]: [] }))
-            })
-        }
       }
       return newSet
     })
   }
 
-  const toggleAssetExpand = async (assetId: string) => {
+  const toggleAssetExpand = (assetId: string) => {
     setExpandedAssets((prev) => {
       const newSet = new Set(prev)
       if (newSet.has(assetId)) {
         newSet.delete(assetId)
       } else {
         newSet.add(assetId)
-        if (!assetBalances[assetId]) {
-          // 获取用户认证信息
-          const storedUser = typeof window !== 'undefined' ? localStorage.getItem('geldborse_user') : null
-          const userData = storedUser ? JSON.parse(storedUser) : null
-          const authToken = userData?.id // 使用用户ID作为临时token
-
-          // 构建请求头
-          const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : undefined
-
-          fetch(`/api/balances?assetId=${assetId}`, headers ? { headers } : {})
-            .then((res) => res.json())
-            .then((data) => {
-              // 确保data是一个数组
-              if (Array.isArray(data)) {
-                setAssetBalances((prev) => ({ ...prev, [assetId]: data }))
-              } else {
-                console.error("获取余额快照列表失败: 响应数据不是数组")
-                setAssetBalances((prev) => ({ ...prev, [assetId]: [] }))
-              }
-            })
-            .catch((error) => {
-              console.error("获取余额快照列表失败:", error)
-              setAssetBalances((prev) => ({ ...prev, [assetId]: [] }))
-            })
-        }
       }
       return newSet
     })
@@ -439,24 +376,11 @@ export default function AccountsPage() {
     setAssetDialogOpen(true)
   }
 
-  const handleEditAsset = async (asset: Asset) => {
+  const handleEditAsset = (asset: Asset) => {
     setEditingAsset(asset)
     setAssetName(asset.name)
     setAssetType(asset.type)
     setAssetAmount(asset.amount.toString())
-    if (!assetBalances[asset.id]) {
-      // 获取用户认证信息
-      const storedUser = typeof window !== 'undefined' ? localStorage.getItem('geldborse_user') : null
-      const userData = storedUser ? JSON.parse(storedUser) : null
-      const authToken = userData?.id // 使用用户ID作为临时token
-
-      // 构建请求头
-      const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : undefined
-
-      const res = await fetch(`/api/balances?assetId=${asset.id}`, headers ? { headers } : {})
-      const data = await res.json()
-      setAssetBalances((prev) => ({ ...prev, [asset.id]: data }))
-    }
     setAssetDialogOpen(true)
   }
 
@@ -477,12 +401,22 @@ export default function AccountsPage() {
         headers
       })
       if (res.ok) {
+        // 更新本地状态，避免重新获取数据
         if (selectedAccount) {
-          fetchAssets(selectedAccount.id)
+          setAssets(prev => prev.filter(a => a.id !== asset.id))
         }
-        const assetsRes = await fetch(`/api/assets?accountId=${asset.accountId}`, headers ? { headers } : {})
-        const assetsData = await assetsRes.json()
-        setAccountAssets((prev) => ({ ...prev, [asset.accountId]: assetsData }))
+        // 更新accountAssets
+        setAccountAssets(prev => ({
+          ...prev,
+          [asset.accountId]: prev[asset.accountId]?.filter(a => a.id !== asset.id) || []
+        }))
+        // 更新assetBalances
+        setAssetBalances(prev => {
+          const newBalances = { ...prev }
+          delete newBalances[asset.id]
+          return newBalances
+        })
+        // 重新获取账户列表，更新账户总额
         fetchAccounts()
         if (selectedAsset?.id === asset.id) {
           setSelectedAsset(null)
@@ -524,17 +458,18 @@ export default function AccountsPage() {
           body: JSON.stringify({ name: assetName, type: assetType, amount: assetAmount }),
         })
         if (res.ok) {
+          const updatedAsset = await res.json()
+          // 更新本地状态
           if (selectedAccount) {
-            fetchAssets(selectedAccount.id)
+            setAssets(prev => prev.map(a => a.id === editingAsset.id ? updatedAsset : a))
           }
           if (editingAsset.accountId) {
-            const assetsRes = await fetch(`/api/assets?accountId=${editingAsset.accountId}`, authToken ? { headers: { 'Authorization': `Bearer ${authToken}` } } : {})
-            const assetsData = await assetsRes.json()
-            setAccountAssets((prev) => ({ ...prev, [editingAsset.accountId]: assetsData }))
+            setAccountAssets(prev => ({
+              ...prev,
+              [editingAsset.accountId]: prev[editingAsset.accountId]?.map(a => a.id === editingAsset.id ? updatedAsset : a) || []
+            }))
           }
-          const balancesRes = await fetch(`/api/balances?assetId=${editingAsset.id}`, authToken ? { headers: { 'Authorization': `Bearer ${authToken}` } } : {})
-          const balancesData = await balancesRes.json()
-          setAssetBalances((prev) => ({ ...prev, [editingAsset.id]: balancesData }))
+          // 重新获取账户列表，更新账户总额
           fetchAccounts()
           setAssetDialogOpen(false)
         } else {
@@ -547,10 +482,16 @@ export default function AccountsPage() {
           body: JSON.stringify({ name: assetName, type: assetType, amount: assetAmount, accountId: selectedAccount!.id }),
         })
         if (res.ok) {
-          fetchAssets(selectedAccount!.id)
-          const assetsRes = await fetch(`/api/assets?accountId=${selectedAccount!.id}`, authToken ? { headers: { 'Authorization': `Bearer ${authToken}` } } : {})
-          const assetsData = await assetsRes.json()
-          setAccountAssets((prev) => ({ ...prev, [selectedAccount!.id]: assetsData }))
+          const newAsset = await res.json()
+          // 更新本地状态
+          if (selectedAccount) {
+            setAssets(prev => [...prev, newAsset])
+          }
+          setAccountAssets(prev => ({
+            ...prev,
+            [selectedAccount!.id]: [...(prev[selectedAccount!.id] || []), newAsset]
+          }))
+          // 重新获取账户列表，更新账户总额
           fetchAccounts()
           setAssetDialogOpen(false)
         } else {
@@ -656,13 +597,16 @@ export default function AccountsPage() {
           body: JSON.stringify({ amount: balanceAmount, recordedAt: balanceDate }),
         })
         if (res.ok) {
+          const updatedBalance = await res.json()
+          // 更新本地状态
           if (selectedAsset) {
-            fetchBalances(selectedAsset.id)
+            setBalances(prev => prev.map(b => b.id === editingBalance.id ? updatedBalance : b))
           }
           if (editingBalance.assetId) {
-            const balancesRes = await fetch(`/api/balances?assetId=${editingBalance.assetId}`, authToken ? { headers: { 'Authorization': `Bearer ${authToken}` } } : {})
-            const balancesData = await balancesRes.json()
-            setAssetBalances((prev) => ({ ...prev, [editingBalance.assetId]: balancesData }))
+            setAssetBalances(prev => ({
+              ...prev,
+              [editingBalance.assetId]: prev[editingBalance.assetId]?.map(b => b.id === editingBalance.id ? updatedBalance : b) || []
+            }))
             // 重新获取账户列表，更新账户总额
             fetchAccounts()
           }
@@ -677,11 +621,14 @@ export default function AccountsPage() {
           body: JSON.stringify({ amount: balanceAmount, recordedAt: balanceDate, assetId: selectedAsset!.id }),
         })
         if (res.ok) {
+          const newBalance = await res.json()
+          // 更新本地状态
           if (selectedAsset) {
-            fetchBalances(selectedAsset.id)
-            const balancesRes = await fetch(`/api/balances?assetId=${selectedAsset.id}`, authToken ? { headers: { 'Authorization': `Bearer ${authToken}` } } : {})
-            const balancesData = await balancesRes.json()
-            setAssetBalances((prev) => ({ ...prev, [selectedAsset.id]: balancesData }))
+            setBalances(prev => [...prev, newBalance])
+            setAssetBalances(prev => ({
+              ...prev,
+              [selectedAsset.id]: [...(prev[selectedAsset.id] || []), newBalance]
+            }))
             // 重新获取账户列表，更新账户总额
             fetchAccounts()
           }
