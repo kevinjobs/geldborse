@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/lib/auth-context";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "sonner";
 
 const robotoSlabHeading = Roboto_Slab({ subsets: ['latin'], variable: '--font-heading' });
 
@@ -43,7 +44,10 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
-            <TooltipProvider>{children}</TooltipProvider>
+            <TooltipProvider>
+              {children}
+              <Toaster />
+            </TooltipProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
+import { getCurrentUserId } from '@/lib/auth';
 import bcrypt from 'bcrypt';
-
-const prisma = new PrismaClient();
 
 export async function PUT(request: NextRequest) {
   try {
@@ -13,9 +12,11 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Current password and new password are required' }, { status: 400 });
     }
 
-    // 这里应该从认证中获取用户ID
-    // 目前使用一个固定的用户ID作为示例
-    const userId = 'user_123';
+    // 从认证中获取用户ID
+    const userId = await getCurrentUserId(request);
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     // 查找用户
     const user = await prisma.user.findUnique({ where: { id: userId } });
