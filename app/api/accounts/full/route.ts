@@ -53,16 +53,16 @@ export async function GET(request: NextRequest) {
           totalAmount += asset.amount || 0
         }
       }
-
+      
       // 计算在最新余额时间之后的收支记录
       if (latestBalanceTime) {
         const latestBalanceTimeSec = Math.floor(latestBalanceTime.getTime() / 1000)
-
+        
         const recordsAfterBalance = account.records.filter(record => {
           const recordTimeSec = Math.floor(new Date(record.date).getTime() / 1000)
           return recordTimeSec > latestBalanceTimeSec
         })
-
+        
         recordsAfterBalanceTotal = recordsAfterBalance.reduce((sum, r) => sum + r.amount, 0)
         totalAmount += recordsAfterBalanceTotal
       } else {
@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
       // 对于没有资产的账户，使用初始余额 + 所有收支
       latestSnapshotTotal = account.initialBalance
       totalAmount = account.initialBalance
-
+      
       recordsAfterBalanceTotal = account.records.reduce((sum, r) => sum + r.amount, 0)
       totalAmount += recordsAfterBalanceTotal
     }

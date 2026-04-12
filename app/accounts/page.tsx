@@ -51,6 +51,7 @@ interface Asset {
   accountId: string
   createdAt: string
   updatedAt: string
+  balances?: Balance[]
 }
 
 interface Balance {
@@ -130,7 +131,7 @@ export default function AccountsPage() {
           if (account.assets && Array.isArray(account.assets)) {
             newAccountAssets[account.id] = account.assets
 
-            account.assets.forEach((asset) => {
+            account.assets.forEach((asset: Asset) => {
               if (asset.balances && Array.isArray(asset.balances)) {
                 newAssetBalances[asset.id] = asset.balances
               }
