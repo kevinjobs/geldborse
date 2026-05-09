@@ -1,5 +1,6 @@
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
+import { Slot } from "radix-ui"
 
 import { cn } from "@/lib/utils"
 
@@ -33,7 +34,7 @@ const textVariants = cva("font-sans", {
       right: "text-right",
       justify: "text-justify",
     },
-    color: {
+    textColor: {
       default: "text-foreground",
       muted: "text-muted-foreground",
       ink: "text-ink",
@@ -48,13 +49,13 @@ const textVariants = cva("font-sans", {
   defaultVariants: {
     variant: "body-md",
     align: "left",
-    color: "default",
+    textColor: "default",
   },
 })
 
 type TextVariants = VariantProps<typeof textVariants>
 
-interface TextProps extends React.ComponentProps<"span">, TextVariants {
+interface TextProps extends Omit<React.ComponentProps<"span">, "color">, TextVariants {
   asChild?: boolean
 }
 
@@ -62,15 +63,15 @@ function Text({
   className,
   variant = "body-md",
   align = "left",
-  color = "default",
+  textColor = "default",
   asChild = false,
   ...props
 }: TextProps) {
-  const Comp = asChild ? React.Fragment : "span"
+  const Comp = asChild ? Slot.Root : "span"
 
   return (
     <Comp
-      className={cn(textVariants({ variant, align, color, className }))}
+      className={cn(textVariants({ variant, align, textColor, className }))}
       {...props}
     />
   )
