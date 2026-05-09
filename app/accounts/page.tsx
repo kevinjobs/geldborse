@@ -78,6 +78,7 @@ export default function AccountsPage() {
   const [accountNumber, setAccountNumber] = useState("")
   const [initialBalance, setInitialBalance] = useState("")
   const [saving, setSaving] = useState(false)
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false)
 
   // 新建账户时的资产信息
   const [newAssetName, setNewAssetName] = useState("")
@@ -105,6 +106,24 @@ export default function AccountsPage() {
   useEffect(() => {
     fetchAccounts()
   }, [])
+
+  const handleLogout = async () => {
+    try {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+      })
+
+      if (response.ok) {
+        localStorage.removeItem('geldborse_user')
+        window.location.href = '/auth/login'
+      } else {
+        alert('退出登录失败')
+      }
+    } catch (error) {
+      console.error('退出登录失败:', error)
+      alert('退出登录失败')
+    }
+  }
 
   const fetchAccounts = async () => {
     try {
@@ -692,7 +711,16 @@ export default function AccountsPage() {
                         <CardTitle>账户管理</CardTitle>
                         <CardDescription>管理您的财务账户、资产和余额快照</CardDescription>
                       </div>
-                      <Button onClick={handleAdd}>添加账户</Button>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => setLogoutDialogOpen(true)}
+                        >
+                          <LogOut className="h-4 w-4 mr-2" />
+                          退出登录
+                        </Button>
+                        <Button onClick={handleAdd}>添加账户</Button>
+                      </div>
                     </CardHeader>
                     <CardContent className="min-h-[300px]">
                       {/* 桌面端表格视图 */}
@@ -1341,6 +1369,25 @@ export default function AccountsPage() {
             </Button>
             <Button variant="destructive" onClick={handleConfirmDelete} disabled={saving}>
               {saving ? "删除中..." : "删除"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>退出登录</DialogTitle>
+            <DialogDescription>
+              确定要退出当前登录吗？
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLogoutDialogOpen(false)}>
+              取消
+            </Button>
+            <Button variant="default" onClick={handleLogout}>
+              退出登录
             </Button>
           </DialogFooter>
         </DialogContent>
