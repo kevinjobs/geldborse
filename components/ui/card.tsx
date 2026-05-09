@@ -2,17 +2,34 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
+const cardVariants = {
+  default: "bg-card text-card-foreground",
+  "signature-coral": "bg-signature-coral text-white",
+  "signature-forest": "bg-signature-forest text-white",
+  "hero-card-dark": "bg-surface-dark-elevated text-white",
+  "cream-callout": "bg-surface-soft text-ink",
+  "demo-grid": "bg-canvas rounded-md p-4",
+}
+
+type CardVariant = keyof typeof cardVariants
+
 function Card({
   className,
   size = "default",
+  variant = "default",
   ...props
-}: React.ComponentProps<"div"> & { size?: "default" | "sm" }) {
+}: React.ComponentProps<"div"> & { 
+  size?: "default" | "sm"
+  variant?: CardVariant
+}) {
   return (
     <div
       data-slot="card"
       data-size={size}
+      data-variant={variant}
       className={cn(
-        "group/card flex flex-col gap-4 overflow-hidden rounded-lg bg-card py-4 text-xs/relaxed text-card-foreground ring-1 ring-foreground/10 has-[>img:first-child]:pt-0 data-[size=sm]:gap-3 data-[size=sm]:py-3 *:[img:first-child]:rounded-t-lg *:[img:last-child]:rounded-b-lg",
+        "group/card flex flex-col gap-4 overflow-hidden rounded-lg py-4 text-xs/relaxed ring-1 ring-foreground/10 has-[>img:first-child]:pt-0 data-[size=sm]:gap-3 data-[size=sm]:py-3 *:[img:first-child]:rounded-t-lg *:[img:last-child]:rounded-b-lg",
+        cardVariants[variant],
         className
       )}
       {...props}
