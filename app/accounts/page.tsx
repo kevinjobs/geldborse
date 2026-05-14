@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ResponsiveTable, ResponsiveTableBody, ResponsiveTableCell, ResponsiveTableHeader, ResponsiveTableRow } from "@/components/responsive-table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ChevronDown, ChevronRight, Plus, Pencil, Trash2, LogOut } from "lucide-react"
+import { ChevronDown, ChevronRight, Plus, Pencil, Trash2 } from "lucide-react"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -78,7 +78,6 @@ export default function AccountsPage() {
   const [accountNumber, setAccountNumber] = useState("")
   const [initialBalance, setInitialBalance] = useState("")
   const [saving, setSaving] = useState(false)
-  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false)
 
   // 新建账户时的资产信息
   const [newAssetName, setNewAssetName] = useState("")
@@ -106,24 +105,6 @@ export default function AccountsPage() {
   useEffect(() => {
     fetchAccounts()
   }, [])
-
-  const handleLogout = async () => {
-    try {
-      const response = await fetch('/api/auth/logout', {
-        method: 'POST',
-      })
-
-      if (response.ok) {
-        localStorage.removeItem('geldborse_user')
-        window.location.href = '/auth/login'
-      } else {
-        alert('退出登录失败')
-      }
-    } catch (error) {
-      console.error('退出登录失败:', error)
-      alert('退出登录失败')
-    }
-  }
 
   const fetchAccounts = async () => {
     try {
@@ -712,13 +693,6 @@ export default function AccountsPage() {
                         <CardDescription>管理您的财务账户、资产和余额快照</CardDescription>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          onClick={() => setLogoutDialogOpen(true)}
-                        >
-                          <LogOut className="h-4 w-4 mr-2" />
-                          退出登录
-                        </Button>
                         <Button onClick={handleAdd}>添加账户</Button>
                       </div>
                     </CardHeader>
@@ -1369,25 +1343,6 @@ export default function AccountsPage() {
             </Button>
             <Button variant="destructive" onClick={handleConfirmDelete} disabled={saving}>
               {saving ? "删除中..." : "删除"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>退出登录</DialogTitle>
-            <DialogDescription>
-              确定要退出当前登录吗？
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setLogoutDialogOpen(false)}>
-              取消
-            </Button>
-            <Button variant="default" onClick={handleLogout}>
-              退出登录
             </Button>
           </DialogFooter>
         </DialogContent>

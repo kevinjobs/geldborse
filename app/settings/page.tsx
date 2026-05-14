@@ -12,7 +12,7 @@ import { Toggle } from "@/components/ui/toggle"
 import { useAuth } from "@/lib/auth-context"
 import { toast } from "sonner"
 import { ProtectedRoute } from "@/components/protected-route"
-import { UserIcon, ShieldIcon, DatabaseIcon, BellIcon, EyeIcon } from "@phosphor-icons/react"
+import { UserIcon, ShieldIcon, DatabaseIcon, BellIcon, EyeIcon, Log } from "@phosphor-icons/react"
 
 interface MenuItem {
   id: string
@@ -263,6 +263,24 @@ function SettingsContent() {
     }
   }
 
+  const handleLogout = async () => {
+    try {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+      })
+
+      if (response.ok) {
+        localStorage.removeItem('geldborse_user')
+        window.location.href = '/auth/login'
+      } else {
+        toast.error('退出登录失败')
+      }
+    } catch (error) {
+      console.error('退出登录失败:', error)
+      toast.error('退出登录失败')
+    }
+  }
+
   // 组件挂载时获取登录历史
   useEffect(() => {
     fetchLoginHistories()
@@ -474,6 +492,25 @@ function SettingsContent() {
                           ))}
                         </div>
                       )}
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-destructive/20">
+                    <CardHeader>
+                      <CardTitle className="text-destructive">退出登录</CardTitle>
+                      <CardDescription>
+                        安全退出当前账户
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <Button
+                        variant="destructive"
+                        className="w-full"
+                        onClick={handleLogout}
+                      >
+                        <Log className="h-4 w-4 mr-2" />
+                        退出登录
+                      </Button>
                     </CardContent>
                   </Card>
                 </div>
