@@ -290,9 +290,8 @@ export default function RecordsPage() {
                               </thead>
                               <ResponsiveTableBody>
                                 {sortedRecords.map((record) => {
-                                  const nameColor = getAccountNameColor(record.account.name)
                                   return (
-                                    <ResponsiveTableRow key={record.id} className={`${nameColor.bgColor} dark:${nameColor.darkBgColor}`}>
+                                    <ResponsiveTableRow key={record.id} className="bg-white/50 hover:bg-white/70 dark:bg-slate-800/50 dark:hover:bg-slate-800/70">
                                       <ResponsiveTableCell mobileLabel="日期">{formatDate(record.date)}</ResponsiveTableCell>
                                       <ResponsiveTableCell mobileLabel="账户">
                                         <AccountDisplay name={record.account.name} type={record.account.type} variant="compact" />
