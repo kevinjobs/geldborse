@@ -291,6 +291,7 @@ export const ACCOUNT_TYPE_CONFIG: Record<string, { label: string; icon: typeof B
   CRYPTO: { label: "虚拟货币", icon: Bitcoin },
   STOCK: { label: "股票证券", icon: TrendingUp },
   ONLINE_PAYMENT: { label: "网络支付", icon: Smartphone },
+  DEBT_CLAIM: { label: "债权", icon: FileText },
   OTHER: { label: "其他", icon: Landmark },
 }
 
@@ -308,6 +309,7 @@ export const ASSET_TYPE_CONFIG: Record<string, { label: string; icon: typeof Pig
   BOND: { label: "债券", icon: FileText },
   WEALTH: { label: "理财", icon: Coins },
   DEBT: { label: "负债", icon: MinusCircle },
+  DEBT_CLAIM: { label: "债权", icon: FileText },
   OTHER: { label: "其他", icon: Wallet },
 }
 
