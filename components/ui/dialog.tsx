@@ -10,7 +10,7 @@ import { XIcon } from "@phosphor-icons/react"
 function Dialog({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Root>) {
-  return <DialogPrimitive.Root data-slot="dialog" disableScrollLock {...props} />
+  return <DialogPrimitive.Root data-slot="dialog" {...props} />
 }
 
 Dialog.displayName = 'Dialog'
