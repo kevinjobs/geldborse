@@ -10,8 +10,15 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Toggle } from "@/components/ui/toggle"
 import { useAuth } from "@/lib/auth-context"
+import { avatarPresets, getAvatarUrl } from "@/lib/avatars"
 import { toast } from "sonner"
 import { ProtectedRoute } from "@/components/protected-route"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { UserIcon, ShieldIcon, DatabaseIcon, BellIcon, EyeIcon, Log } from "@phosphor-icons/react"
 
 interface MenuItem {
@@ -57,38 +64,45 @@ function SettingsContent() {
     try {
       if (!user) return
 
-      const formData = new FormData()
-      formData.append('name', name)
-      
-      if (avatarFile) {
-        formData.append('avatar', avatarFile)
+      const body: Record<string, unknown> = { name }
+
+      if (avatarPreset) {
+        body.avatarPreset = avatarPreset
+      } else if (avatarFile) {
+        const base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result as string)
+          reader.onerror = reject
+          reader.readAsDataURL(avatarFile)
+        })
+        body.avatarData = base64
+        body.avatarType = avatarFile.type
       }
 
       const response = await fetch("/api/user/profile", {
         method: "PUT",
-        // 不设置Content-Type，让浏览器自动设置为multipart/form-data
         headers: {
+          "Content-Type": "application/json",
           "Authorization": `Bearer ${user.id}`
         },
-        body: formData,
+        body: JSON.stringify(body),
       })
 
       if (!response.ok) {
-        throw new Error("更新失败")
+        const errData = await response.json().catch(() => ({}))
+        throw new Error(errData.error || `更新失败 (${response.status})`)
       }
 
-      // 更新本地存储中的用户信息
       const updatedData = await response.json()
       if (updatedData.user) {
-        // 更新本地存储
         localStorage.setItem('geldborse_user', JSON.stringify(updatedData.user))
-        // 重新加载页面以显示更新后的数据
         window.location.reload()
       }
 
       toast.success("个人资料已更新")
     } catch (error) {
-      toast.error("更新失败，请重试")
+      console.error('保存失败:', error)
+      toast.error(error instanceof Error ? error.message : "更新失败，请重试")
     } finally {
       setLoading(false)
     }
@@ -341,43 +355,33 @@ function SettingsContent() {
       <CardContent>
         <div className="space-y-4">
           {/* 头像选择区域 */}
-          <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>头像</Label>
             <div className="flex items-center space-x-4">
-              <div className="relative">
-                <img
-                  src={avatarPreview || '/default-avatar.png'}
-                  alt="头像"
-                  className="w-24 h-24 rounded-full object-cover border-2 border-primary"
+                <div
+                  className="relative cursor-pointer shrink-0"
                   onClick={() => setShowAvatarPicker(true)}
-                  style={{ cursor: 'pointer' }}
-                />
-                {!avatarPreview && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
-                    <UserIcon className="h-6 w-6 text-white" />
-                  </div>
-                )}
-                {showAvatarPicker && (
-                  <div className="absolute -top-2 -right-2 bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">
-                    +
-                  </div>
-                )}
+                >
+                  {avatarPreview ? (
+                    <img
+                      src={avatarPreview}
+                      alt="头像"
+                      className="w-16 h-16 rounded-full object-cover border-2 border-primary"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-full bg-[#2C2C2E] border-2 border-primary flex items-center justify-center">
+                      <UserIcon className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="name">昵称</Label>
-                <Input
-                  id="name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="请输入您的昵称"
-                />
-              </div>
-            </div>
             
             {/* 头像选择器 */}
-            {showAvatarPicker && (
-              <div className="border rounded-[16px] p-4 bg-[#1E1E1E]">
-                <h3 className="font-medium mb-4">选择头像</h3>
+            <Dialog open={showAvatarPicker} onOpenChange={setShowAvatarPicker}>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>选择头像</DialogTitle>
+                </DialogHeader>
                 <div className="space-y-4">
                   {/* 上传自定义头像 */}
                   <div className="space-y-3">
@@ -389,28 +393,25 @@ function SettingsContent() {
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) {
-                          // 验证文件类型和大小
                           const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
                           if (!validTypes.includes(file.type)) {
                             toast.error('只支持JPEG, PNG, GIF和WebP格式');
                             return;
                           }
-                          
-                          const maxSize = 5 * 1024 * 1024; // 5MB
+
+                          const maxSize = 5 * 1024 * 1024;
                           if (file.size > maxSize) {
                             toast.error('文件大小不能超过5MB');
                             return;
                           }
-                          
-                          // 预览图片
+
                           const reader = new FileReader();
                           reader.onload = (event) => {
                             setAvatarPreview(event.target?.result as string);
                           };
                           reader.readAsDataURL(file);
-                          
-                          // 存储文件以便提交
                           setAvatarFile(file);
+                          setAvatarPreset(null);
                         }
                       }}
                     />
@@ -418,55 +419,34 @@ function SettingsContent() {
                       支持JPEG, PNG, GIF, WebP格式，最大5MB
                     </p>
                   </div>
-                  
+
                   {/* 预设头像 */}
                   <div className="space-y-3">
                     <Label>选择系统头像</Label>
-                    <div className="grid grid-cols-4 gap-2">
-                      {/* 生成16个预设头像 */}
-                      {Array.from({ length: 16 }, (_, i) => i + 1).map((index) => (
+                    <div className="grid grid-cols-4 gap-3">
+                      {avatarPresets.map((preset) => (
                         <button
-                          key={index}
+                          key={preset.id}
                           onClick={() => {
-                            setAvatarPreset(index);
-                            setAvatarPreview(`/avatars/avatar-${index}.png`);
+                            setAvatarPreset(preset.id);
+                            setAvatarFile(null);
+                            setAvatarPreview(getAvatarUrl(preset));
                             setShowAvatarPicker(false);
                           }}
-                          className={`w-10 h-10 rounded-full border-2 ${selectedPresetAvatar === index ? 'border-primary' : 'border-transparent'} hover:border-primary transition-colors cursor-pointer`}
+                          className={`w-14 h-14 rounded-full overflow-hidden border-2 ${selectedPresetAvatar === preset.id ? 'border-primary' : 'border-transparent'} hover:border-primary transition-colors`}
                         >
                           <img
-                            src={`/avatars/avatar-${index}.png`}
-                            alt={`头像 ${index}`}
-                            className="w-full h-full rounded-full object-cover"
+                            src={getAvatarUrl(preset)}
+                            alt={`头像 ${preset.id}`}
+                            className="w-full h-full"
                           />
                         </button>
                       ))}
                     </div>
-                    <p className="text-xs text-muted-foreground text-center">
-                      点击选择预设头像
-                    </p>
-                  </div>
-                  
-                  <div className="flex justify-end space-x-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowAvatarPicker(false)}
-                      size="sm"
-                    >
-                      取消
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        setShowAvatarPicker(false);
-                      }}
-                      size="sm"
-                    >
-                      确定
-                    </Button>
                   </div>
                 </div>
-              </div>
-            )}
+              </DialogContent>
+            </Dialog>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">

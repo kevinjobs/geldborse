@@ -22,14 +22,11 @@ export function NavUser() {
       >
         <Avatar className="h-9 w-9 group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8">
           <AvatarImage
-            src={`/avatars/${user?.id || "default"}.svg`}
+            src={user?.avatar}
             alt={user?.name || "用户"}
-            onError={(e) => {
-              e.currentTarget.src = "/avatars/default.svg";
-            }}
           />
           <AvatarFallback>
-            {typeof window !== 'undefined' ? (user?.name?.charAt(0).toUpperCase() || "U") : "U"}
+            {user?.name?.charAt(0).toUpperCase() || "U"}
           </AvatarFallback>
         </Avatar>
         <div className="flex-1 text-left group-data-[collapsible=icon]:hidden">

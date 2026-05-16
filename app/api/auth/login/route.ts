@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({ user: { id: user.id, email: user.email, name: user.name } }, { status: 200 });
+    return NextResponse.json({ user: { id: user.id, email: user.email, name: user.name, avatar: user.avatar } }, { status: 200 });
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

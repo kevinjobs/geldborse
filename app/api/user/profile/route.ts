@@ -2,45 +2,53 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/auth';
 
+const AVATAR_STYLES: Record<number, string> = {
+  1: 'adventurer', 2: 'avataaars', 3: 'bottts', 4: 'fun-emoji',
+  5: 'identicon', 6: 'lorelei', 7: 'micah', 8: 'notionists',
+  9: 'open-peeps', 10: 'personas', 11: 'pixel-art', 12: 'rings',
+  13: 'shapes', 14: 'thumbs', 15: 'croodles', 16: 'big-smile',
+};
+
+const AVATAR_SEEDS: Record<number, string> = {
+  1: 'Mia', 2: 'Max', 3: 'Luna', 4: 'Felix',
+  5: 'Nova', 6: 'Oscar', 7: 'Ivy', 8: 'Finn',
+  9: 'Ella', 10: 'Leo', 11: 'Zara', 12: 'Kai',
+  13: 'Ruby', 14: 'Jade', 15: 'Ash', 16: 'Sky',
+};
+
 export async function PUT(request: NextRequest) {
   try {
-    const formData = await request.formData();
-    const name = formData.get('name') as string;
-    const avatar = formData.get('avatar') as File | null;
+    const body = await request.json();
+    const { name, avatarPreset, avatarData, avatarType } = body;
 
-    // 验证输入
     if (!name) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
     }
 
-    // 从认证中获取用户ID
     const userId = await getCurrentUserId(request);
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // 更新用户信息
     const updateData: { name: string; avatar?: string } = { name };
 
-    if (avatar) {
-      // 验证文件类型
-      const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-      if (!validTypes.includes(avatar.type)) {
-        return NextResponse.json({ error: 'Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed.' }, { status: 400 });
+    if (avatarPreset) {
+      const style = AVATAR_STYLES[avatarPreset as number];
+      const seed = AVATAR_SEEDS[avatarPreset as number];
+      if (style && seed) {
+        const dicebearRes = await fetch(`https://api.dicebear.com/9.x/${style}/svg?seed=${seed}`);
+        if (dicebearRes.ok) {
+          const svg = await dicebearRes.text();
+          const base64 = Buffer.from(svg).toString('base64');
+          updateData.avatar = `data:image/svg+xml;base64,${base64}`;
+        }
       }
-
-      // 验证文件大小（限制为5MB）
-      const maxSize = 5 * 1024 * 1024; // 5MB
-      if (avatar.size > maxSize) {
-        return NextResponse.json({ error: 'File size too large. Maximum size is 5MB.' }, { status: 400 });
+    } else if (avatarData) {
+      const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+      if (avatarType && !validTypes.includes(avatarType)) {
+        return NextResponse.json({ error: 'Invalid file type.' }, { status: 400 });
       }
-
-      // 将文件转换为base64
-      const bytes = await avatar.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-      const base64Image = buffer.toString('base64');
-      const dataUrl = `data:${avatar.type};base64,${base64Image}`;
-      updateData.avatar = dataUrl;
+      updateData.avatar = avatarData;
     }
 
     const updatedUser = await prisma.user.update({
