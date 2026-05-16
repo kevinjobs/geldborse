@@ -133,6 +133,10 @@ export const GFDBankLogo = ({ size = 24, className = "" }: LogoProps) => (
   </svg>
 )
 
+export const DebtClaimLogo = ({ size = 24, className = "" }: LogoProps) => (
+  <Image src={`${BASE_PATH}债权.svg`} alt="债权" width={size} height={size} className={className} />
+)
+
 export const OtherLogo = ({ size = 24, className = "" }: LogoProps) => (
   <Image src={`${BASE_PATH}其他.svg`} alt="其他" width={size} height={size} className={className} />
 )
@@ -166,6 +170,7 @@ export const ACCOUNT_LOGOS: Record<string, React.ComponentType<LogoProps>> = {
   "邮储银行": PSBCBankLogo,
   "南京银行": NJCBankLogo,
   "微众银行": WebankLogo,
+  "债权": DebtClaimLogo,
   "其他": OtherLogo,
 }
 
