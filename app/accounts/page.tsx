@@ -714,7 +714,7 @@ export default function AccountsPage() {
                           </thead>
                           <ResponsiveTableBody>
                             {accounts.length === 0 ? (
-                              <ResponsiveTableRow className="animate-fade-in">
+                              <ResponsiveTableRow>
                                 <ResponsiveTableCell colSpan={8} className="text-center text-muted-foreground">
                                   暂无账户
                                 </ResponsiveTableCell>
@@ -733,8 +733,7 @@ export default function AccountsPage() {
                                 return (
                                   <Fragment key={account.id}>
                                     <ResponsiveTableRow
-                                      className={`${bgColor} ${hasAssets ? "cursor-pointer hover:brightness-95 transition-all" : ""} animate-fade-in animate-hover-lift`}
-                                      style={{ animationDelay: `${index * 0.1}s` }}
+                                      className={`${bgColor} ${hasAssets ? "cursor-pointer" : ""}`}
                                       onClick={() => hasAssets && toggleAccountExpand(account.id)}
                                     >
                                       <ResponsiveTableCell mobileLabel="名称" className="py-3">
@@ -769,7 +768,7 @@ export default function AccountsPage() {
                                           <Button
                                             variant="outline"
                                             size="sm"
-                                            className="text-[#00E5FF] border-[#00E5FF]/30 hover:bg-[#00E5FF]/10 hover:text-[#00E5FF] animate-transition-all"
+                                            className="text-[#00E5FF] border-[#00E5FF]/30 hover:bg-[#00E5FF]/10 hover:text-[#00E5FF]"
                                             onClick={() => {
                                               setSelectedAccount(account)
                                               handleAddAsset()
@@ -781,7 +780,6 @@ export default function AccountsPage() {
                                           <Button
                                             variant="outline"
                                             size="sm"
-                                            className="animate-transition-all"
                                             onClick={() => handleEdit(account)}
                                           >
                                             <Pencil className="h-3.5 w-3.5 mr-1" />
@@ -790,7 +788,6 @@ export default function AccountsPage() {
                                           <Button
                                             variant="destructive"
                                             size="sm"
-                                            className="animate-transition-all"
                                             onClick={() => handleDelete(account)}
                                           >
                                             <Trash2 className="h-3.5 w-3.5 mr-1" />
@@ -808,8 +805,7 @@ export default function AccountsPage() {
                                       return (
                                         <Fragment key={asset.id}>
                                           <ResponsiveTableRow
-                                            className="bg-[#252525]/50 hover:bg-[#2C2C2E]/50 transition-colors cursor-pointer animate-slide-in animate-hover-lift"
-                                            style={{ animationDelay: `${assetIndex * 0.05}s` }}
+                                            className="bg-[#252525]/50 hover:bg-[#2C2C2E]/50 cursor-pointer"
                                             onClick={() => toggleAssetExpand(asset.id)}
                                           >
                                             <ResponsiveTableCell mobileLabel="名称" className="relative py-3">
@@ -844,7 +840,7 @@ export default function AccountsPage() {
                                                 <Button
                                                   variant="ghost"
                                                   size="sm"
-                                                  className="text-[#00E5FF] hover:text-[#00E5FF] animate-transition-all"
+                                                  className="text-[#00E5FF] hover:text-[#00E5FF]"
                                                   onClick={() => {
                                                     setSelectedAccount(account)
                                                     setSelectedAsset(asset)
@@ -857,7 +853,6 @@ export default function AccountsPage() {
                                                 <Button
                                                   variant="outline"
                                                   size="sm"
-                                                  className="animate-transition-all"
                                                   onClick={() => handleEditAsset(asset)}
                                                 >
                                                   <Pencil className="h-3.5 w-3.5 mr-1" />
@@ -866,7 +861,6 @@ export default function AccountsPage() {
                                                 <Button
                                                   variant="destructive"
                                                   size="sm"
-                                                  className="animate-transition-all"
                                                   onClick={() => handleDeleteAsset(asset)}
                                                 >
                                                   <Trash2 className="h-3.5 w-3.5 mr-1" />
@@ -878,7 +872,7 @@ export default function AccountsPage() {
                                           {isAssetExpanded && assetBalanceList.map((balance, balanceIndex) => {
                                             const isLastBalance = balanceIndex === assetBalanceList.length - 1
                                             return (
-                                              <ResponsiveTableRow key={balance.id} className="bg-[#2C2C2E]/50 hover:bg-[#3A3A3C]/50 transition-colors animate-scale-in animate-hover-lift" style={{ animationDelay: `${balanceIndex * 0.03}s` }}>
+                                              <ResponsiveTableRow key={balance.id} className="bg-[#2C2C2E]/50 hover:bg-[#3A3A3C]/50">
                                                 <ResponsiveTableCell mobileLabel="时间" className="relative py-2">
                                                   {!isLastAsset && (
                                                     <div className="absolute left-4 top-0 bottom-0 w-px bg-[#2C2C2E]" />
@@ -1012,7 +1006,7 @@ export default function AccountsPage() {
                             return (
                               <div key={account.id} className={`rounded-[16px] ${bgColor} border border-[#2C2C2E] shadow-sm overflow-hidden`}>
                                 {/* 账户卡片 */}
-                                <div className={`p-4 ${hasAssets ? "cursor-pointer hover:brightness-95 transition-all" : ""}`} onClick={() => hasAssets && toggleAccountExpand(account.id)}>
+                                <div className={`p-4 ${hasAssets ? "cursor-pointer" : ""}`} onClick={() => hasAssets && toggleAccountExpand(account.id)}>
                                   <div className="flex justify-between items-start mb-3">
                                     <div>
                                       <div className="flex items-center gap-2">
@@ -1091,7 +1085,7 @@ export default function AccountsPage() {
                                       return (
                                         <div key={asset.id} className="border-b border-[#2C2C2E] last:border-b-0">
                                           {/* 资产卡片 */}
-                                          <div className="p-4 cursor-pointer hover:bg-[#252525]/50 transition-colors" onClick={() => toggleAssetExpand(asset.id)}>
+                                          <div className="p-4 cursor-pointer" onClick={() => toggleAssetExpand(asset.id)}>
                                             <div className="flex justify-between items-start">
                                               <div className="flex items-center gap-2">
                                                 <span className="w-4 h-4 flex items-center justify-center shrink-0">
