@@ -642,8 +642,7 @@ export default function SnapshotsPage() {
                                       const LogoComponent = getAccountLogo(accountData.account.name)
                                       const accountKey = `${group.snapshotAt}-${accountData.account.name}`
                                       const hasMultipleAssets = accountData.snapshots.length > 1
-                                      const isDarkMode = typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
-                                      const bgColor = isDarkMode ? nameColor.darkBgColor : nameColor.bgColor
+                                      const bgColor = nameColor.darkBgColor
 
                                       return (
                                         <div key={accountKey} className={`rounded-[16px] ${bgColor} border border-[#2C2C2E] shadow-sm overflow-hidden`}>

@@ -330,18 +330,12 @@ export function AccountDisplay({ name, type, variant = "table", showBadge = true
   const TypeIcon = typeConfig.icon
   const LogoComponent = ACCOUNT_LOGOS[name]
 
-  // 检测当前是否为深色模式
-  const isDarkMode = typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
-
-  // 根据主题选择颜色
-  const displayColor = isDarkMode ? nameColor.darkColor : nameColor.color
-
   if (variant === "card") {
     return (
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          {LogoComponent && <LogoComponent size={18} className={displayColor} />}
-          <span className={`font-semibold ${displayColor}`}>{name}</span>
+          {LogoComponent && <LogoComponent size={18} className={nameColor.darkColor} />}
+          <span className={`font-semibold ${nameColor.darkColor}`}>{name}</span>
           {showBadge && (
             <Badge variant="outline" className="gap-1 text-xs">
               <TypeIcon className="h-3 w-3" />
@@ -356,8 +350,8 @@ export function AccountDisplay({ name, type, variant = "table", showBadge = true
   if (variant === "compact") {
     return (
       <div className="flex items-center gap-1.5">
-        {LogoComponent && <LogoComponent size={14} className={displayColor} />}
-        <span className={`font-medium ${displayColor}`}>{name}</span>
+        {LogoComponent && <LogoComponent size={14} className={nameColor.darkColor} />}
+        <span className={`font-medium ${nameColor.darkColor}`}>{name}</span>
         {showBadge && (
           <Badge variant="outline" className="gap-0.5 text-[10px] px-1.5 py-0 h-4">
             <TypeIcon className="h-2.5 w-2.5" />
@@ -370,8 +364,8 @@ export function AccountDisplay({ name, type, variant = "table", showBadge = true
 
   return (
     <div className="flex items-center gap-2">
-      {LogoComponent && <LogoComponent size={16} className={displayColor} />}
-      <span className={`font-medium ${displayColor}`}>{name}</span>
+      {LogoComponent && <LogoComponent size={16} className={nameColor.darkColor} />}
+      <span className={`font-medium ${nameColor.darkColor}`}>{name}</span>
       {showBadge && (
         <Badge variant="outline" className="gap-1 text-xs">
           <TypeIcon className="h-3 w-3" />

@@ -729,10 +729,7 @@ export default function AccountsPage() {
                                 const isNegative = totalAmount < 0
                                 const recordsAfterBalanceTotal = (account as { recordsAfterBalanceTotal?: number }).recordsAfterBalanceTotal || 0
                                 const latestSnapshotTotal = (account as { latestSnapshotTotal?: number }).latestSnapshotTotal || 0
-                                // 检测当前是否为深色模式
-                                const isDarkMode = typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
-                                // 根据主题选择背景颜色
-                                const bgColor = isDarkMode ? nameColor.darkBgColor : nameColor.bgColor
+                                const bgColor = nameColor.darkBgColor
                                 return (
                                   <Fragment key={account.id}>
                                     <ResponsiveTableRow
@@ -1011,10 +1008,7 @@ export default function AccountsPage() {
                             const recordsAfterBalanceTotal = (account as { recordsAfterBalanceTotal?: number }).recordsAfterBalanceTotal || 0
                             const latestSnapshotTotal = (account as { latestSnapshotTotal?: number }).latestSnapshotTotal || 0
                             const isNegative = totalAmount < 0
-                            // 检测当前是否为深色模式
-                            const isDarkMode = typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
-                            // 根据主题选择背景颜色
-                            const bgColor = isDarkMode ? nameColor.darkBgColor : nameColor.bgColor
+                            const bgColor = nameColor.darkBgColor
                             return (
                               <div key={account.id} className={`rounded-[16px] ${bgColor} border border-[#2C2C2E] shadow-sm overflow-hidden`}>
                                 {/* 账户卡片 */}

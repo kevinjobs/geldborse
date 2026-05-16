@@ -520,8 +520,7 @@ function OverviewPageContent() {
                                 const isExpanded = expandedAccounts.has(account.id)
                                 const hasAssets = accountAssets.length > 0
                                 const isNegative = total < 0
-                                const isDarkMode = typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
-                                const bgColor = isDarkMode ? nameColor.darkBgColor : nameColor.bgColor
+                                const bgColor = nameColor.darkBgColor
                                 return (
                                   <Fragment key={account.id}>
                                     <ResponsiveTableRow
@@ -612,8 +611,7 @@ function OverviewPageContent() {
                             const isExpanded = expandedAccounts.has(account.id)
                             const hasAssets = accountAssets.length > 0
                             const isNegative = total < 0
-                            const isDarkMode = typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
-                            const bgColor = isDarkMode ? nameColor.darkBgColor : nameColor.bgColor
+                            const bgColor = nameColor.darkBgColor
                             return (
                               <div key={account.id} className={`rounded-[16px] ${bgColor} border border-[#2C2C2E] overflow-hidden`}>
                                 <div className={`p-4 ${hasAssets ? "cursor-pointer" : ""}`} onClick={() => hasAssets && toggleAccountExpand(account.id)}>
