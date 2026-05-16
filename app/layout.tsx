@@ -26,6 +26,10 @@ export const metadata: Metadata = {
   title: "Geldborse - 智能财务管理",
   description: "Geldborse帮助你轻松追踪收支、管理资产、制定预算，让财务管理变得简单而高效",
   keywords: ["财务管理", "收支追踪", "资产管理", "预算管理", "个人理财"],
+  icons: {
+    icon: "/icon.svg",
+    apple: "/icon.svg",
+  },
 };
 
 export default function RootLayout({
