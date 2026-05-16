@@ -40,16 +40,33 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn("h-full", "antialiased", "dark", inter.variable, firaCode.variable, interHeading.variable)}
+      className={cn("h-full", "antialiased", inter.variable, firaCode.variable, interHeading.variable)}
       suppressHydrationWarning
     >
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `
+            (function() {
+              try {
+                var theme = localStorage.getItem('theme');
+                if (theme === 'light') {
+                  document.documentElement.classList.remove('dark');
+                  document.documentElement.classList.add('light');
+                } else if (theme === 'dark') {
+                  document.documentElement.classList.add('dark');
+                  document.documentElement.classList.remove('light');
+                } else {
+                  var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                  document.documentElement.classList.toggle('dark', prefersDark);
+                  document.documentElement.classList.toggle('light', !prefersDark);
+                }
+              } catch(e) {}
+            })();
+          `,
+        }}
+      />
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange
-        >
+        <ThemeProvider>
           <AuthProvider>
             <TooltipProvider>
               {children}

@@ -48,15 +48,15 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#121212]">
+    <div className="min-h-screen bg-background">
       <div style={{ maxWidth: '400px', margin: '0 auto', padding: '16px', paddingTop: 'calc(50vh - 200px)' }}>
         <Card className="block">
           <CardHeader>
             <div className="flex items-center gap-2 mb-4">
-              <Link href="/" className="hover:text-[#00E5FF] transition-colors">
-                <ArrowLeft className="h-5 w-5 text-[#98989D]" />
+              <Link href="/" className="hover:text-primary transition-colors">
+                <ArrowLeft className="h-5 w-5 text-muted-foreground" />
               </Link>
-              <h1 className="text-xl font-bold text-white">
+              <h1 className="text-xl font-bold text-foreground">
                 Geldborse
               </h1>
             </div>
@@ -67,7 +67,7 @@ export default function RegisterPage() {
           </CardHeader>
           <CardContent>
             {error && (
-              <div className="mb-4 p-3 bg-[#3A1C1C] text-[#FF453A] rounded-[8px] border-l-[3px] border-l-[#FF453A]">
+              <div className="mb-4 p-3 bg-destructive/10 text-destructive rounded-[8px] border-l-[3px] border-l-destructive">
                 {error}
               </div>
             )}
@@ -75,7 +75,7 @@ export default function RegisterPage() {
               <div className="space-y-2">
                 <Label htmlFor="name">姓名</Label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#98989D]" />
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
                   <Input
                     id="name"
                     type="text"
@@ -89,7 +89,7 @@ export default function RegisterPage() {
               <div className="space-y-2">
                 <Label htmlFor="email">邮箱</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#98989D]" />
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
                   <Input
                     id="email"
                     type="email"
@@ -104,7 +104,7 @@ export default function RegisterPage() {
               <div className="space-y-2">
                 <Label htmlFor="password">密码</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#98989D]" />
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
                   <Input
                     id="password"
                     type="password"
@@ -117,12 +117,12 @@ export default function RegisterPage() {
                   />
                 </div>
               </div>
-              <Button type="submit" className="w-full bg-[#00E5FF] hover:bg-[#00E5FF]/90 text-[#121212] font-medium" disabled={loading}>
+              <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium" disabled={loading}>
                 {loading ? '注册中...' : '注册'}
               </Button>
-              <div className="text-center text-sm text-[#98989D]">
+              <div className="text-center text-sm text-muted-foreground">
                 已经有账户？
-                <Link href="/auth/login" className="text-[#00E5FF] hover:underline ml-1">
+                <Link href="/auth/login" className="text-primary hover:underline ml-1">
                   登录
                 </Link>
               </div>

@@ -574,21 +574,21 @@ export default function ExportPage() {
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="xlsx" id="snapshot-xlsx" />
                           <Label htmlFor="snapshot-xlsx" className="flex items-center gap-1 cursor-pointer text-sm">
-                            <FileXlsIcon className="h-4 w-4 text-[#32D74B]" />
+                            <FileXlsIcon className="h-4 w-4 text-success" />
                             Excel
                           </Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="pdf" id="snapshot-pdf" />
                           <Label htmlFor="snapshot-pdf" className="flex items-center gap-1 cursor-pointer text-sm">
-                            <FilePdfIcon className="h-4 w-4 text-[#FF453A]" />
+                            <FilePdfIcon className="h-4 w-4 text-destructive" />
                             PDF
                           </Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="jpg" id="snapshot-jpg" />
                           <Label htmlFor="snapshot-jpg" className="flex items-center gap-1 cursor-pointer text-sm">
-                            <ImageIcon className="h-4 w-4 text-[#00E5FF]" />
+                            <ImageIcon className="h-4 w-4 text-primary" />
                             图片
                           </Label>
                         </div>
@@ -608,11 +608,11 @@ export default function ExportPage() {
                   <Label>预览</Label>
                   <div
                     ref={snapshotPreviewRef}
-                    className="w-full max-w-[800px] mx-auto bg-white dark:bg-[#1E1E1E] p-6 rounded-[16px] border border-[#2C2C2E] dark:border-[#2C2C2E]"
+                    className="w-full max-w-[800px] mx-auto bg-card p-6 rounded-[16px] border border-border"
                   >
                     <div className="text-center mb-6">
-                      <h2 className="text-2xl font-bold text-white dark:text-white">资产快照报告</h2>
-                      <p className="text-[#98989D] dark:text-[#98989D] mt-1">
+                      <h2 className="text-2xl font-bold text-foreground">资产快照报告</h2>
+                      <p className="text-muted-foreground mt-1">
                         生成时间：{new Date().toLocaleString("zh-CN")}
                       </p>
                     </div>
@@ -621,7 +621,7 @@ export default function ExportPage() {
                       .filter((g) => selectedSnapshot === "all" || g.snapshotAt === selectedSnapshot)
                       .map((group) => (
                         <div key={group.snapshotAt} className="mb-6">
-                          <div className="bg-gradient-to-r from-blue-500 to-purple-500 text-white p-3 rounded-t-lg">
+                          <div className="bg-gradient-to-r from-blue-500 to-purple-500 text-foreground p-3 rounded-t-lg">
                             <div className="flex justify-between items-center">
                               <span className="font-semibold">{formatDateTime(group.snapshotAt)}</span>
                               <span className="text-lg font-bold">
@@ -647,7 +647,7 @@ export default function ExportPage() {
                                 const isRecordAdjustment = !item.assetId && (item.account.assets?.length ?? 0) > 0
                                 const LogoComponent = getAccountLogo(item.account.name)
                                 return (
-                                  <ResponsiveTableRow key={item.id} className={index % 2 === 0 ? "bg-white dark:bg-[#1E1E1E]" : "bg-[#252525] dark:bg-[#252525]/50"}>
+                                  <ResponsiveTableRow key={item.id} className={index % 2 === 0 ? "bg-card" : "bg-muted"}>
                                     <ResponsiveTableCell mobileLabel="账户">
                                       <div className="flex items-center gap-2">
                                         {LogoComponent ? (
@@ -667,7 +667,7 @@ export default function ExportPage() {
                                     <ResponsiveTableCell mobileLabel="资产类型">
                                       {isRecordAdjustment ? "-" : (assetTypeConfig?.label || "-")}
                                     </ResponsiveTableCell>
-                                    <ResponsiveTableCell mobileLabel="金额" className="text-right font-medium text-[#32D74B]">
+                                    <ResponsiveTableCell mobileLabel="金额" className="text-right font-medium text-success">
                                       {formatAmount(item.amount)}
                                     </ResponsiveTableCell>
                                   </ResponsiveTableRow>
@@ -699,21 +699,21 @@ export default function ExportPage() {
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="xlsx" id="account-xlsx" />
                         <Label htmlFor="account-xlsx" className="flex items-center gap-1 cursor-pointer text-sm">
-                          <FileXlsIcon className="h-4 w-4 text-[#32D74B]" />
+                          <FileXlsIcon className="h-4 w-4 text-success" />
                           Excel
                         </Label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="pdf" id="account-pdf" />
                         <Label htmlFor="account-pdf" className="flex items-center gap-1 cursor-pointer text-sm">
-                          <FilePdfIcon className="h-4 w-4 text-[#FF453A]" />
+                          <FilePdfIcon className="h-4 w-4 text-destructive" />
                           PDF
                         </Label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="jpg" id="account-jpg" />
                         <Label htmlFor="account-jpg" className="flex items-center gap-1 cursor-pointer text-sm">
-                          <ImageIcon className="h-4 w-4 text-[#00E5FF]" />
+                          <ImageIcon className="h-4 w-4 text-primary" />
                           图片
                         </Label>
                       </div>
@@ -732,16 +732,16 @@ export default function ExportPage() {
                   <Label>预览</Label>
                   <div
                     ref={accountPreviewRef}
-                    className="w-full max-w-[800px] mx-auto bg-white dark:bg-[#1E1E1E] p-6 rounded-[16px] border border-[#2C2C2E] dark:border-[#2C2C2E]"
+                    className="w-full max-w-[800px] mx-auto bg-card p-6 rounded-[16px] border border-border"
                   >
                     <div className="text-center mb-6">
-                      <h2 className="text-2xl font-bold text-white dark:text-white">账户明细报告</h2>
-                      <p className="text-[#98989D] dark:text-[#98989D] mt-1">
+                      <h2 className="text-2xl font-bold text-foreground">账户明细报告</h2>
+                      <p className="text-muted-foreground mt-1">
                         生成时间：{new Date().toLocaleString("zh-CN")}
                       </p>
                     </div>
 
-                    <div className="bg-gradient-to-r from-[#00E5FF] to-[#32D74B] text-white p-4 rounded-[16px] mb-6">
+                    <div className="bg-gradient-to-r from-[#00E5FF] to-[#32D74B] text-foreground p-4 rounded-[16px] mb-6">
                       <div className="text-center">
                         <p className="text-sm opacity-80">总资产</p>
                         <p className="text-3xl font-bold">{formatAmount(totalAssets)}</p>
@@ -770,7 +770,7 @@ export default function ExportPage() {
 
                           if (assets.length === 0) {
                             return (
-                              <ResponsiveTableRow key={account.id} className={accountIndex % 2 === 0 ? "bg-white dark:bg-[#1E1E1E]" : "bg-[#252525] dark:bg-[#252525]/50"}>
+                              <ResponsiveTableRow key={account.id} className={accountIndex % 2 === 0 ? "bg-card" : "bg-muted"}>
                                 <ResponsiveTableCell mobileLabel="账户">
                                   <div className="flex items-center gap-2">
                                     {LogoComponent ? (
@@ -787,10 +787,10 @@ export default function ExportPage() {
                                 <ResponsiveTableCell mobileLabel="账户号码">{account.accountNumber || "-"}</ResponsiveTableCell>
                                 <ResponsiveTableCell mobileLabel="资产">-</ResponsiveTableCell>
                                 <ResponsiveTableCell mobileLabel="资产类型">-</ResponsiveTableCell>
-                                <ResponsiveTableCell mobileLabel="金额" className="text-right font-medium text-[#32D74B]">
+                                <ResponsiveTableCell mobileLabel="金额" className="text-right font-medium text-success">
                                   {formatAmount(account.totalAmount)}
                                 </ResponsiveTableCell>
-                                <ResponsiveTableCell mobileLabel="账户总计" className="text-right font-bold text-[#32D74B]">
+                                <ResponsiveTableCell mobileLabel="账户总计" className="text-right font-bold text-success">
                                   {formatAmount(account.totalAmount)}
                                 </ResponsiveTableCell>
                               </ResponsiveTableRow>
@@ -803,7 +803,7 @@ export default function ExportPage() {
                             return (
                               <ResponsiveTableRow
                                 key={`${account.id}-${asset.id}`}
-                                className={accountIndex % 2 === 0 ? "bg-white dark:bg-[#1E1E1E]" : "bg-[#252525] dark:bg-[#252525]/50"}
+                                className={accountIndex % 2 === 0 ? "bg-card" : "bg-muted"}
                               >
                                 {assetIndex === 0 && (
                                   <>
@@ -832,11 +832,11 @@ export default function ExportPage() {
                                 )}
                                 <ResponsiveTableCell mobileLabel="资产" className="pl-6">{asset.name}</ResponsiveTableCell>
                                 <ResponsiveTableCell mobileLabel="资产类型">{assetTypeConfig.label}</ResponsiveTableCell>
-                                <ResponsiveTableCell mobileLabel="金额" className="text-right font-medium text-[#32D74B]">
+                                <ResponsiveTableCell mobileLabel="金额" className="text-right font-medium text-success">
                                   {formatAmount(assetAmount)}
                                 </ResponsiveTableCell>
                                 {assetIndex === 0 && (
-                                  <ResponsiveTableCell mobileLabel="账户总计" className="text-right font-bold text-[#32D74B]">
+                                  <ResponsiveTableCell mobileLabel="账户总计" className="text-right font-bold text-success">
                                     {formatAmount(account.totalAmount)}
                                   </ResponsiveTableCell>
                                 )}
@@ -871,14 +871,14 @@ export default function ExportPage() {
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="xlsx" id="record-xlsx" />
                         <Label htmlFor="record-xlsx" className="flex items-center gap-1 cursor-pointer text-sm">
-                          <FileXlsIcon className="h-4 w-4 text-[#32D74B]" />
+                          <FileXlsIcon className="h-4 w-4 text-success" />
                           Excel
                         </Label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="pdf" id="record-pdf" />
                         <Label htmlFor="record-pdf" className="flex items-center gap-1 cursor-pointer text-sm">
-                          <FilePdfIcon className="h-4 w-4 text-[#FF453A]" />
+                          <FilePdfIcon className="h-4 w-4 text-destructive" />
                           PDF
                         </Label>
                       </div>
@@ -897,27 +897,27 @@ export default function ExportPage() {
                   <Label>预览</Label>
                   <div
                     id="record-preview"
-                    className="w-full max-w-[800px] mx-auto bg-white dark:bg-[#1E1E1E] p-6 rounded-[16px] border border-[#2C2C2E] dark:border-[#2C2C2E]"
+                    className="w-full max-w-[800px] mx-auto bg-card p-6 rounded-[16px] border border-border"
                   >
                     <div className="text-center mb-6">
-                      <h2 className="text-2xl font-bold text-white dark:text-white">收支记录报告</h2>
-                      <p className="text-[#98989D] dark:text-[#98989D] mt-1">
+                      <h2 className="text-2xl font-bold text-foreground">收支记录报告</h2>
+                      <p className="text-muted-foreground mt-1">
                         生成时间：{new Date().toLocaleString("zh-CN")}
                       </p>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
-                      <div className="bg-[#32D74B]/10 border border-[#32D74B]/30 rounded-[16px] p-3 sm:p-4 text-center">
-                        <p className="text-sm text-[#32D74B] mb-1">总收入</p>
-                        <p className="text-xl sm:text-2xl font-bold text-[#32D74B]">{formatAmount(incomeTotal)}</p>
+                      <div className="bg-success/10 border border-success/30 rounded-[16px] p-3 sm:p-4 text-center">
+                        <p className="text-sm text-success mb-1">总收入</p>
+                        <p className="text-xl sm:text-2xl font-bold text-success">{formatAmount(incomeTotal)}</p>
                       </div>
-                      <div className="bg-[#3A1C1C] border border-[#FF453A]/30 rounded-[16px] p-3 sm:p-4 text-center">
-                        <p className="text-sm text-[#FF453A] mb-1">总支出</p>
-                        <p className="text-xl sm:text-2xl font-bold text-[#FF453A]">{formatAmount(Math.abs(expenseTotal))}</p>
+                      <div className="bg-destructive/10 border border-destructive/30 rounded-[16px] p-3 sm:p-4 text-center">
+                        <p className="text-sm text-destructive mb-1">总支出</p>
+                        <p className="text-xl sm:text-2xl font-bold text-destructive">{formatAmount(Math.abs(expenseTotal))}</p>
                       </div>
-                      <div className="bg-[#00E5FF]/10 border border-[#00E5FF]/30 rounded-[16px] p-3 sm:p-4 text-center">
-                        <p className="text-sm text-[#00E5FF] mb-1">净收入</p>
-                        <p className="text-xl sm:text-2xl font-bold text-[#00E5FF]">
+                      <div className="bg-primary/10 border border-primary/30 rounded-[16px] p-3 sm:p-4 text-center">
+                        <p className="text-sm text-primary mb-1">净收入</p>
+                        <p className="text-xl sm:text-2xl font-bold text-primary">
                           {formatAmount(incomeTotal + expenseTotal)}
                         </p>
                       </div>
@@ -938,12 +938,12 @@ export default function ExportPage() {
                           const nameColor = getAccountNameColor(record.account.name)
                           const LogoComponent = getAccountLogo(record.account.name)
                           return (
-                            <ResponsiveTableRow key={record.id} className={index % 2 === 0 ? "bg-white dark:bg-[#1E1E1E]" : "bg-[#252525] dark:bg-[#252525]/50"}>
+                            <ResponsiveTableRow key={record.id} className={index % 2 === 0 ? "bg-card" : "bg-muted"}>
                               <ResponsiveTableCell mobileLabel="日期">
                                 {new Date(record.date).toLocaleDateString("zh-CN")}
                               </ResponsiveTableCell>
                               <ResponsiveTableCell mobileLabel="类型">
-                                <span className={`px-2 py-1 rounded text-xs font-medium ${record.type === "INCOME" ? "bg-[#32D74B]/10 text-[#32D74B]" : "bg-[#FF453A]/10 text-[#FF453A]"}`}>
+                                <span className={`px-2 py-1 rounded text-xs font-medium ${record.type === "INCOME" ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"}`}>
                                   {record.type === "INCOME" ? "收入" : "支出"}
                                 </span>
                               </ResponsiveTableCell>
@@ -959,7 +959,7 @@ export default function ExportPage() {
                                   {record.account.name}
                                 </div>
                               </ResponsiveTableCell>
-                              <ResponsiveTableCell mobileLabel="金额" className={`text-right font-medium ${record.type === "INCOME" ? "text-[#32D74B]" : "text-[#FF453A]"}`}>
+                              <ResponsiveTableCell mobileLabel="金额" className={`text-right font-medium ${record.type === "INCOME" ? "text-success" : "text-destructive"}`}>
                                 {record.type === "INCOME" ? "+" : "-"}
                                 {formatAmount(Math.abs(record.amount || 0))}
                               </ResponsiveTableCell>
@@ -982,11 +982,11 @@ export default function ExportPage() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="space-y-4">
-                    <div className="p-4 bg-[#00E5FF]/10 dark:bg-[#00E5FF]/10 rounded-[16px] border border-[#00E5FF]/30 dark:border-[#00E5FF]/30">
-                      <p className="text-sm text-[#00E5FF] dark:text-[#00E5FF]">
+                    <div className="p-4 bg-primary/10 rounded-[16px] border border-primary/30">
+                      <p className="text-sm text-primary">
                         导出的文件包含以下数据：
                       </p>
-                      <ul className="mt-2 space-y-1 text-sm text-[#00E5FF] dark:text-[#00E5FF]">
+                      <ul className="mt-2 space-y-1 text-sm text-primary">
                         <li>• 所有账户信息（名称、类型、账户号码）</li>
                         <li>• 所有资产信息（名称、类型、金额）</li>
                         <li>• 所有资产快照记录</li>
@@ -1017,11 +1017,11 @@ export default function ExportPage() {
                   <div className="space-y-4">
                     {importStatus === 'idle' && (
                       <>
-                        <div className="p-4 bg-[#00E5FF]/10 dark:bg-[#00E5FF]/10 rounded-[16px] border border-[#00E5FF]/30 dark:border-[#00E5FF]/30">
-                          <p className="text-sm text-[#00E5FF] dark:text-[#00E5FF]">
+                        <div className="p-4 bg-primary/10 rounded-[16px] border border-primary/30">
+                          <p className="text-sm text-primary">
                             请选择从其他用户导出的 .json 数据文件
                           </p>
-                          <ul className="mt-2 space-y-1 text-sm text-[#00E5FF] dark:text-[#00E5FF]">
+                          <ul className="mt-2 space-y-1 text-sm text-primary">
                             <li>• 支持导入账户、资产、快照和收支记录</li>
                             <li>• 导入时会自动处理重复数据</li>
                             <li>• 导入过程可能需要几秒钟时间</li>
@@ -1031,7 +1031,7 @@ export default function ExportPage() {
                         <input
                           type="file"
                           accept=".json"
-                          className="w-full border border-[#2C2C2E] dark:border-[#2C2C2E] rounded-[16px] p-2"
+                          className="w-full border border-border rounded-[16px] p-2"
                           onChange={handleFileImport}
                         />
                       </>
@@ -1039,25 +1039,25 @@ export default function ExportPage() {
 
                     {importStatus === 'loading' && (
                       <div className="text-center py-8">
-                        <p className="text-sm text-[#98989D] dark:text-[#98989D]">正在处理数据...</p>
+                        <p className="text-sm text-muted-foreground">正在处理数据...</p>
                       </div>
                     )}
 
                     {importStatus === 'preview' && previewData && (
                       <div className="space-y-4">
-                        <div className="p-4 bg-[#FFD60A]/10 dark:bg-[#FFD60A]/10 rounded-[16px] border border-[#FFD60A]/30 dark:border-[#FFD60A]/30">
-                          <h3 className="font-medium text-yellow-700 dark:text-yellow-300 mb-2">数据预览</h3>
+                        <div className="p-4 bg-warning/10 border border-warning/30">
+                          <h3 className="font-medium text-warning mb-2">数据预览</h3>
                           <div className="grid grid-cols-2 gap-4">
                             <div>
-                              <p className="text-sm text-[#98989D] dark:text-[#98989D]">账户数量: <span className="font-medium">{previewData.stats.accounts}</span></p>
-                              <p className="text-sm text-[#98989D] dark:text-[#98989D]">资产数量: <span className="font-medium">{previewData.stats.assets}</span></p>
+                              <p className="text-sm text-muted-foreground">账户数量: <span className="font-medium">{previewData.stats.accounts}</span></p>
+                              <p className="text-sm text-muted-foreground">资产数量: <span className="font-medium">{previewData.stats.assets}</span></p>
                             </div>
                             <div>
-                              <p className="text-sm text-[#98989D] dark:text-[#98989D]">收支记录: <span className="font-medium">{previewData.stats.records}</span></p>
-                              <p className="text-sm text-[#98989D] dark:text-[#98989D]">资产快照: <span className="font-medium">{previewData.stats.snapshots}</span></p>
+                              <p className="text-sm text-muted-foreground">收支记录: <span className="font-medium">{previewData.stats.records}</span></p>
+                              <p className="text-sm text-muted-foreground">资产快照: <span className="font-medium">{previewData.stats.snapshots}</span></p>
                             </div>
                           </div>
-                          <p className="mt-3 text-sm text-yellow-700 dark:text-yellow-300">
+                          <p className="mt-3 text-sm text-warning">
                             点击"确认导入"将开始导入以上数据，导入过程中会自动处理重复数据。
                           </p>
                         </div>
@@ -1081,23 +1081,23 @@ export default function ExportPage() {
                     )}
 
                     {importStatus === 'success' && (
-                      <div className="p-4 bg-[#32D74B]/10 rounded-[16px] border border-[#32D74B]/30">
-                        <p className="text-sm text-[#32D74B] dark:text-[#32D74B] font-medium">
+                      <div className="p-4 bg-success/10 rounded-[16px] border border-success/30">
+                        <p className="text-sm text-success font-medium">
                           数据导入成功！
                         </p>
                         <div className="mt-3 space-y-2">
-                          <p className="text-sm text-[#98989D] dark:text-[#98989D]">
+                          <p className="text-sm text-muted-foreground">
                             <span className="font-medium">成功导入：</span>
                             {importStats.accounts} 个账户，{importStats.assets} 个资产，{importStats.records} 条记录
                           </p>
                           {importStats.duplicates > 0 && (
-                            <p className="text-sm text-yellow-600 dark:text-yellow-400">
+                            <p className="text-sm text-warning">
                               <span className="font-medium">重复数据：</span>
                               {importStats.duplicates} 条（已自动处理）
                             </p>
                           )}
                           {importStats.invalid > 0 && (
-                            <p className="text-sm text-[#FF453A]">
+                            <p className="text-sm text-destructive">
                               <span className="font-medium">无效数据：</span>
                               {importStats.invalid} 条（已跳过）
                             </p>
@@ -1114,8 +1114,8 @@ export default function ExportPage() {
                     )}
 
                     {importStatus === 'error' && (
-                      <div className="p-4 bg-[#3A1C1C] dark:bg-[#3A1C1C]/50 rounded-[16px] border border-[#FF453A]/30 dark:border-[#FF453A]/30">
-                        <p className="text-sm text-[#FF453A] dark:text-[#FF453A]">
+                      <div className="p-4 bg-destructive/10 rounded-[16px] border border-destructive/30">
+                        <p className="text-sm text-destructive">
                           导入失败：{importError}
                         </p>
                         <Button

@@ -375,7 +375,7 @@ export default function SnapshotsPage() {
                     <CardContent>
                       {getAssetChanges.fromFirst !== null ? (
                         <div className="text-2xl font-bold">
-                          <span className={getAssetChanges.fromFirst >= 0 ? "text-[#32D74B]" : "text-[#FF453A]"}>
+                          <span className={getAssetChanges.fromFirst >= 0 ? "text-success" : "text-destructive"}>
                             {getAssetChanges.fromFirst >= 0 ? "+" : ""}
                             {formatAmount(getAssetChanges.fromFirst)}
                           </span>
@@ -397,7 +397,7 @@ export default function SnapshotsPage() {
                     <CardContent>
                       {getAssetChanges.fromLastMonth !== null ? (
                         <div className="text-2xl font-bold">
-                          <span className={getAssetChanges.fromLastMonth >= 0 ? "text-[#32D74B]" : "text-[#FF453A]"}>
+                          <span className={getAssetChanges.fromLastMonth >= 0 ? "text-success" : "text-destructive"}>
                             {getAssetChanges.fromLastMonth >= 0 ? "+" : ""}
                             {formatAmount(getAssetChanges.fromLastMonth)}
                           </span>
@@ -443,16 +443,16 @@ export default function SnapshotsPage() {
                       <div className="h-[300px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                           <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#2C2C2E" />
+                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                             <XAxis
                               dataKey="label"
                               tick={{ fontSize: 12 }}
-                              stroke="#98989D"
+                              stroke="var(--muted-foreground)"
                               tickLine={false}
                             />
                             <YAxis
                               tick={{ fontSize: 12 }}
-                              stroke="#98989D"
+                              stroke="var(--muted-foreground)"
                               tickLine={false}
                               tickFormatter={formatAmountShort}
                             />
@@ -465,8 +465,8 @@ export default function SnapshotsPage() {
                                 return label
                               }}
                               contentStyle={{
-                                backgroundColor: "#1E1E1E",
-                                border: "1px solid #2C2C2E",
+                                backgroundColor: "var(--card)",
+                                border: "1px solid var(--border)",
                                 borderRadius: "8px",
                                 boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
                               }}
@@ -474,10 +474,10 @@ export default function SnapshotsPage() {
                             <Line
                               type="monotone"
                               dataKey="total"
-                              stroke="#00E5FF"
+                              stroke="var(--primary)"
                               strokeWidth={2}
                               dot={false}
-                              activeDot={{ r: 6, fill: "#00E5FF" }}
+                              activeDot={{ r: 6, fill: "var(--primary)" }}
                             />
                           </LineChart>
                         </ResponsiveContainer>
@@ -531,7 +531,7 @@ export default function SnapshotsPage() {
                           return (
                             <div key={group.snapshotAt} className="border rounded-[16px] overflow-hidden">
                               <div
-                                className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 bg-[#252525] cursor-pointer hover:bg-[#252525] transition-colors gap-2 sm:gap-0"
+                                className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 bg-muted cursor-pointer hover:bg-muted transition-colors gap-2 sm:gap-0"
                                 onClick={() => toggleSnapshotExpand(group.snapshotAt)}
                               >
                                 <div className="flex items-center gap-2">
@@ -544,7 +544,7 @@ export default function SnapshotsPage() {
                                 </div>
                                 <div className="flex items-center justify-between sm:justify-end gap-4 pl-6 sm:pl-0">
                                   <div className="text-base sm:text-lg font-bold">
-                                    总计: <span className={group.total >= 0 ? "text-[#32D74B]" : "text-[#FF453A]"}>{formatAmount(group.total)}</span>
+                                    总计: <span className={group.total >= 0 ? "text-success" : "text-destructive"}>{formatAmount(group.total)}</span>
                                   </div>
                                   <Button
                                     variant="ghost"
@@ -621,12 +621,12 @@ export default function SnapshotsPage() {
                                                   </Badge>
                                                 </ResponsiveTableCell>
                                                 <ResponsiveTableCell mobileLabel="金额" className="text-right">
-                                                  <span className={accountData.total >= 0 ? "text-[#32D74B]" : "text-[#FF453A]"}>
+                                                  <span className={accountData.total >= 0 ? "text-success" : "text-destructive"}>
                                                     {formatAmount(accountData.total)}
                                                   </span>
                                                 </ResponsiveTableCell>
                                                 <ResponsiveTableCell mobileLabel="账户总计" className="text-right">
-                                                  <span className={accountData.total >= 0 ? "text-[#32D74B]" : "text-[#FF453A]"}>
+                                                  <span className={accountData.total >= 0 ? "text-success" : "text-destructive"}>
                                                     {formatAmount(accountData.total)}
                                                   </span>
                                                 </ResponsiveTableCell>
@@ -652,17 +652,17 @@ export default function SnapshotsPage() {
                                                 const AssetIcon = assetTypeConfig?.icon
 
                                                 return (
-                                                  <ResponsiveTableRow key={snapshot.id} className="bg-[#252525]/50 hover:bg-[#252525]/50 transition-colors">
+                                                  <ResponsiveTableRow key={snapshot.id} className="bg-muted/50 hover:bg-muted/50 transition-colors">
                                                     <ResponsiveTableCell mobileLabel="资产" className="relative py-2">
                                                       {!isLastSnapshot && (
-                                                        <div className="absolute left-4 top-0 bottom-0 w-px bg-[#2C2C2E]" />
+                                                        <div className="absolute left-4 top-0 bottom-0 w-px bg-border" />
                                                       )}
                                                       {isLastSnapshot && (
-                                                        <div className="absolute left-4 top-0 h-1/2 w-px bg-[#2C2C2E]" />
+                                                        <div className="absolute left-4 top-0 h-1/2 w-px bg-border" />
                                                       )}
-                                                      <div className="absolute left-4 top-1/2 w-3 h-px bg-[#2C2C2E]" />
+                                                      <div className="absolute left-4 top-1/2 w-3 h-px bg-border" />
                                                       <div className="pl-10 flex items-center gap-2">
-                                                        <span className="text-sm text-[#98989D]">
+                                                        <span className="text-sm text-muted-foreground">
                                                           {snapshot.asset?.name || "默认资产"}
                                                         </span>
                                                         {assetTypeConfig && (
@@ -675,7 +675,7 @@ export default function SnapshotsPage() {
                                                     </ResponsiveTableCell>
                                                     <ResponsiveTableCell />
                                                     <ResponsiveTableCell mobileLabel="金额" className="text-right text-sm">
-                                                      <span className={snapshot.amount >= 0 ? "text-[#32D74B]" : "text-[#FF453A]"}>
+                                                      <span className={snapshot.amount >= 0 ? "text-success" : "text-destructive"}>
                                                         {formatAmount(snapshot.amount)}
                                                       </span>
                                                     </ResponsiveTableCell>
@@ -714,7 +714,7 @@ export default function SnapshotsPage() {
                                       const bgColor = nameColor.darkBgColor
 
                                       return (
-                                        <div key={accountKey} className={`rounded-[16px] ${bgColor} border border-[#2C2C2E] shadow-sm overflow-hidden`}>
+                                        <div key={accountKey} className={`rounded-[16px] ${bgColor} border border-border shadow-sm overflow-hidden`}>
                                           {/* 账户卡片 */}
                                           <div className="p-4">
                                             <div className="flex justify-between items-start mb-2">
@@ -733,7 +733,7 @@ export default function SnapshotsPage() {
                                                   )}
                                                 </div>
                                               </div>
-                                              <div className={`text-lg font-medium ${accountData.total >= 0 ? "text-[#32D74B]" : "text-[#FF453A]"}`}>
+                                              <div className={`text-lg font-medium ${accountData.total >= 0 ? "text-success" : "text-destructive"}`}>
                                                 {formatAmount(accountData.total)}
                                               </div>
                                             </div>
@@ -751,17 +751,17 @@ export default function SnapshotsPage() {
                                           </div>
                                           {/* 资产列表 */}
                                           {hasMultipleAssets && (
-                                            <div className="border-t border-[#2C2C2E]">
+                                            <div className="border-t border-border">
                                               {accountData.snapshots.map((snapshot, snapshotIndex) => {
                                                 const assetTypeConfig = snapshot.asset ? getAssetTypeConfig(snapshot.asset.type) : null
                                                 const AssetIcon = assetTypeConfig?.icon
                                                 const isLast = snapshotIndex === accountData.snapshots.length - 1
 
                                                 return (
-                                                  <div key={snapshot.id} className={`p-3 ${!isLast ? "border-b border-[#2C2C2E]" : ""}`}>
+                                                  <div key={snapshot.id} className={`p-3 ${!isLast ? "border-b border-border" : ""}`}>
                                                     <div className="flex justify-between items-center">
                                                       <div className="flex items-center gap-2">
-                                                        <span className="text-sm text-[#98989D]">
+                                                        <span className="text-sm text-muted-foreground">
                                                           {snapshot.asset?.name || "默认资产"}
                                                         </span>
                                                         {assetTypeConfig && (
@@ -772,7 +772,7 @@ export default function SnapshotsPage() {
                                                         )}
                                                       </div>
                                                       <div className="flex items-center gap-2">
-                                                        <div className={`text-sm font-medium ${snapshot.amount >= 0 ? "text-[#32D74B]" : "text-[#FF453A]"}`}>
+                                                        <div className={`text-sm font-medium ${snapshot.amount >= 0 ? "text-success" : "text-destructive"}`}>
                                                           {formatAmount(snapshot.amount)}
                                                         </div>
                                                         <Button

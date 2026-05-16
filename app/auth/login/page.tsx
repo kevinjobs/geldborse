@@ -34,15 +34,15 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#121212]">
+    <div className="min-h-screen bg-background">
       <div style={{ maxWidth: '400px', margin: '0 auto', padding: '16px', paddingTop: 'calc(50vh - 200px)' }}>
         <Card className="block">
           <CardHeader>
             <div className="flex items-center gap-2 mb-4">
-              <Link href="/" className="hover:text-[#00E5FF] transition-colors">
-                <ArrowLeft className="h-5 w-5 text-[#98989D]" />
+              <Link href="/" className="hover:text-primary transition-colors">
+                <ArrowLeft className="h-5 w-5 text-muted-foreground" />
               </Link>
-              <h1 className="text-xl font-bold text-white">
+              <h1 className="text-xl font-bold text-foreground">
                 Geldborse
               </h1>
             </div>
@@ -53,7 +53,7 @@ export default function LoginPage() {
           </CardHeader>
           <CardContent>
             {error && (
-              <div className="mb-4 p-3 bg-[#3A1C1C] text-[#FF453A] rounded-[8px] border-l-[3px] border-l-[#FF453A]">
+              <div className="mb-4 p-3 bg-destructive/10 text-destructive rounded-[8px] border-l-[3px] border-l-destructive">
                 {error}
               </div>
             )}
@@ -61,7 +61,7 @@ export default function LoginPage() {
               <div className="space-y-2">
                 <Label htmlFor="email">邮箱</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#98989D]" />
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
                   <Input
                     id="email"
                     type="email"
@@ -76,12 +76,12 @@ export default function LoginPage() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password">密码</Label>
-                  <Link href="#" className="text-sm text-[#00E5FF] hover:underline">
+                  <Link href="#" className="text-sm text-primary hover:underline">
                     忘记密码？
                   </Link>
                 </div>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#98989D]" />
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
                   <Input
                     id="password"
                     type="password"
@@ -93,12 +93,12 @@ export default function LoginPage() {
                   />
                 </div>
               </div>
-              <Button type="submit" className="w-full bg-[#00E5FF] hover:bg-[#00E5FF]/90 text-[#121212] font-medium" disabled={loading}>
+              <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium" disabled={loading}>
                 {loading ? '登录中...' : '登录'}
               </Button>
-              <div className="text-center text-sm text-[#98989D]">
+              <div className="text-center text-sm text-muted-foreground">
                 还没有账户？
-                <Link href="/auth/register" className="text-[#00E5FF] hover:underline ml-1">
+                <Link href="/auth/register" className="text-primary hover:underline ml-1">
                   注册
                 </Link>
               </div>

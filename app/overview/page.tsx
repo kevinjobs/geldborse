@@ -306,52 +306,52 @@ function OverviewPageContent() {
                 {/* 3-column KPI Cards */}
                 <div className="px-4 lg:px-6">
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                    <Card className="border-l-[3px] border-l-[#00E5FF]">
+                    <Card className="border-l-[3px] border-l-primary">
                       <CardHeader className="pb-1">
                         <CardDescription className="flex items-center gap-2 text-xs uppercase tracking-wider">
-                          <Zap className="h-3.5 w-3.5 text-[#00E5FF]" />
+                          <Zap className="h-3.5 w-3.5 text-primary" />
                           总资产
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <div className="font-mono text-3xl font-bold tracking-tight text-white">
+                        <div className="font-mono text-3xl font-bold tracking-tight text-foreground">
                           {formatAmount(totalAssets)}
                         </div>
-                        <p className="text-xs text-[#98989D] mt-1">
+                        <p className="text-xs text-muted-foreground mt-1">
                           {totalAccounts} 个账户
                         </p>
                       </CardContent>
                     </Card>
 
-                    <Card className="border-l-[3px] border-l-[#32D74B]">
+                    <Card className="border-l-[3px] border-l-success">
                       <CardHeader className="pb-1">
                         <CardDescription className="flex items-center gap-2 text-xs uppercase tracking-wider">
-                          <Gauge className="h-3.5 w-3.5 text-[#32D74B]" />
+                          <Gauge className="h-3.5 w-3.5 text-success" />
                           近一月变化
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <div className={`font-mono text-3xl font-bold tracking-tight ${trend.isPositive ? "text-[#32D74B]" : "text-[#FF453A]"}`}>
+                        <div className={`font-mono text-3xl font-bold tracking-tight ${trend.isPositive ? "text-success" : "text-destructive"}`}>
                           {trend.isPositive ? "+" : ""}{formatAmount(trend.value)}
                         </div>
-                        <p className="text-xs text-[#98989D] mt-1">
+                        <p className="text-xs text-muted-foreground mt-1">
                           {trend.isPositive ? "↑ 净增长" : "↓ 净减少"}
                         </p>
                       </CardContent>
                     </Card>
 
-                    <Card className="border-l-[3px] border-l-[#FFD60A]">
+                    <Card className="border-l-[3px] border-l-warning">
                       <CardHeader className="pb-1">
                         <CardDescription className="flex items-center gap-2 text-xs uppercase tracking-wider">
-                          <PlugZap className="h-3.5 w-3.5 text-[#FFD60A]" />
+                          <PlugZap className="h-3.5 w-3.5 text-warning" />
                           收支笔数
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <div className="font-mono text-3xl font-bold tracking-tight text-white">
+                        <div className="font-mono text-3xl font-bold tracking-tight text-foreground">
                           {totalRecords}
                         </div>
-                        <p className="text-xs text-[#98989D] mt-1">
+                        <p className="text-xs text-muted-foreground mt-1">
                           累计记录
                         </p>
                       </CardContent>
@@ -371,7 +371,7 @@ function OverviewPageContent() {
                         </CardHeader>
                         <CardContent>
                           {chartData.length === 0 ? (
-                            <div className="flex items-center justify-center h-[250px] text-[#98989D] text-sm">
+                            <div className="flex items-center justify-center h-[250px] text-muted-foreground text-sm">
                               暂无数据
                             </div>
                           ) : (
@@ -380,14 +380,14 @@ function OverviewPageContent() {
                                 <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
                                   <defs>
                                     <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                                      <stop offset="0%" stopColor="#00E5FF" stopOpacity={0.3} />
-                                      <stop offset="95%" stopColor="#00E5FF" stopOpacity={0.05} />
+                                      <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.3} />
+                                      <stop offset="95%" stopColor="var(--primary)" stopOpacity={0.05} />
                                     </linearGradient>
                                   </defs>
-                                  <CartesianGrid stroke="#2C2C2E" vertical={false} strokeDasharray="3 3" />
+                                  <CartesianGrid stroke="var(--border)" vertical={false} strokeDasharray="3 3" />
                                   <XAxis
                                     dataKey="date"
-                                    tick={{ fill: "#98989D", fontSize: 11 }}
+                                    tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
                                     tickLine={false}
                                     axisLine={false}
                                     tickFormatter={(v) => {
@@ -396,7 +396,7 @@ function OverviewPageContent() {
                                     }}
                                   />
                                   <YAxis
-                                    tick={{ fill: "#98989D", fontSize: 11 }}
+                                    tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
                                     tickLine={false}
                                     axisLine={false}
                                     tickFormatter={formatAmountShort}
@@ -404,19 +404,19 @@ function OverviewPageContent() {
                                   />
                                   <Tooltip
                                     contentStyle={{
-                                      backgroundColor: "#1E1E1E",
-                                      border: "1px solid #2C2C2E",
+                                      backgroundColor: "var(--card)",
+                                      border: "1px solid var(--border)",
                                       borderRadius: "8px",
                                       fontSize: "12px",
                                     }}
-                                    labelStyle={{ color: "#98989D" }}
+                                    labelStyle={{ color: "var(--muted-foreground)" }}
                                     formatter={(value: number) => [formatAmount(value), "金额"]}
                                     labelFormatter={(label) => `日期: ${label}`}
                                   />
                                   <Area
                                     type="monotone"
                                     dataKey="amount"
-                                    stroke="#00E5FF"
+                                    stroke="var(--primary)"
                                     strokeWidth={2}
                                     fill="url(#areaGradient)"
                                     dot={false}
@@ -434,14 +434,14 @@ function OverviewPageContent() {
                       <Card className="h-full">
                         <CardHeader>
                           <CardTitle className="flex items-center gap-2">
-                            <TriangleAlert className="h-4 w-4 text-[#FF453A]" />
+                            <TriangleAlert className="h-4 w-4 text-destructive" />
                             最近收支
                           </CardTitle>
                           <CardDescription>最新5条记录</CardDescription>
                         </CardHeader>
                         <CardContent className="p-0">
                           {latestRecords.length === 0 ? (
-                            <div className="flex items-center justify-center h-[200px] text-[#98989D] text-sm">
+                            <div className="flex items-center justify-center h-[200px] text-muted-foreground text-sm">
                               暂无记录
                             </div>
                           ) : (
@@ -449,27 +449,27 @@ function OverviewPageContent() {
                               {latestRecords.map((record) => (
                                 <div
                                   key={record.id}
-                                  className="border-l-[3px] border-l-[#FF453A] bg-[#3A1C1C]/50 px-4 py-3 mx-5 mb-2 rounded-r-[4px] last:mb-5"
+                                  className="border-l-[3px] border-l-destructive bg-destructive/10 px-4 py-3 mx-5 mb-2 rounded-r-[4px] last:mb-5"
                                 >
                                   <div className="flex items-center justify-between mb-1">
-                                    <span className="text-xs text-[#98989D]">{formatDate(record.date)}</span>
+                                    <span className="text-xs text-muted-foreground">{formatDate(record.date)}</span>
                                     <Badge
                                       variant="outline"
                                       className={`text-[10px] px-1.5 py-0 h-5 border-none font-normal ${
                                         record.type === "INCOME"
-                                          ? "bg-[#32D74B]/10 text-[#32D74B]"
-                                          : "bg-[#FF453A]/10 text-[#FF453A]"
+                                          ? "bg-success/10 text-success"
+                                          : "bg-destructive/10 text-destructive"
                                       }`}
                                     >
                                       {record.type === "INCOME" ? "收入" : "支出"}
                                     </Badge>
                                   </div>
                                   <div className="flex items-center justify-between">
-                                    <span className="text-xs text-[#98989D] truncate max-w-[100px]">
+                                    <span className="text-xs text-muted-foreground truncate max-w-[100px]">
                                       {record.account.name}
                                     </span>
                                     <span className={`font-mono text-sm font-semibold ${
-                                      record.amount >= 0 ? "text-[#32D74B]" : "text-[#FF453A]"
+                                      record.amount >= 0 ? "text-success" : "text-destructive"
                                     }`}>
                                       {record.amount >= 0 ? "+" : ""}{formatAmount(record.amount)}
                                     </span>
@@ -496,19 +496,19 @@ function OverviewPageContent() {
                         <ResponsiveTable className="select-none">
                           <thead>
                             <ResponsiveTableRow>
-                              <ResponsiveTableHeader className="text-[#98989D] font-normal text-xs uppercase tracking-wider">名称</ResponsiveTableHeader>
-                              <ResponsiveTableHeader className="text-[#98989D] font-normal text-xs uppercase tracking-wider">账户号码</ResponsiveTableHeader>
-                              <ResponsiveTableHeader className="text-right text-[#98989D] font-normal text-xs uppercase tracking-wider">总资产</ResponsiveTableHeader>
-                              <ResponsiveTableHeader className="text-right text-[#98989D] font-normal text-xs uppercase tracking-wider">最新快照总额</ResponsiveTableHeader>
-                              <ResponsiveTableHeader className="text-right text-[#98989D] font-normal text-xs uppercase tracking-wider">收支总额</ResponsiveTableHeader>
-                              <ResponsiveTableHeader className="text-center text-[#98989D] font-normal text-xs uppercase tracking-wider">收支数</ResponsiveTableHeader>
-                              <ResponsiveTableHeader className="text-center text-[#98989D] font-normal text-xs uppercase tracking-wider">资产数</ResponsiveTableHeader>
+                              <ResponsiveTableHeader className="text-muted-foreground font-normal text-xs uppercase tracking-wider">名称</ResponsiveTableHeader>
+                              <ResponsiveTableHeader className="text-muted-foreground font-normal text-xs uppercase tracking-wider">账户号码</ResponsiveTableHeader>
+                              <ResponsiveTableHeader className="text-right text-muted-foreground font-normal text-xs uppercase tracking-wider">总资产</ResponsiveTableHeader>
+                              <ResponsiveTableHeader className="text-right text-muted-foreground font-normal text-xs uppercase tracking-wider">最新快照总额</ResponsiveTableHeader>
+                              <ResponsiveTableHeader className="text-right text-muted-foreground font-normal text-xs uppercase tracking-wider">收支总额</ResponsiveTableHeader>
+                              <ResponsiveTableHeader className="text-center text-muted-foreground font-normal text-xs uppercase tracking-wider">收支数</ResponsiveTableHeader>
+                              <ResponsiveTableHeader className="text-center text-muted-foreground font-normal text-xs uppercase tracking-wider">资产数</ResponsiveTableHeader>
                             </ResponsiveTableRow>
                           </thead>
                           <ResponsiveTableBody>
                             {accounts.length === 0 ? (
                               <ResponsiveTableRow>
-                                <ResponsiveTableCell colSpan={7} className="text-center text-[#98989D] py-8">
+                                <ResponsiveTableCell colSpan={7} className="text-center text-muted-foreground py-8">
                                   暂无账户
                                 </ResponsiveTableCell>
                               </ResponsiveTableRow>
@@ -533,9 +533,9 @@ function OverviewPageContent() {
                                           {hasAssets && (
                                             <span className="w-4 h-4 flex items-center justify-center shrink-0">
                                               {isExpanded ? (
-                                                <ChevronDown className="h-4 w-4 text-[#00E5FF]" />
+                                                <ChevronDown className="h-4 w-4 text-primary" />
                                               ) : (
-                                                <ChevronRight className="h-4 w-4 text-[#00E5FF]" />
+                                                <ChevronRight className="h-4 w-4 text-primary" />
                                               )}
                                             </span>
                                           )}
@@ -544,17 +544,17 @@ function OverviewPageContent() {
                                         </div>
                                       </ResponsiveTableCell>
                                       <ResponsiveTableCell mobileLabel="账户号码">{account.accountNumber || "-"}</ResponsiveTableCell>
-                                      <ResponsiveTableCell mobileLabel="总资产" className={`text-right font-mono font-semibold ${isNegative ? "text-[#FF453A]" : "text-[#32D74B]"}`}>
+                                      <ResponsiveTableCell mobileLabel="总资产" className={`text-right font-mono font-semibold ${isNegative ? "text-destructive" : "text-success"}`}>
                                         {formatAmount(total)}
                                       </ResponsiveTableCell>
-                                      <ResponsiveTableCell mobileLabel="最新快照总额" className="text-right text-[#98989D] font-mono">
+                                      <ResponsiveTableCell mobileLabel="最新快照总额" className="text-right text-muted-foreground font-mono">
                                         {formatAmount(baseAmount)}
                                       </ResponsiveTableCell>
-                                      <ResponsiveTableCell mobileLabel="收支总额" className={`text-right font-mono ${recordsTotal < 0 ? "text-[#FF453A]" : "text-[#32D74B]"}`}>
+                                      <ResponsiveTableCell mobileLabel="收支总额" className={`text-right font-mono ${recordsTotal < 0 ? "text-destructive" : "text-success"}`}>
                                         {formatAmount(recordsTotal)}
                                       </ResponsiveTableCell>
-                                      <ResponsiveTableCell mobileLabel="收支数" className="text-center text-[#98989D]">{records.filter((r) => r.accountId === account.id).length}</ResponsiveTableCell>
-                                      <ResponsiveTableCell mobileLabel="资产数" className="text-center text-[#98989D]">{accountAssets.length}</ResponsiveTableCell>
+                                      <ResponsiveTableCell mobileLabel="收支数" className="text-center text-muted-foreground">{records.filter((r) => r.accountId === account.id).length}</ResponsiveTableCell>
+                                      <ResponsiveTableCell mobileLabel="资产数" className="text-center text-muted-foreground">{accountAssets.length}</ResponsiveTableCell>
                                     </ResponsiveTableRow>
                                     {isExpanded && accountAssets.map((asset, assetIndex) => {
                                       const assetTotal = getAssetRealTimeTotal(asset.id)
@@ -562,32 +562,32 @@ function OverviewPageContent() {
                                       const AssetIcon = assetTypeConfig.icon
                                       const isLast = assetIndex === accountAssets.length - 1
                                       return (
-                                        <ResponsiveTableRow key={asset.id} className="bg-[#252525]/30 hover:bg-[#252525]/50 transition-colors">
+                                        <ResponsiveTableRow key={asset.id} className="bg-muted/30 hover:bg-muted/50 transition-colors">
                                           <ResponsiveTableCell mobileLabel="名称" className="relative py-3">
                                             {!isLast && (
-                                              <div className="absolute left-4 top-0 bottom-0 w-px bg-[#2C2C2E]" />
+                                              <div className="absolute left-4 top-0 bottom-0 w-px bg-border" />
                                             )}
                                             {isLast && (
-                                              <div className="absolute left-4 top-0 h-1/2 w-px bg-[#2C2C2E]" />
+                                              <div className="absolute left-4 top-0 h-1/2 w-px bg-border" />
                                             )}
-                                            <div className="absolute left-4 top-1/2 w-3 h-px bg-[#2C2C2E]" />
+                                            <div className="absolute left-4 top-1/2 w-3 h-px bg-border" />
                                             <div className="pl-10">
-                                              <span className="text-sm text-[#98989D]">{asset.name}</span>
+                                              <span className="text-sm text-muted-foreground">{asset.name}</span>
                                             </div>
                                           </ResponsiveTableCell>
                                           <ResponsiveTableCell mobileLabel="类型" className="py-3">
-                                            <Badge className="gap-1 text-xs font-normal bg-[#2C2C2E] text-[#98989D] hover:bg-[#2C2C2E] border-none">
+                                            <Badge className="gap-1 text-xs font-normal bg-accent text-muted-foreground hover:bg-accent border-none">
                                               <AssetIcon className="h-3 w-3" />
                                               {assetTypeConfig.label}
                                             </Badge>
                                           </ResponsiveTableCell>
                                           <ResponsiveTableCell mobileLabel="基准金额" className="text-right py-3">
-                                            <span className="text-xs text-[#98989D] mr-1">
+                                            <span className="text-xs text-muted-foreground mr-1">
                                               {assetTotal.baseType === "balance" ? "(快照)" : "(初始)"}
                                             </span>
-                                            <span className="font-mono text-[#98989D]">{formatAmount(assetTotal.baseAmount)}</span>
+                                            <span className="font-mono text-muted-foreground">{formatAmount(assetTotal.baseAmount)}</span>
                                           </ResponsiveTableCell>
-                                          <ResponsiveTableCell mobileLabel="实时余额" className={`text-right font-mono font-semibold py-3 ${assetTotal.total >= 0 ? "text-[#32D74B]" : "text-[#FF453A]"}`}>
+                                          <ResponsiveTableCell mobileLabel="实时余额" className={`text-right font-mono font-semibold py-3 ${assetTotal.total >= 0 ? "text-success" : "text-destructive"}`}>
                                             {formatAmount(assetTotal.total)}
                                           </ResponsiveTableCell>
                                         </ResponsiveTableRow>
@@ -602,7 +602,7 @@ function OverviewPageContent() {
                       </div>
                       <div className="md:hidden space-y-3 px-5 pb-5">
                         {accounts.length === 0 ? (
-                          <div className="text-center text-[#98989D] py-8">暂无账户</div>
+                          <div className="text-center text-muted-foreground py-8">暂无账户</div>
                         ) : (
                           accounts.map((account) => {
                             const { total, hasBalance, baseAmount, recordsTotal } = getAccountTotal(account.id)
@@ -613,7 +613,7 @@ function OverviewPageContent() {
                             const isNegative = total < 0
                             const bgColor = nameColor.darkBgColor
                             return (
-                              <div key={account.id} className={`rounded-[16px] ${bgColor} border border-[#2C2C2E] overflow-hidden`}>
+                              <div key={account.id} className={`rounded-[16px] ${bgColor} border border-border overflow-hidden`}>
                                 <div className={`p-4 ${hasAssets ? "cursor-pointer" : ""}`} onClick={() => hasAssets && toggleAccountExpand(account.id)}>
                                   <div className="flex justify-between items-start mb-3">
                                     <div>
@@ -621,61 +621,61 @@ function OverviewPageContent() {
                                         {hasAssets && (
                                           <span className="w-4 h-4 flex items-center justify-center shrink-0">
                                             {isExpanded ? (
-                                              <ChevronDown className="h-4 w-4 text-[#00E5FF]" />
+                                              <ChevronDown className="h-4 w-4 text-primary" />
                                             ) : (
-                                              <ChevronRight className="h-4 w-4 text-[#00E5FF]" />
+                                              <ChevronRight className="h-4 w-4 text-primary" />
                                             )}
                                           </span>
                                         )}
                                         <AccountDisplay name={account.name} type={account.type} variant="card" />
                                       </div>
-                                      <div className="text-sm text-[#98989D] mt-1">
+                                      <div className="text-sm text-muted-foreground mt-1">
                                         账户号码: {account.accountNumber || "-"}
                                       </div>
                                     </div>
-                                    <div className={`font-mono text-lg font-semibold ${isNegative ? "text-[#FF453A]" : "text-[#32D74B]"}`}>
+                                    <div className={`font-mono text-lg font-semibold ${isNegative ? "text-destructive" : "text-success"}`}>
                                       {formatAmount(total)}
                                     </div>
                                   </div>
-                                  <div className="flex justify-between text-sm text-[#98989D]">
+                                  <div className="flex justify-between text-sm text-muted-foreground">
                                     <span>最新快照总额:</span>
                                     <span className="font-mono">{formatAmount(baseAmount)}</span>
                                   </div>
                                   <div className="flex justify-between text-sm">
-                                    <span className="text-[#98989D]">收支总额:</span>
-                                    <span className={`font-mono ${recordsTotal < 0 ? "text-[#FF453A]" : "text-[#32D74B]"}`}>
+                                    <span className="text-muted-foreground">收支总额:</span>
+                                    <span className={`font-mono ${recordsTotal < 0 ? "text-destructive" : "text-success"}`}>
                                       {formatAmount(recordsTotal)}
                                     </span>
                                   </div>
-                                  <div className="flex justify-between text-sm text-[#98989D]">
+                                  <div className="flex justify-between text-sm text-muted-foreground">
                                     <span>收支数: {records.filter((r) => r.accountId === account.id).length}</span>
                                     <span>资产数: {accountAssets.length}</span>
                                   </div>
                                 </div>
                                 {isExpanded && hasAssets && (
-                                  <div className="border-t border-[#2C2C2E]">
+                                  <div className="border-t border-border">
                                     {accountAssets.map((asset, index) => {
                                       const assetTotal = getAssetRealTimeTotal(asset.id)
                                       const assetTypeConfig = getAssetTypeConfig(asset.type)
                                       const AssetIcon = assetTypeConfig.icon
                                       const isLast = index === accountAssets.length - 1
                                       return (
-                                        <div key={asset.id} className={`p-4 ${!isLast ? "border-b border-[#2C2C2E]" : ""}`}>
+                                        <div key={asset.id} className={`p-4 ${!isLast ? "border-b border-border" : ""}`}>
                                           <div className="flex justify-between items-start">
                                             <div>
                                               <div className="flex items-center gap-2">
-                                                <span className="text-sm text-[#98989D]">{asset.name}</span>
-                                                <Badge className="gap-1 text-xs font-normal bg-[#2C2C2E] text-[#98989D] hover:bg-[#2C2C2E] border-none">
+                                                <span className="text-sm text-muted-foreground">{asset.name}</span>
+                                                <Badge className="gap-1 text-xs font-normal bg-accent text-muted-foreground hover:bg-accent border-none">
                                                   <AssetIcon className="h-3 w-3" />
                                                   {assetTypeConfig.label}
                                                 </Badge>
                                               </div>
-                                              <div className="text-xs text-[#98989D] mt-1">
+                                              <div className="text-xs text-muted-foreground mt-1">
                                                 基准: {assetTotal.baseType === "balance" ? "(快照) " : "(初始) "}
                                                 <span className="font-mono">{formatAmount(assetTotal.baseAmount)}</span>
                                               </div>
                                             </div>
-                                            <div className={`font-mono text-sm font-semibold ${assetTotal.total >= 0 ? "text-[#32D74B]" : "text-[#FF453A]"}`}>
+                                            <div className={`font-mono text-sm font-semibold ${assetTotal.total >= 0 ? "text-success" : "text-destructive"}`}>
                                               {formatAmount(assetTotal.total)}
                                             </div>
                                           </div>

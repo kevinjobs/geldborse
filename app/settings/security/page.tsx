@@ -150,7 +150,7 @@ function SecurityContent() {
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="font-medium">两步验证</h3>
-                      <p className="text-sm text-gray-500">启用后，登录时需要输入验证码</p>
+                      <p className="text-sm text-muted-foreground">启用后，登录时需要输入验证码</p>
                     </div>
                     <Toggle
                       pressed={twoFactorEnabled}
@@ -162,7 +162,7 @@ function SecurityContent() {
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="font-medium">安全通知</h3>
-                      <p className="text-sm text-gray-500">接收账户安全相关的通知</p>
+                      <p className="text-sm text-muted-foreground">接收账户安全相关的通知</p>
                     </div>
                     <Toggle
                       pressed={notificationsEnabled}
@@ -192,7 +192,7 @@ function SecurityContent() {
                   </div>
                 ) : loginHistories.length === 0 ? (
                   <div className="flex items-center justify-center py-8">
-                    <p className="text-gray-500">暂无登录记录</p>
+                    <p className="text-muted-foreground">暂无登录记录</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -200,11 +200,11 @@ function SecurityContent() {
                       <div key={history.id} className="flex items-center justify-between p-3 border rounded-md">
                         <div>
                           <p className="font-medium">{history.deviceInfo}</p>
-                          <p className="text-sm text-gray-500">{new Date(history.loginAt).toLocaleString('zh-CN')}</p>
-                          <p className="text-sm text-gray-500">{history.ip}</p>
+                          <p className="text-sm text-muted-foreground">{new Date(history.loginAt).toLocaleString('zh-CN')}</p>
+                          <p className="text-sm text-muted-foreground">{history.ip}</p>
                         </div>
                         {history.isCurrent ? (
-                          <div className="text-[#32D74B] font-medium">当前会话</div>
+                          <div className="text-success font-medium">当前会话</div>
                         ) : (
                           <Button 
                             variant="ghost" 

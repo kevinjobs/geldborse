@@ -2,24 +2,30 @@
 
 import * as React from "react"
 
-// 简单的主题提供者，避免使用next-themes库导致的脚本标签问题
-export function ThemeProvider({
-  children,
-  ...props
-}: any) {
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedTheme = localStorage.getItem('theme')
-      document.documentElement.classList.toggle('dark', savedTheme !== 'light')
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)')
-      const handleThemeChange = (e: MediaQueryListEvent) => {
-        if (!localStorage.getItem('theme')) {
-          document.documentElement.classList.toggle('dark', e.matches)
-        }
-      }
-      prefersDark.addEventListener('change', handleThemeChange)
-      return () => prefersDark.removeEventListener('change', handleThemeChange)
+    const savedTheme = localStorage.getItem('theme')
+    if (savedTheme === 'light') {
+      document.documentElement.classList.remove('dark')
+      document.documentElement.classList.add('light')
+    } else if (savedTheme === 'dark') {
+      document.documentElement.classList.add('dark')
+      document.documentElement.classList.remove('light')
+    } else {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      document.documentElement.classList.toggle('dark', prefersDark)
+      document.documentElement.classList.toggle('light', !prefersDark)
     }
+
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)')
+    const handleThemeChange = (e: MediaQueryListEvent) => {
+      if (!localStorage.getItem('theme')) {
+        document.documentElement.classList.toggle('dark', e.matches)
+        document.documentElement.classList.toggle('light', !e.matches)
+      }
+    }
+    prefersDark.addEventListener('change', handleThemeChange)
+    return () => prefersDark.removeEventListener('change', handleThemeChange)
   }, [])
 
   return <>{children}</>

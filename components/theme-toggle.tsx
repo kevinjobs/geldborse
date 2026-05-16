@@ -22,12 +22,14 @@ export function ThemeToggle() {
   const setLightTheme = () => {
     localStorage.setItem("theme", "light")
     document.documentElement.classList.remove("dark")
+    document.documentElement.classList.add("light")
     setTheme("light")
   }
 
   const setDarkTheme = () => {
     localStorage.setItem("theme", "dark")
     document.documentElement.classList.add("dark")
+    document.documentElement.classList.remove("light")
     setTheme("dark")
   }
 
@@ -35,6 +37,7 @@ export function ThemeToggle() {
     localStorage.removeItem("theme")
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
     document.documentElement.classList.toggle("dark", prefersDark)
+    document.documentElement.classList.toggle("light", !prefersDark)
     setTheme("system")
   }
 

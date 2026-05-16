@@ -12,8 +12,8 @@ export function Logo({ className }: { className?: string }) {
     >
       <defs>
         <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#00E5FF" />
-          <stop offset="100%" stopColor="#32D74B" />
+          <stop offset="0%" stopColor="var(--primary)" />
+          <stop offset="100%" stopColor="var(--success)" />
         </linearGradient>
       </defs>
       <rect
@@ -22,8 +22,7 @@ export function Logo({ className }: { className?: string }) {
         width="32"
         height="32"
         rx="8"
-        fill="#1E1E1E"
-        stroke="#2C2C2E"
+        className="fill-[var(--card)] stroke-[var(--border)]"
         strokeWidth="1"
       />
       <path
@@ -34,7 +33,7 @@ export function Logo({ className }: { className?: string }) {
         cx="28"
         cy="28"
         r="2"
-        fill="#32D74B"
+        className="fill-[var(--success)]"
         opacity="0.8"
       />
     </svg>
