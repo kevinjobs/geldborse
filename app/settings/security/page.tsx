@@ -204,7 +204,7 @@ function SecurityContent() {
                           <p className="text-sm text-gray-500">{history.ip}</p>
                         </div>
                         {history.isCurrent ? (
-                          <div className="text-green-600 font-medium">当前会话</div>
+                          <div className="text-[#32D74B] font-medium">当前会话</div>
                         ) : (
                           <Button 
                             variant="ghost" 

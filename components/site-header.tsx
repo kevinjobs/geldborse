@@ -7,7 +7,7 @@ import { ThemeToggle } from "@/components/theme-toggle"
 
 const PAGE_TITLES: Record<string, string> = {
   "/overview": "总览",
-  "/record": "收支",
+  "/record": "收支记录",
   "/record/add": "添加收支",
   "/accounts": "账户管理",
   "/snapshots": "每日快照",

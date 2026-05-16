@@ -756,13 +756,13 @@ export default function AccountsPage() {
                                         </div>
                                       </ResponsiveTableCell>
                                       <ResponsiveTableCell mobileLabel="账户号码">{account.accountNumber || "-"}</ResponsiveTableCell>
-                                      <ResponsiveTableCell mobileLabel="总资产" className={`text-right font-medium ${isNegative ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
+                                      <ResponsiveTableCell mobileLabel="总资产" className={`text-right font-medium ${isNegative ? "text-[#FF453A]" : "text-[#32D74B]"}`}>
                                         {formatAmount(totalAmount)}
                                       </ResponsiveTableCell>
                                       <ResponsiveTableCell mobileLabel="最新快照总额" className="text-right text-muted-foreground">
                                         {formatAmount(latestSnapshotTotal)}
                                       </ResponsiveTableCell>
-                                      <ResponsiveTableCell mobileLabel="收支总额" className={`text-right ${recordsAfterBalanceTotal < 0 ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
+                                      <ResponsiveTableCell mobileLabel="收支总额" className={`text-right ${recordsAfterBalanceTotal < 0 ? "text-[#FF453A]" : "text-[#32D74B]"}`}>
                                         {formatAmount(recordsAfterBalanceTotal)}
                                       </ResponsiveTableCell>
                                       <ResponsiveTableCell mobileLabel="收支数" className="text-center">{account._count?.records || 0}</ResponsiveTableCell>
@@ -772,7 +772,7 @@ export default function AccountsPage() {
                                           <Button
                                             variant="outline"
                                             size="sm"
-                                            className="text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-700 dark:hover:text-blue-300 animate-transition-all"
+                                            className="text-[#00E5FF] border-[#00E5FF]/30 hover:bg-[#00E5FF]/10 hover:text-[#00E5FF] animate-transition-all"
                                             onClick={() => {
                                               setSelectedAccount(account)
                                               handleAddAsset()
@@ -811,18 +811,18 @@ export default function AccountsPage() {
                                       return (
                                         <Fragment key={asset.id}>
                                           <ResponsiveTableRow
-                                            className="bg-slate-50/50 dark:bg-slate-800/50 hover:bg-slate-100/50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer animate-slide-in animate-hover-lift"
+                                            className="bg-[#252525]/50 hover:bg-[#2C2C2E]/50 transition-colors cursor-pointer animate-slide-in animate-hover-lift"
                                             style={{ animationDelay: `${assetIndex * 0.05}s` }}
                                             onClick={() => toggleAssetExpand(asset.id)}
                                           >
                                             <ResponsiveTableCell mobileLabel="名称" className="relative py-3">
                                               {!isLastAsset && (
-                                                <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200 dark:bg-slate-700" />
+                                                <div className="absolute left-4 top-0 bottom-0 w-px bg-[#2C2C2E]" />
                                               )}
                                               {isLastAsset && (
-                                                <div className="absolute left-4 top-0 h-1/2 w-px bg-slate-200 dark:bg-slate-700" />
+                                                <div className="absolute left-4 top-0 h-1/2 w-px bg-[#2C2C2E]" />
                                               )}
-                                              <div className="absolute left-4 top-1/2 w-3 h-px bg-slate-200 dark:bg-slate-700" />
+                                              <div className="absolute left-4 top-1/2 w-3 h-px bg-[#2C2C2E]" />
                                               <div className="pl-10 flex items-center gap-2">
                                                 <span className="w-4 h-4 flex items-center justify-center shrink-0">
                                                   {isAssetExpanded ? (
@@ -831,7 +831,7 @@ export default function AccountsPage() {
                                                     <ChevronRight className="h-3 w-3" />
                                                   )}
                                                 </span>
-                                                <span className="text-sm text-slate-600 dark:text-slate-300">{asset.name}</span>
+                                                <span className="text-sm text-[#98989D]">{asset.name}</span>
                                                 <Badge className="gap-1 text-xs font-normal">
                                                   <AssetIcon className="h-3 w-3" />
                                                   {assetTypeConfig.label}
@@ -847,7 +847,7 @@ export default function AccountsPage() {
                                                 <Button
                                                   variant="ghost"
                                                   size="sm"
-                                                  className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 animate-transition-all"
+                                                  className="text-[#00E5FF] hover:text-[#00E5FF] animate-transition-all"
                                                   onClick={() => {
                                                     setSelectedAccount(account)
                                                     setSelectedAsset(asset)
@@ -881,23 +881,23 @@ export default function AccountsPage() {
                                           {isAssetExpanded && assetBalanceList.map((balance, balanceIndex) => {
                                             const isLastBalance = balanceIndex === assetBalanceList.length - 1
                                             return (
-                                              <ResponsiveTableRow key={balance.id} className="bg-slate-100/50 dark:bg-slate-700/50 hover:bg-slate-200/50 dark:hover:bg-slate-600/50 transition-colors animate-scale-in animate-hover-lift" style={{ animationDelay: `${balanceIndex * 0.03}s` }}>
+                                              <ResponsiveTableRow key={balance.id} className="bg-[#2C2C2E]/50 hover:bg-[#3A3A3C]/50 transition-colors animate-scale-in animate-hover-lift" style={{ animationDelay: `${balanceIndex * 0.03}s` }}>
                                                 <ResponsiveTableCell mobileLabel="时间" className="relative py-2">
                                                   {!isLastAsset && (
-                                                    <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200 dark:bg-slate-700" />
+                                                    <div className="absolute left-4 top-0 bottom-0 w-px bg-[#2C2C2E]" />
                                                   )}
                                                   {!isLastBalance && (
-                                                    <div className="absolute left-8 top-0 bottom-0 w-px bg-slate-200 dark:bg-slate-700" />
+                                                    <div className="absolute left-8 top-0 bottom-0 w-px bg-[#2C2C2E]" />
                                                   )}
                                                   {isLastBalance && (
-                                                    <div className="absolute left-8 top-0 h-1/2 w-px bg-slate-200 dark:bg-slate-700" />
+                                                    <div className="absolute left-8 top-0 h-1/2 w-px bg-[#2C2C2E]" />
                                                   )}
-                                                  <div className="absolute left-8 top-1/2 w-2 h-px bg-slate-200 dark:bg-slate-700" />
+                                                  <div className="absolute left-8 top-1/2 w-2 h-px bg-[#2C2C2E]" />
                                                   <div className="pl-12 flex items-center gap-2">
                                                     <span className="text-xs text-muted-foreground">
                                                       {formatDateTime(balance.recordedAt)}
                                                     </span>
-                                                    <span className="text-xs text-slate-500 dark:text-slate-400">快照</span>
+                                                    <span className="text-xs text-[#98989D]">快照</span>
                                                   </div>
                                                 </ResponsiveTableCell>
                                                 <ResponsiveTableCell mobileLabel="金额" className="text-right text-sm">{formatAmount(balance.amount)}</ResponsiveTableCell>
@@ -929,12 +929,12 @@ export default function AccountsPage() {
                                             )
                                           })}
                                           {isAssetExpanded && assetBalanceList.length === 0 && (
-                                            <ResponsiveTableRow className="bg-slate-100/50 dark:bg-slate-700/50">
+                                            <ResponsiveTableRow className="bg-[#2C2C2E]/50">
                                               <ResponsiveTableCell mobileLabel="提示" className="relative py-2">
                                                 {!isLastAsset && (
-                                                  <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200 dark:bg-slate-700" />
+                                                  <div className="absolute left-4 top-0 bottom-0 w-px bg-[#2C2C2E]" />
                                                 )}
-                                                <div className="absolute left-8 top-1/2 w-2 h-px bg-slate-200 dark:bg-slate-700" />
+                                                <div className="absolute left-8 top-1/2 w-2 h-px bg-[#2C2C2E]" />
                                                 <div className="pl-12 text-xs text-muted-foreground">暂无快照</div>
                                               </ResponsiveTableCell>
                                               <ResponsiveTableCell />
@@ -945,7 +945,7 @@ export default function AccountsPage() {
                                                 <Button
                                                   variant="ghost"
                                                   size="sm"
-                                                  className="h-7 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                                                  className="h-7 text-[#00E5FF] hover:text-[#00E5FF]"
                                                   onClick={() => {
                                                     setSelectedAccount(account)
                                                     setSelectedAsset(asset)
@@ -962,10 +962,10 @@ export default function AccountsPage() {
                                       )
                                     })}
                                     {isExpanded && accountAssetList.length === 0 && (
-                                      <ResponsiveTableRow className="bg-slate-50/50 dark:bg-slate-800/50">
+                                      <ResponsiveTableRow className="bg-[#252525]/50">
                                         <ResponsiveTableCell mobileLabel="提示" className="relative py-2">
-                                          <div className="absolute left-4 top-0 h-1/2 w-px bg-slate-200 dark:bg-slate-700" />
-                                          <div className="absolute left-4 top-1/2 w-3 h-px bg-slate-200 dark:bg-slate-700" />
+                                          <div className="absolute left-4 top-0 h-1/2 w-px bg-[#2C2C2E]" />
+                                          <div className="absolute left-4 top-1/2 w-3 h-px bg-[#2C2C2E]" />
                                           <div className="pl-10 text-xs text-muted-foreground">暂无资产</div>
                                         </ResponsiveTableCell>
                                         <ResponsiveTableCell />
@@ -976,7 +976,7 @@ export default function AccountsPage() {
                                           <Button
                                             variant="ghost"
                                             size="sm"
-                                            className="h-7 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                                            className="h-7 text-[#00E5FF] hover:text-[#00E5FF]"
                                             onClick={() => {
                                               setSelectedAccount(account)
                                               handleAddAsset()
@@ -1016,7 +1016,7 @@ export default function AccountsPage() {
                             // 根据主题选择背景颜色
                             const bgColor = isDarkMode ? nameColor.darkBgColor : nameColor.bgColor
                             return (
-                              <div key={account.id} className={`rounded-lg ${bgColor} border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden`}>
+                              <div key={account.id} className={`rounded-[16px] ${bgColor} border border-[#2C2C2E] shadow-sm overflow-hidden`}>
                                 {/* 账户卡片 */}
                                 <div className={`p-4 ${hasAssets ? "cursor-pointer hover:brightness-95 transition-all" : ""}`} onClick={() => hasAssets && toggleAccountExpand(account.id)}>
                                   <div className="flex justify-between items-start mb-3">
@@ -1037,7 +1037,7 @@ export default function AccountsPage() {
                                         账户号码: {account.accountNumber || "-"}
                                       </div>
                                     </div>
-                                    <div className={`text-lg font-medium ${isNegative ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
+                                    <div className={`text-lg font-medium ${isNegative ? "text-[#FF453A]" : "text-[#32D74B]"}`}>
                                       {formatAmount(totalAmount)}
                                     </div>
                                   </div>
@@ -1047,7 +1047,7 @@ export default function AccountsPage() {
                                   </div>
                                   <div className="flex justify-between text-sm">
                                     <span className="text-muted-foreground">收支总额:</span>
-                                    <span className={`${recordsAfterBalanceTotal < 0 ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
+                                    <span className={`${recordsAfterBalanceTotal < 0 ? "text-[#FF453A]" : "text-[#32D74B]"}`}>
                                       {formatAmount(recordsAfterBalanceTotal)}
                                     </span>
                                   </div>
@@ -1059,7 +1059,7 @@ export default function AccountsPage() {
                                     <Button
                                       variant="outline"
                                       size="sm"
-                                      className="text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-700 dark:hover:text-blue-300"
+                                      className="text-[#00E5FF] border-[#00E5FF]/30 hover:bg-[#00E5FF]/10 hover:text-[#00E5FF]"
                                       onClick={() => {
                                         setSelectedAccount(account)
                                         handleAddAsset()
@@ -1088,16 +1088,16 @@ export default function AccountsPage() {
                                 </div>
                                 {/* 资产列表 */}
                                 {isExpanded && hasAssets && (
-                                  <div className="border-t border-slate-200 dark:border-slate-700">
+                                  <div className="border-t border-[#2C2C2E]">
                                     {accountAssetList.map((asset, assetIndex) => {
                                       const assetTypeConfig = getAssetTypeConfig(asset.type)
                                       const AssetIcon = assetTypeConfig.icon
                                       const isAssetExpanded = expandedAssets.has(asset.id)
                                       const assetBalanceList = assetBalances[asset.id] || []
                                       return (
-                                        <div key={asset.id} className="border-b border-slate-200 dark:border-slate-700 last:border-b-0">
+                                        <div key={asset.id} className="border-b border-[#2C2C2E] last:border-b-0">
                                           {/* 资产卡片 */}
-                                          <div className="p-4 cursor-pointer hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors" onClick={() => toggleAssetExpand(asset.id)}>
+                                          <div className="p-4 cursor-pointer hover:bg-[#252525]/50 transition-colors" onClick={() => toggleAssetExpand(asset.id)}>
                                             <div className="flex justify-between items-start">
                                               <div className="flex items-center gap-2">
                                                 <span className="w-4 h-4 flex items-center justify-center shrink-0">
@@ -1107,7 +1107,7 @@ export default function AccountsPage() {
                                                     <ChevronRight className="h-3 w-3" />
                                                   )}
                                                 </span>
-                                                <span className="text-sm text-slate-600 dark:text-slate-300">{asset.name}</span>
+                                                <span className="text-sm text-[#98989D]">{asset.name}</span>
                                                 <Badge className="gap-1 text-xs font-normal">
                                                   <AssetIcon className="h-3 w-3" />
                                                   {assetTypeConfig.label}
@@ -1121,7 +1121,7 @@ export default function AccountsPage() {
                                               <Button
                                                 variant="ghost"
                                                 size="sm"
-                                                className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                                                className="text-[#00E5FF] hover:text-[#00E5FF]"
                                                 onClick={() => {
                                                   setSelectedAccount(account)
                                                   setSelectedAsset(asset)
@@ -1151,9 +1151,9 @@ export default function AccountsPage() {
                                           </div>
                                           {/* 余额快照列表 */}
                                           {isAssetExpanded && assetBalanceList.length > 0 && (
-                                            <div className="bg-slate-50/30 dark:bg-slate-800/30">
+                                            <div className="bg-[#252525]/30">
                                               {assetBalanceList.map((balance) => (
-                                                <div key={balance.id} className="p-3 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                                                <div key={balance.id} className="p-3 border-t border-[#2C2C2E] flex justify-between items-center">
                                                   <div className="text-xs text-muted-foreground">
                                                     {formatDateTime(balance.recordedAt)}
                                                   </div>
@@ -1181,7 +1181,7 @@ export default function AccountsPage() {
                                             </div>
                                           )}
                                           {isAssetExpanded && assetBalanceList.length === 0 && (
-                                            <div className="p-3 border-t border-slate-200 dark:border-slate-700">
+                                            <div className="p-3 border-t border-[#2C2C2E]">
                                               <div className="text-xs text-muted-foreground">
                                                 暂无快照
                                               </div>
@@ -1405,7 +1405,7 @@ export default function AccountsPage() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                    className="h-7 text-[#00E5FF] hover:text-[#00E5FF]"
                     onClick={() => {
                       setSelectedAsset(editingAsset)
                       handleAddBalance()
@@ -1421,7 +1421,7 @@ export default function AccountsPage() {
                       {[...assetBalances[editingAsset.id]]
                         .sort((a, b) => new Date(b.recordedAt).getTime() - new Date(a.recordedAt).getTime())
                         .map((balance) => (
-                          <div key={balance.id} className="flex items-center justify-between p-2 hover:bg-slate-50">
+                          <div key={balance.id} className="flex items-center justify-between p-2 hover:bg-[#252525]">
                             <div className="flex items-center gap-2">
                               <span className="text-sm text-muted-foreground">
                                 {formatDateTime(balance.recordedAt)}

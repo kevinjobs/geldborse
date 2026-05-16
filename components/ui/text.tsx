@@ -37,8 +37,7 @@ const textVariants = cva("font-sans", {
     textColor: {
       default: "text-foreground",
       muted: "text-muted-foreground",
-      ink: "text-ink",
-      "ink-muted": "text-ink-muted",
+      tertiary: "text-[#6B7280]",
       link: "text-link",
       primary: "text-primary",
       accent: "text-accent",

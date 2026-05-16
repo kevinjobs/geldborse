@@ -291,14 +291,14 @@ export default function RecordsPage() {
                               <ResponsiveTableBody>
                                 {sortedRecords.map((record) => {
                                   return (
-                                    <ResponsiveTableRow key={record.id} className="bg-white/50 hover:bg-white/70 dark:bg-slate-800/50 dark:hover:bg-slate-800/70">
+                                    <ResponsiveTableRow key={record.id} className="bg-[#1E1E1E]/50 hover:bg-[#252525] transition-colors">
                                       <ResponsiveTableCell mobileLabel="日期">{formatDate(record.date)}</ResponsiveTableCell>
                                       <ResponsiveTableCell mobileLabel="账户">
                                         <AccountDisplay name={record.account.name} type={record.account.type} variant="compact" />
                                       </ResponsiveTableCell>
                                       <ResponsiveTableCell mobileLabel="资产">
                                         {record.asset ? (
-                                          <span className="text-sm">{record.asset.name}</span>
+                                          <span className="text-sm text-[#98989D]">{record.asset.name}</span>
                                         ) : (
                                           <span className="text-sm text-muted-foreground">-</span>
                                         )}
@@ -308,7 +308,7 @@ export default function RecordsPage() {
                                           {record.type === "INCOME" ? "收入" : "支出"}
                                         </Badge>
                                       </ResponsiveTableCell>
-                                      <ResponsiveTableCell mobileLabel="金额" className={`text-right font-medium ${record.amount >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
+                                      <ResponsiveTableCell mobileLabel="金额" className={`text-right font-mono font-semibold ${record.amount >= 0 ? "text-[#32D74B]" : "text-[#FF453A]"}`}>
                                         {formatAmount(record.amount)}
                                       </ResponsiveTableCell>
                                       <ResponsiveTableCell mobileLabel="备注">
@@ -350,7 +350,7 @@ export default function RecordsPage() {
                               </div>
                             ) : (
                               sortedRecords.map((record) => (
-                                <div key={record.id} className="rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm p-4">
+                                <div key={record.id} className="rounded-[16px] bg-[#1E1E1E] border border-[#2C2C2E] p-4">
                                   <div className="flex justify-between items-start mb-2">
                                     <div className="flex items-center gap-2">
                                       <Badge variant={record.type === "INCOME" ? "default" : "destructive"}>
@@ -358,7 +358,7 @@ export default function RecordsPage() {
                                       </Badge>
                                       <span className="text-sm text-muted-foreground">{formatDate(record.date)}</span>
                                     </div>
-                                    <div className={"text-lg font-medium " + (record.amount >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400")}>
+                                    <div className={"text-lg font-mono font-semibold " + (record.amount >= 0 ? "text-[#32D74B]" : "text-[#FF453A]")}>
                                       {formatAmount(record.amount)}
                                     </div>
                                   </div>

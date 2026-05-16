@@ -65,7 +65,7 @@ function ResponsiveTableBody({ className, ...props }: React.ComponentProps<"tbod
 
 function ResponsiveTableRow({ className, children, ...props }: ResponsiveTableRowProps) {
   const rowClassName = cn(
-    "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
+    "border-b border-[#2C2C2E] transition-colors hover:bg-[#252525] data-[state=selected]:bg-[#252525]",
     className
   )
   return (

@@ -295,7 +295,7 @@ function SettingsContent() {
           <div className="max-w-6xl mx-auto w-full flex flex-col md:flex-row gap-6">
             {/* 侧边栏菜单 */}
             <div className="md:w-64 flex-shrink-0">
-              <div className="bg-card rounded-lg border p-4">
+              <div className="bg-card rounded-[16px] border p-4">
                 <h2 className="text-lg font-semibold mb-4">设置</h2>
                 <nav className="space-y-1">
                   {menuItems.map((item) => (
@@ -478,7 +478,7 @@ function SettingsContent() {
                                 <p className="text-sm text-gray-500">{history.ip}</p>
                               </div>
                               {history.isCurrent ? (
-                                <div className="text-green-600 font-medium">当前会话</div>
+                                <div className="text-[#32D74B] font-medium">当前会话</div>
                               ) : (
                                 <Button
                                   variant="ghost"
@@ -527,11 +527,10 @@ function SettingsContent() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
-                        <p className="text-sm text-red-700 dark:text-red-300 font-medium">
-                          警告：此操作将永久删除您的所有数据，包括账户、资产、收支记录和快照。
+                      <div className="p-4 bg-[#3A1C1C] rounded-[16px] border border-[#FF453A]/30">
+                        <p className="text-sm text-[#FF453A] font-medium">
                         </p>
-                        <p className="mt-2 text-sm text-red-700 dark:text-red-300">
+                        <p className="mt-2 text-sm text-[#FF453A]">
                           请谨慎操作，数据删除后无法恢复。
                         </p>
                       </div>

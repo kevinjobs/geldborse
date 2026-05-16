@@ -8,28 +8,17 @@ export function ThemeProvider({
   ...props
 }: any) {
   React.useEffect(() => {
-    // 只在客户端执行主题相关的逻辑
     if (typeof window !== 'undefined') {
-      // 检查用户的主题偏好
       const savedTheme = localStorage.getItem('theme')
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      const initialTheme = savedTheme || (prefersDark ? 'dark' : 'light')
-      
-      // 设置初始主题
-      document.documentElement.classList.toggle('dark', initialTheme === 'dark')
-      
-      // 监听主题变化
+      document.documentElement.classList.toggle('dark', savedTheme !== 'light')
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)')
       const handleThemeChange = (e: MediaQueryListEvent) => {
         if (!localStorage.getItem('theme')) {
           document.documentElement.classList.toggle('dark', e.matches)
         }
       }
-      
-      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', handleThemeChange)
-      
-      return () => {
-        window.matchMedia('(prefers-color-scheme: dark)').removeEventListener('change', handleThemeChange)
-      }
+      prefersDark.addEventListener('change', handleThemeChange)
+      return () => prefersDark.removeEventListener('change', handleThemeChange)
     }
   }, [])
 

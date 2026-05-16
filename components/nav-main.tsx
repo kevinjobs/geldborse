@@ -58,7 +58,7 @@ export function NavMain() {
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel className="px-4 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+      <SidebarGroupLabel className="px-4 py-2 text-xs font-medium text-muted-foreground uppercase">
         主菜单
       </SidebarGroupLabel>
       <SidebarGroupContent>
@@ -68,9 +68,9 @@ export function NavMain() {
               <SidebarMenuButton
                 asChild
                 tooltip={item.title}
-                className={`${buttonClass} animate-transition-all hover:bg-gray-50 dark:hover:bg-gray-800`}
+                className={`${buttonClass} animate-transition-all`}
               >
-                <Link href={item.url} className="w-full h-full flex items-center gap-3 px-4 animate-transition-colors">
+                <Link href={item.url} className="w-full h-full flex items-center gap-3 px-4">
                   <NavIcon iconKey={item.iconKey} mounted={mounted} />
                   <span>{item.title}</span>
                 </Link>

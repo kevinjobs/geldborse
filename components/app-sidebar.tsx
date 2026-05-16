@@ -35,12 +35,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   }
 
   return (
-    <Sidebar collapsible="icon" {...props} className="bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800">
-      <SidebarHeader className="border-b border-gray-200 dark:border-gray-800 pb-4">
+    <Sidebar collapsible="icon" {...props}>
+      <SidebarHeader className="border-b border-sidebar-border pb-4">
         <div className="px-4 py-3">
           <a href="/overview" className="flex items-center gap-2">
             <Logo className="size-6!" />
-            <span className="text-base font-bold bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent group-data-[collapsible=icon]:hidden">
+            <span className="text-base font-bold text-primary group-data-[collapsible=icon]:hidden">
               Geldborse
             </span>
           </a>
@@ -54,7 +54,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
         {/* 其他区域 */}
         <SidebarGroup>
-          <SidebarGroupLabel className="px-4 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+          <SidebarGroupLabel className="px-4 py-2 text-xs font-medium text-muted-foreground uppercase">
             其他
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -81,7 +81,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarContent>
 
       {/* 用户信息 - 放在最下面 */}
-      <div className="border-t border-gray-200 dark:border-gray-800 p-2 group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:justify-center">
+      <div className="border-t border-sidebar-border p-2 group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:justify-center">
         <NavUser />
       </div>
     </Sidebar>
