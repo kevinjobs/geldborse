@@ -23,6 +23,10 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 No typecheck script exists. There are pre-existing lint errors (mostly `no-explicit-any` in test files) — do not introduce new ones.
 
+## Git
+
+- **Always ask for confirmation before creating any commit.** Present the diff and commit message draft, then wait for approval.
+
 ## Database (Prisma 5 + PostgreSQL)
 
 - Migration (dev): `bunx prisma migrate dev`
