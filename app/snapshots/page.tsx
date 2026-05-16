@@ -206,6 +206,45 @@ export default function SnapshotsPage() {
     return getSnapshotsByTime(snapshotAt).reduce((sum, s) => sum + s.amount, 0)
   }
 
+  const getAssetChanges = useMemo(() => {
+    const times = getUniqueSnapshotTimes()
+    if (times.length < 2) return { fromFirst: null, fromLastMonth: null, firstTime: null, lastMonthTime: null }
+
+    const latestTime = times[0]
+    const latestTotal = getTotalByTime(latestTime)
+
+    const firstTime = times[times.length - 1]
+    const firstTotal = getTotalByTime(firstTime)
+    const fromFirst = latestTotal - firstTotal
+
+    const latestDate = new Date(latestTime)
+    const lastMonthYear = latestDate.getFullYear()
+    const lastMonthMonth = latestDate.getMonth() - 1
+    let lastMonthTime: string | null = null
+
+    if (lastMonthMonth < 0) {
+      const candidateTimes = times.filter(t => {
+        const d = new Date(t)
+        return d.getFullYear() === lastMonthYear - 1 && d.getMonth() === 11
+      })
+      if (candidateTimes.length > 0) {
+        lastMonthTime = candidateTimes[0]
+      }
+    } else {
+      const candidateTimes = times.filter(t => {
+        const d = new Date(t)
+        return d.getFullYear() === lastMonthYear && d.getMonth() === lastMonthMonth
+      })
+      if (candidateTimes.length > 0) {
+        lastMonthTime = candidateTimes[0]
+      }
+    }
+
+    const fromLastMonth = lastMonthTime ? latestTotal - getTotalByTime(lastMonthTime) : null
+
+    return { fromFirst, fromLastMonth, firstTime, lastMonthTime }
+  }, [snapshots])
+
   const getChartDateRange = () => {
     const now = new Date()
     const years = parseFloat(chartPeriod)
@@ -299,7 +338,7 @@ export default function SnapshotsPage() {
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
               <div className="px-4 lg:px-6">
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">快照次数</CardTitle>
@@ -331,16 +370,46 @@ export default function SnapshotsPage() {
                   </Card>
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">资产变化</CardTitle>
+                      <CardTitle className="text-sm font-medium">与首笔相比</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">
-                        {getUniqueSnapshotTimes().length >= 2
-                          ? formatAmount(
-                            getTotalByTime(getUniqueSnapshotTimes()[0]) - getTotalByTime(getUniqueSnapshotTimes()[1])
-                          )
-                          : "-"}
-                      </div>
+                      {getAssetChanges.fromFirst !== null ? (
+                        <div className="text-2xl font-bold">
+                          <span className={getAssetChanges.fromFirst >= 0 ? "text-[#32D74B]" : "text-[#FF453A]"}>
+                            {getAssetChanges.fromFirst >= 0 ? "+" : ""}
+                            {formatAmount(getAssetChanges.fromFirst)}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="text-2xl font-bold">-</div>
+                      )}
+                      {getAssetChanges.firstTime && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          首笔: {formatDateShort(getAssetChanges.firstTime)}
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">与上月同期相比</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {getAssetChanges.fromLastMonth !== null ? (
+                        <div className="text-2xl font-bold">
+                          <span className={getAssetChanges.fromLastMonth >= 0 ? "text-[#32D74B]" : "text-[#FF453A]"}>
+                            {getAssetChanges.fromLastMonth >= 0 ? "+" : ""}
+                            {formatAmount(getAssetChanges.fromLastMonth)}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="text-2xl font-bold">-</div>
+                      )}
+                      {getAssetChanges.lastMonthTime && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          上月: {formatDateShort(getAssetChanges.lastMonthTime)}
+                        </p>
+                      )}
                     </CardContent>
                   </Card>
                 </div>
