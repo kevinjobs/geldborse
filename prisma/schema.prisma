@@ -92,12 +92,11 @@ model User {
   email     String        @unique
   password  String
   name      String?
+  avatar    String?
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
   accounts  Account[]
   loginHistories LoginHistory[]
-
-  @@index([email])
 }
 
 model LoginHistory {

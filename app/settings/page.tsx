@@ -23,6 +23,9 @@ interface MenuItem {
 function SettingsContent() {
   const { user } = useAuth()
   const [name, setName] = useState(user?.name || "")
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(user?.avatar || null)
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [avatarPreset, setAvatarPreset] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
   const [clearPassword, setClearPassword] = useState("")
   const [loadingClear, setLoadingClear] = useState(false)
@@ -36,6 +39,8 @@ function SettingsContent() {
   const [loginHistories, setLoginHistories] = useState<any[]>([])
   const [loadingHistories, setLoadingHistories] = useState(true)
   const [activeMenu, setActiveMenu] = useState("profile")
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false)
+  const [selectedPresetAvatar, setSelectedPresetAvatar] = useState<number | null>(null)
 
   const menuItems: MenuItem[] = [
     { id: "profile", title: "个人资料", icon: <UserIcon className="h-4 w-4" /> },
@@ -52,13 +57,20 @@ function SettingsContent() {
     try {
       if (!user) return
 
+      const formData = new FormData()
+      formData.append('name', name)
+      
+      if (avatarFile) {
+        formData.append('avatar', avatarFile)
+      }
+
       const response = await fetch("/api/user/profile", {
         method: "PUT",
+        // 不设置Content-Type，让浏览器自动设置为multipart/form-data
         headers: {
-          "Content-Type": "application/json",
           "Authorization": `Bearer ${user.id}`
         },
-        body: JSON.stringify({ name }),
+        body: formData,
       })
 
       if (!response.ok) {
@@ -318,48 +330,179 @@ function SettingsContent() {
             {/* 内容区域 */}
             <div className="flex-1">
               {/* 个人资料 */}
-              {activeMenu === "profile" && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>个人资料</CardTitle>
-                    <CardDescription>
-                      管理您的个人信息和账户设置
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="email">邮箱</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          value={user?.email || ""}
-                          disabled
-                          className="bg-muted"
-                        />
-                        <p className="text-sm text-muted-foreground">
-                          邮箱地址无法修改
-                        </p>
-                      </div>
+{activeMenu === "profile" && (
+    <Card>
+      <CardHeader>
+        <CardTitle>个人资料</CardTitle>
+        <CardDescription>
+          管理您的个人信息和账户设置
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {/* 头像选择区域 */}
+          <div className="space-y-4">
+            <div className="flex items-center space-x-4">
+              <div className="relative">
+                <img
+                  src={avatarPreview || '/default-avatar.png'}
+                  alt="头像"
+                  className="w-24 h-24 rounded-full object-cover border-2 border-primary"
+                  onClick={() => setShowAvatarPicker(true)}
+                  style={{ cursor: 'pointer' }}
+                />
+                {!avatarPreview && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
+                    <UserIcon className="h-6 w-6 text-white" />
+                  </div>
+                )}
+                {showAvatarPicker && (
+                  <div className="absolute -top-2 -right-2 bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">
+                    +
+                  </div>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="name">昵称</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="请输入您的昵称"
+                />
+              </div>
+            </div>
+            
+            {/* 头像选择器 */}
+            {showAvatarPicker && (
+              <div className="border rounded-[16px] p-4 bg-[#1E1E1E]">
+                <h3 className="font-medium mb-4">选择头像</h3>
+                <div className="space-y-4">
+                  {/* 上传自定义头像 */}
+                  <div className="space-y-3">
+                    <Label htmlFor="avatar-upload">上传自定义头像</Label>
+                    <Input
+                      id="avatar-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          // 验证文件类型和大小
+                          const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+                          if (!validTypes.includes(file.type)) {
+                            toast.error('只支持JPEG, PNG, GIF和WebP格式');
+                            return;
+                          }
+                          
+                          const maxSize = 5 * 1024 * 1024; // 5MB
+                          if (file.size > maxSize) {
+                            toast.error('文件大小不能超过5MB');
+                            return;
+                          }
+                          
+                          // 预览图片
+                          const reader = new FileReader();
+                          reader.onload = (event) => {
+                            setAvatarPreview(event.target?.result as string);
+                          };
+                          reader.readAsDataURL(file);
+                          
+                          // 存储文件以便提交
+                          setAvatarFile(file);
+                        }
+                      }}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      支持JPEG, PNG, GIF, WebP格式，最大5MB
+                    </p>
+                  </div>
+                  
+                  {/* 预设头像 */}
+                  <div className="space-y-3">
+                    <Label>选择系统头像</Label>
+                    <div className="grid grid-cols-4 gap-2">
+                      {/* 生成16个预设头像 */}
+                      {Array.from({ length: 16 }, (_, i) => i + 1).map((index) => (
+                        <button
+                          key={index}
+                          onClick={() => {
+                            setAvatarPreset(index);
+                            setAvatarPreview(`/avatars/avatar-${index}.png`);
+                            setShowAvatarPicker(false);
+                          }}
+                          className={`w-10 h-10 rounded-full border-2 ${selectedPresetAvatar === index ? 'border-primary' : 'border-transparent'} hover:border-primary transition-colors cursor-pointer`}
+                        >
+                          <img
+                            src={`/avatars/avatar-${index}.png`}
+                            alt={`头像 ${index}`}
+                            className="w-full h-full rounded-full object-cover"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground text-center">
+                      点击选择预设头像
+                    </p>
+                  </div>
+                  
+                  <div className="flex justify-end space-x-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowAvatarPicker(false)}
+                      size="sm"
+                    >
+                      取消
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setShowAvatarPicker(false);
+                      }}
+                      size="sm"
+                    >
+                      确定
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="name">昵称</Label>
-                        <Input
-                          id="name"
-                          type="text"
-                          value={name}
-                          onChange={(e) => setName(e.target.value)}
-                          placeholder="请输入您的昵称"
-                        />
-                      </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">邮箱</Label>
+              <Input
+                id="email"
+                type="email"
+                value={user?.email || ""}
+                disabled
+                className="bg-muted"
+              />
+              <p className="text-sm text-muted-foreground">
+                邮箱地址无法修改
+              </p>
+            </div>
 
-                      <Button type="submit" disabled={loading}>
-                        {loading ? "保存中..." : "保存更改"}
-                      </Button>
-                    </form>
-                  </CardContent>
-                </Card>
-              )}
+            <div className="space-y-2">
+              <Label htmlFor="name">昵称</Label>
+              <Input
+                id="name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="请输入您的昵称"
+              />
+            </div>
+
+            <Button type="submit" disabled={loading}>
+              {loading ? "保存中..." : "保存更改"}
+            </Button>
+          </form>
+        </div>
+      </CardContent>
+    </Card>
+  )}
 
               {/* 账户安全 */}
               {activeMenu === "account" && (
