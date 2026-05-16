@@ -22,7 +22,7 @@ export function NavUser() {
       >
         <Avatar className="h-9 w-9 group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8">
           <AvatarImage
-            src={user?.avatar}
+            src={user?.avatar ?? undefined}
             alt={user?.name || "用户"}
           />
           <AvatarFallback>

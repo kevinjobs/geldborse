@@ -29,7 +29,7 @@ function parseUserAgent(userAgent: string) {
 
 // Test mode - for testing only
 let testMode = false;
-let testUser: { id: string; email: string; password: string; name?: string } | null = null;
+let testUser: { id: string; email: string; password: string; name?: string | null; avatar?: string | null } | null = null;
 let testError: Error | null = null;
 let testPasswordMatch = false;
 

@@ -6,8 +6,8 @@ const prisma = new PrismaClient();
 
 // Test mode - for testing only
 let testMode = false;
-let testExistingUser: { id: string; email: string; password: string; name?: string } | null = null;
-let testCreateResult: { id: string; email: string; password: string; name?: string } | null = null;
+let testExistingUser: { id: string; email: string; password: string; name?: string | null; avatar?: string | null } | null = null;
+let testCreateResult: { id: string; email: string; password: string; name?: string | null; avatar?: string | null } | null = null;
 let testError: Error | null = null;
 
 export function setTestMode(enabled: boolean) {
