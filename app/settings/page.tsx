@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Toggle } from "@/components/ui/toggle"
 import { useAuth } from "@/lib/auth-context"
-import { avatarPresets, getAvatarUrl } from "@/lib/avatars"
+import { generateRandomPresets, getAvatarUrl } from "@/lib/avatars"
 import { toast } from "sonner"
 import { ProtectedRoute } from "@/components/protected-route"
 import {
@@ -48,6 +48,7 @@ function SettingsContent() {
   const [activeMenu, setActiveMenu] = useState("profile")
   const [showAvatarPicker, setShowAvatarPicker] = useState(false)
   const [selectedPresetAvatar, setSelectedPresetAvatar] = useState<number | null>(null)
+  const [avatarPresets, setAvatarPresets] = useState(() => generateRandomPresets())
 
   const menuItems: MenuItem[] = [
     { id: "profile", title: "个人资料", icon: <UserIcon className="h-4 w-4" /> },
@@ -67,7 +68,10 @@ function SettingsContent() {
       const body: Record<string, unknown> = { name }
 
       if (avatarPreset) {
-        body.avatarPreset = avatarPreset
+        const preset = avatarPresets.find(p => p.id === avatarPreset)
+        if (preset) {
+          body.avatarPresetUrl = getAvatarUrl(preset)
+        }
       } else if (avatarFile) {
         const base64 = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader()
@@ -422,11 +426,30 @@ function SettingsContent() {
 
                   {/* 预设头像 */}
                   <div className="space-y-3">
-                    <Label>选择系统头像</Label>
+                    <div className="flex items-center justify-between">
+                      <Label>选择系统头像</Label>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setAvatarPresets(generateRandomPresets())
+                          setSelectedPresetAvatar(null)
+                        }}
+                        className="gap-1"
+                      >
+                        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21 2v6h-6" />
+                          <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
+                          <path d="M3 22v-6h6" />
+                          <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+                        </svg>
+                        换一批
+                      </Button>
+                    </div>
                     <div className="grid grid-cols-4 gap-3">
                       {avatarPresets.map((preset) => (
                         <button
-                          key={preset.id}
+                          key={`${preset.id}-${preset.seed}`}
                           onClick={() => {
                             setAvatarPreset(preset.id);
                             setAvatarFile(null);
