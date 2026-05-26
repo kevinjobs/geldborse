@@ -24,12 +24,19 @@ async function main() {
       data: {
         email: defaultEmail,
         password: hashedPassword,
-        name: "管理员"
+        name: "管理员",
+        isAdmin: true
       }
     })
     console.log(`创建默认用户: ${defaultEmail}`)
   } else {
-
+    if (!user.isAdmin) {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { isAdmin: true }
+      })
+      console.log(`更新用户为管理员: ${defaultEmail}`)
+    }
     console.log(`默认用户已存在: ${defaultEmail}`)
   }
 

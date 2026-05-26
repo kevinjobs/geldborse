@@ -7,6 +7,7 @@ type User = {
   email: string
   name?: string
   avatar?: string | null
+  isAdmin?: boolean
 }
 
 type AuthContextType = {
