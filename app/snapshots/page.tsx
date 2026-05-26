@@ -71,9 +71,23 @@ export default function SnapshotsPage() {
     fetchSnapshots()
   }, [])
 
+  const getAuthHeaders = () => {
+    if (typeof window !== 'undefined') {
+      const userData = localStorage.getItem('geldborse_user')
+      if (userData) {
+        try {
+          const user = JSON.parse(userData)
+          return user?.id ? { 'Authorization': `Bearer ${user.id}` } : undefined
+        } catch {}
+      }
+    }
+    return undefined
+  }
+
   const fetchSnapshots = async () => {
     try {
-      const res = await fetch("/api/daily-snapshots")
+      const headers = getAuthHeaders()
+      const res = await fetch("/api/daily-snapshots", { headers })
       const data = await res.json()
       setSnapshots(Array.isArray(data) ? data : [])
     } catch (error) {
@@ -86,7 +100,8 @@ export default function SnapshotsPage() {
   const generateSnapshot = async () => {
     setGenerating(true)
     try {
-      const res = await fetch("/api/daily-snapshots", { method: "POST" })
+      const headers = getAuthHeaders()
+      const res = await fetch("/api/daily-snapshots", { method: "POST", headers })
       const data = await res.json()
       if (data.success) {
         await fetchSnapshots()
@@ -107,9 +122,10 @@ export default function SnapshotsPage() {
   }
 
   const executeDelete = async () => {
+    const headers = getAuthHeaders()
     if (deleteDialog.type === "single" && deleteDialog.id) {
       try {
-        const res = await fetch(`/api/daily-snapshots/${deleteDialog.id}`, { method: "DELETE" })
+        const res = await fetch(`/api/daily-snapshots/${deleteDialog.id}`, { method: "DELETE", headers })
         const data = await res.json()
         if (data.success) {
           setSnapshots((prev) => prev.filter((s) => s.id !== deleteDialog.id))
@@ -119,7 +135,7 @@ export default function SnapshotsPage() {
       }
     } else if (deleteDialog.type === "group" && deleteDialog.snapshotAt) {
       try {
-        const res = await fetch(`/api/daily-snapshots?snapshotAt=${encodeURIComponent(deleteDialog.snapshotAt)}`, { method: "DELETE" })
+        const res = await fetch(`/api/daily-snapshots?snapshotAt=${encodeURIComponent(deleteDialog.snapshotAt)}`, { method: "DELETE", headers })
         const data = await res.json()
         if (data.success) {
           setSnapshots((prev) => prev.filter((s) => s.snapshotAt !== deleteDialog.snapshotAt))

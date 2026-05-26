@@ -1,13 +1,22 @@
-import { NextResponse } from "next/server"
+import { NextResponse, NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { getCurrentUserId } from "@/lib/auth"
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const userId = await getCurrentUserId(request)
+  if (!userId) {
+    return NextResponse.json({ error: "未授权" }, { status: 401 })
+  }
+
   const { id } = await params
-  const record = await prisma.record.findUnique({
-    where: { id },
+  const record = await prisma.record.findFirst({
+    where: {
+      id,
+      account: { userId }
+    },
     include: { account: true },
   })
   if (!record) {
@@ -17,15 +26,35 @@ export async function GET(
 }
 
 export async function PUT(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const userId = await getCurrentUserId(request)
+  if (!userId) {
+    return NextResponse.json({ error: "未授权" }, { status: 401 })
+  }
+
   const { id } = await params
+
+  const existing = await prisma.record.findFirst({
+    where: {
+      id,
+      account: { userId }
+    }
+  })
+
+  if (!existing) {
+    return NextResponse.json({ error: "记录不存在或无权操作" }, { status: 404 })
+  }
+
   const { date, accountId, assetId, amount, type, note } = await request.json()
   
-  // 验证账户是否存在
-  const account = await prisma.account.findUnique({
-    where: { id: accountId }
+  // 验证账户是否属于当前用户
+  const account = await prisma.account.findFirst({
+    where: {
+      id: accountId,
+      userId
+    }
   })
 
   if (!account) {
@@ -69,10 +98,27 @@ export async function PUT(
 }
 
 export async function DELETE(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const userId = await getCurrentUserId(request)
+  if (!userId) {
+    return NextResponse.json({ error: "未授权" }, { status: 401 })
+  }
+
   const { id } = await params
+
+  const existing = await prisma.record.findFirst({
+    where: {
+      id,
+      account: { userId }
+    }
+  })
+
+  if (!existing) {
+    return NextResponse.json({ error: "记录不存在或无权操作" }, { status: 404 })
+  }
+
   await prisma.record.delete({
     where: { id },
   })

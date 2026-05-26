@@ -1,9 +1,20 @@
-import { NextResponse } from "next/server"
+import { NextResponse, NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { getCurrentUserId } from "@/lib/auth"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const userId = await getCurrentUserId(request)
+    if (!userId) {
+      return NextResponse.json({ error: "未授权" }, { status: 401 })
+    }
+
     const snapshots = await prisma.dailySnapshot.findMany({
+      where: {
+        account: {
+          userId
+        }
+      },
       orderBy: [{ snapshotAt: "desc" }, { accountId: "asc" }],
       include: {
         account: {
@@ -41,11 +52,17 @@ export async function GET() {
   }
 }
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
+    const userId = await getCurrentUserId(request)
+    if (!userId) {
+      return NextResponse.json({ error: "未授权" }, { status: 401 })
+    }
+
     const now = new Date()
 
     const accounts = await prisma.account.findMany({
+      where: { userId },
       include: {
         assets: {
           include: {
@@ -136,8 +153,13 @@ export async function POST() {
   }
 }
 
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
   try {
+    const userId = await getCurrentUserId(request)
+    if (!userId) {
+      return NextResponse.json({ error: "未授权" }, { status: 401 })
+    }
+
     const { searchParams } = new URL(request.url)
     const snapshotAt = searchParams.get("snapshotAt")
 
@@ -148,6 +170,9 @@ export async function DELETE(request: Request) {
     const result = await prisma.dailySnapshot.deleteMany({
       where: {
         snapshotAt: new Date(snapshotAt),
+        account: {
+          userId
+        }
       },
     })
 

@@ -1,13 +1,19 @@
-import { NextResponse } from "next/server"
+import { NextResponse, NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { getCurrentUserId } from "@/lib/auth"
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const userId = await getCurrentUserId(request)
+  if (!userId) {
+    return NextResponse.json({ error: "未授权" }, { status: 401 })
+  }
+
   const { id } = await params
-  const account = await prisma.account.findUnique({
-    where: { id },
+  const account = await prisma.account.findFirst({
+    where: { id, userId },
     include: {
       records: { orderBy: { date: "desc" }, take: 10 },
       assets: { orderBy: { createdAt: "desc" } },
@@ -20,9 +26,14 @@ export async function GET(
 }
 
 export async function PUT(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const userId = await getCurrentUserId(request)
+  if (!userId) {
+    return NextResponse.json({ error: "未授权" }, { status: 401 })
+  }
+
   const { id } = await params
   const { name, type, accountNumber, initialBalance } = await request.json()
 
@@ -31,6 +42,14 @@ export async function PUT(
   }
 
   try {
+    const existing = await prisma.account.findFirst({
+      where: { id, userId }
+    })
+
+    if (!existing) {
+      return NextResponse.json({ error: "账户不存在或无权操作" }, { status: 404 })
+    }
+
     const account = await prisma.account.update({
       where: { id },
       data: {
@@ -47,10 +66,23 @@ export async function PUT(
 }
 
 export async function DELETE(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const userId = await getCurrentUserId(request)
+  if (!userId) {
+    return NextResponse.json({ error: "未授权" }, { status: 401 })
+  }
+
   const { id } = await params
+
+  const existing = await prisma.account.findFirst({
+    where: { id, userId }
+  })
+
+  if (!existing) {
+    return NextResponse.json({ error: "账户不存在或无权操作" }, { status: 404 })
+  }
 
   const recordCount = await prisma.record.count({
     where: { accountId: id },

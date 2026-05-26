@@ -1,13 +1,22 @@
-import { NextResponse } from "next/server"
+import { NextResponse, NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { getCurrentUserId } from "@/lib/auth"
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const userId = await getCurrentUserId(request)
+  if (!userId) {
+    return NextResponse.json({ error: "未授权" }, { status: 401 })
+  }
+
   const { id } = await params
-  const asset = await prisma.asset.findUnique({
-    where: { id },
+  const asset = await prisma.asset.findFirst({
+    where: {
+      id,
+      account: { userId }
+    },
     include: { account: true },
   })
   if (!asset) {
@@ -17,13 +26,29 @@ export async function GET(
 }
 
 export async function PUT(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const userId = await getCurrentUserId(request)
+  if (!userId) {
+    return NextResponse.json({ error: "未授权" }, { status: 401 })
+  }
+
   const { id } = await params
   const { name, type, amount } = await request.json()
 
   try {
+    const existing = await prisma.asset.findFirst({
+      where: {
+        id,
+        account: { userId }
+      }
+    })
+
+    if (!existing) {
+      return NextResponse.json({ error: "资产不存在或无权操作" }, { status: 404 })
+    }
+
     const existingBalances = await prisma.balance.findMany({
       where: { assetId: id },
     })
@@ -69,12 +94,28 @@ export async function PUT(
 }
 
 export async function DELETE(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const userId = await getCurrentUserId(request)
+  if (!userId) {
+    return NextResponse.json({ error: "未授权" }, { status: 401 })
+  }
+
   const { id } = await params
 
   try {
+    const existing = await prisma.asset.findFirst({
+      where: {
+        id,
+        account: { userId }
+      }
+    })
+
+    if (!existing) {
+      return NextResponse.json({ error: "资产不存在或无权操作" }, { status: 404 })
+    }
+
     await prisma.asset.delete({
       where: { id },
     })
