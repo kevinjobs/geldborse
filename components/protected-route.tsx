@@ -1,34 +1,26 @@
-'use client';
+'use client'
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/auth-context';
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/lib/auth-context'
 
 interface ProtectedRouteProps {
-  children: React.ReactNode;
+  children: React.ReactNode
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user } = useAuth();
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth()
+  const router = useRouter()
 
   useEffect(() => {
-    // 等待用户状态恢复
-    setIsLoading(false);
-  }, []);
-
-  useEffect(() => {
-    // 只有在加载完成后才检查用户状态
-    if (!isLoading && !user) {
-      router.push('/auth/login');
+    if (user === null) {
+      router.push('/auth/login')
     }
-  }, [user, router, isLoading]);
+  }, [user, router])
 
-  // 加载状态下返回null，避免重定向
-  if (isLoading || !user) {
-    return null;
+  if (user === null) {
+    return null
   }
 
-  return <>{children}</>;
+  return <>{children}</>
 }

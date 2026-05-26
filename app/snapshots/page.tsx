@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, Fragment, useMemo } from "react"
+import { api } from "@/lib/api-client"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
@@ -71,24 +71,9 @@ export default function SnapshotsPage() {
     fetchSnapshots()
   }, [])
 
-  const getAuthHeaders = () => {
-    if (typeof window !== 'undefined') {
-      const userData = localStorage.getItem('geldborse_user')
-      if (userData) {
-        try {
-          const user = JSON.parse(userData)
-          return user?.id ? { 'Authorization': `Bearer ${user.id}` } : undefined
-        } catch {}
-      }
-    }
-    return undefined
-  }
-
   const fetchSnapshots = async () => {
     try {
-      const headers = getAuthHeaders()
-      const res = await fetch("/api/daily-snapshots", { headers })
-      const data = await res.json()
+      const data = await api.get<{ success?: boolean; data?: DailySnapshot[] }>("/api/daily-snapshots")
       setSnapshots(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error("获取快照失败:", error)
@@ -100,12 +85,8 @@ export default function SnapshotsPage() {
   const generateSnapshot = async () => {
     setGenerating(true)
     try {
-      const headers = getAuthHeaders()
-      const res = await fetch("/api/daily-snapshots", { method: "POST", headers })
-      const data = await res.json()
-      if (data.success) {
-        await fetchSnapshots()
-      }
+      await api.post("/api/daily-snapshots")
+      await fetchSnapshots()
     } catch (error) {
       console.error("生成快照失败:", error)
     } finally {
@@ -122,24 +103,17 @@ export default function SnapshotsPage() {
   }
 
   const executeDelete = async () => {
-    const headers = getAuthHeaders()
     if (deleteDialog.type === "single" && deleteDialog.id) {
       try {
-        const res = await fetch(`/api/daily-snapshots/${deleteDialog.id}`, { method: "DELETE", headers })
-        const data = await res.json()
-        if (data.success) {
-          setSnapshots((prev) => prev.filter((s) => s.id !== deleteDialog.id))
-        }
+        await api.delete(`/api/daily-snapshots/${deleteDialog.id}`)
+        setSnapshots((prev) => prev.filter((s) => s.id !== deleteDialog.id))
       } catch (error) {
         console.error("删除快照失败:", error)
       }
     } else if (deleteDialog.type === "group" && deleteDialog.snapshotAt) {
       try {
-        const res = await fetch(`/api/daily-snapshots?snapshotAt=${encodeURIComponent(deleteDialog.snapshotAt)}`, { method: "DELETE", headers })
-        const data = await res.json()
-        if (data.success) {
-          setSnapshots((prev) => prev.filter((s) => s.snapshotAt !== deleteDialog.snapshotAt))
-        }
+        await api.delete(`/api/daily-snapshots?snapshotAt=${encodeURIComponent(deleteDialog.snapshotAt)}`)
+        setSnapshots((prev) => prev.filter((s) => s.snapshotAt !== deleteDialog.snapshotAt))
       } catch (error) {
         console.error("删除快照组失败:", error)
       }

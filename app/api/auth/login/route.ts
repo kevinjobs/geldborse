@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcrypt';
+import { signToken } from '@/lib/jwt';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 function parseUserAgent(userAgent: string) {
   if (userAgent.includes('Chrome')) {
@@ -51,6 +53,11 @@ export function setTestPasswordMatch(match: boolean) {
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    if (!checkRateLimit(ip)) {
+      return NextResponse.json({ error: 'Too many requests, please try again later' }, { status: 429 })
+    }
+
     const { email, password } = await request.json();
 
     // 验证输入
@@ -107,7 +114,22 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({ user: { id: user.id, email: user.email, name: user.name, avatar: user.avatar } }, { status: 200 });
+    const token = await signToken(user.id)
+
+    const response = NextResponse.json(
+      { user: { id: user.id, email: user.email, name: user.name, avatar: user.avatar } },
+      { status: 200 }
+    )
+
+    response.cookies.set('auth_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 60 * 60 * 24 * 7,
+      path: '/'
+    })
+
+    return response
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

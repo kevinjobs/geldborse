@@ -1,88 +1,88 @@
-'use client';
+'use client'
 
-import * as React from 'react';
-
-const STORAGE_KEY = 'geldborse_user';
+import * as React from 'react'
 
 type User = {
-  id: string;
-  email: string;
-  name?: string;
-  avatar?: string | null;
-};
+  id: string
+  email: string
+  name?: string
+  avatar?: string | null
+}
 
 type AuthContextType = {
-  user: User | null;
-  login: (credentials: { email: string; password: string }) => Promise<void>;
-  logout: () => Promise<void>;
-};
+  user: User | null
+  login: (credentials: { email: string; password: string }) => Promise<void>
+  logout: () => Promise<void>
+}
 
-const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
+const AuthContext = React.createContext<AuthContextType | undefined>(undefined)
 
 export function useAuth() {
-  const context = React.useContext(AuthContext);
+  const context = React.useContext(AuthContext)
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error('useAuth must be used within an AuthProvider')
   }
-  return context;
+  return context
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  // Initialize user state to null
-  const [user, setUser] = React.useState<User | null>(null);
+  const [user, setUser] = React.useState<User | null>(null)
+  const [isLoading, setIsLoading] = React.useState(true)
 
-  // Restore user from localStorage on client side
   React.useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedUser = localStorage.getItem(STORAGE_KEY);
-      if (storedUser) {
-        try {
-          setUser(JSON.parse(storedUser));
-        } catch (error) {
-          console.error('Failed to parse stored user:', error);
-          localStorage.removeItem(STORAGE_KEY);
+    fetch('/api/auth/me', { credentials: 'include' })
+      .then((res) => {
+        if (res.ok) return res.json()
+        return null
+      })
+      .then((data) => {
+        if (data?.user) {
+          setUser(data.user)
         }
-      }
-    }
-  }, []);
+        setIsLoading(false)
+      })
+      .catch(() => {
+        setIsLoading(false)
+      })
+  }, [])
 
   const login = async (credentials: { email: string; password: string }) => {
     const response = await fetch('/api/auth/login', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(credentials),
-    });
+      credentials: 'include',
+    })
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Login failed');
+      const error = await response.json()
+      throw new Error(error.error || 'Login failed')
     }
 
-    const data = await response.json();
-    setUser(data.user);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data.user));
-  };
+    const data = await response.json()
+    setUser(data.user)
+  }
 
   const logout = async () => {
-    const response = await fetch('/api/auth/logout', {
-      method: 'POST',
-    });
-
-    if (!response.ok) {
-      console.error('Logout failed');
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      })
+    } finally {
+      setUser(null)
     }
-
-    setUser(null);
-    localStorage.removeItem(STORAGE_KEY);
-  };
+  }
 
   const value = {
     user,
     login,
     logout,
-  };
+  }
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {!isLoading && children}
+    </AuthContext.Provider>
+  )
 }

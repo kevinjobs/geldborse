@@ -7,6 +7,25 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  OWNER
+  EDITOR
+  VIEWER
+}
+
+model User {
+  id        String        @id @default(cuid())
+  email     String        @unique
+  password  String
+  name      String?
+  avatar    String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  accounts  Account[]
+  accountMembers AccountMember[]
+  loginHistories LoginHistory[]
+}
+
 model Account {
   id             String          @id @default(cuid())
   name           String
@@ -20,8 +39,23 @@ model Account {
   records        Record[]
   assets         Asset[]
   dailySnapshots DailySnapshot[]
+  members        AccountMember[]
 
   @@index([type])
+  @@index([userId])
+}
+
+model AccountMember {
+  id        String   @id @default(cuid())
+  accountId String
+  account   Account  @relation(fields: [accountId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  role      Role     @default(VIEWER)
+  createdAt DateTime @default(now())
+
+  @@unique([accountId, userId])
+  @@index([accountId])
   @@index([userId])
 }
 
@@ -85,18 +119,6 @@ model DailySnapshot {
   @@index([snapshotAt])
   @@index([accountId])
   @@index([assetId])
-}
-
-model User {
-  id        String        @id @default(cuid())
-  email     String        @unique
-  password  String
-  name      String?
-  avatar    String?
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-  accounts  Account[]
-  loginHistories LoginHistory[]
 }
 
 model LoginHistory {
