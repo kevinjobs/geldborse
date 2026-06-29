@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getCurrentUserId } from '@/lib/auth';
+import { authenticateRequest } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
     // 从认证中获取用户ID
-    const userId = await getCurrentUserId(request);
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await authenticateRequest(request, { requiredScope: 'settings:write' });
+    if (auth instanceof NextResponse) return auth;
+    const { userId } = auth;
 
     const formData = await request.formData();
     const file = formData.get('avatar') as File;

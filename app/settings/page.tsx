@@ -39,7 +39,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
-import { UserIcon, ShieldIcon, DatabaseIcon, BellIcon, EyeIcon, SignOut, Users as UsersIcon, Plus, Pencil, Trash, MagnifyingGlass } from "@phosphor-icons/react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { SCOPE_GROUPS, SCOPE_PRESETS, API_KEY_SCOPES } from "@/lib/api-key"
+import { UserIcon, ShieldIcon, DatabaseIcon, BellIcon, EyeIcon, SignOut, Users as UsersIcon, Plus, Pencil, Trash, MagnifyingGlass, Key, Copy, Check, XCircle } from "@phosphor-icons/react"
 
 interface MenuItem {
   id: string
@@ -82,12 +84,26 @@ function SettingsContent() {
   const [adminDialogLoading, setAdminDialogLoading] = useState(false)
   const [adminFormData, setAdminFormData] = useState({ email: "", name: "", password: "", isAdmin: false })
 
+  const [apiKeys, setApiKeys] = useState<any[]>([])
+  const [apiKeysLoading, setApiKeysLoading] = useState(true)
+  const [showCreateApiKeyDialog, setShowCreateApiKeyDialog] = useState(false)
+  const [showApiKeyResultDialog, setShowApiKeyResultDialog] = useState(false)
+  const [createdApiKey, setCreatedApiKey] = useState<string>("")
+  const [createdApiKeyName, setCreatedApiKeyName] = useState<string>("")
+  const [apiKeyForm, setApiKeyForm] = useState({ name: "", scopes: [] as string[], expiresIn: "never" })
+  const [apiKeyCopied, setApiKeyCopied] = useState(false)
+  const [showRevokeApiKeyDialog, setShowRevokeApiKeyDialog] = useState(false)
+  const [showDeleteApiKeyDialog, setShowDeleteApiKeyDialog] = useState(false)
+  const [revokeApiKeyTarget, setRevokeApiKeyTarget] = useState<any>(null)
+  const [deleteApiKeyTarget, setDeleteApiKeyTarget] = useState<any>(null)
+
   const menuItems: MenuItem[] = [
     { id: "profile", title: "个人资料", icon: <UserIcon className="h-4 w-4" /> },
     { id: "account", title: "账户安全", icon: <ShieldIcon className="h-4 w-4" /> },
     { id: "data", title: "数据管理", icon: <DatabaseIcon className="h-4 w-4" /> },
     { id: "notifications", title: "通知设置", icon: <BellIcon className="h-4 w-4" /> },
     { id: "privacy", title: "隐私设置", icon: <EyeIcon className="h-4 w-4" /> },
+    { id: "api-keys", title: "API 密钥", icon: <Key className="h-4 w-4" /> },
     ...(user?.isAdmin ? [{ id: "users", title: "用户管理", icon: <UsersIcon className="h-4 w-4" /> }] : []),
   ]
 
@@ -344,11 +360,120 @@ function SettingsContent() {
     }
   }
 
+  const fetchApiKeys = async () => {
+    setApiKeysLoading(true)
+    try {
+      const res = await fetch("/api/api-keys", { credentials: "include" })
+      if (!res.ok) throw new Error("获取 API Key 列表失败")
+      const data = await res.json()
+      setApiKeys(data.apiKeys || [])
+    } catch (error) {
+      console.error("获取 API Key 列表失败:", error)
+      setApiKeys([])
+    } finally {
+      setApiKeysLoading(false)
+    }
+  }
+
+  const handleCreateApiKey = async () => {
+    if (!apiKeyForm.name.trim()) {
+      toast.error("密钥名称不能为空")
+      return
+    }
+    if (apiKeyForm.scopes.length === 0) {
+      toast.error("至少选择一个权限")
+      return
+    }
+    try {
+      const res = await fetch("/api/api-keys", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(apiKeyForm),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || "创建失败")
+      }
+      const data = await res.json()
+      setCreatedApiKey(data.fullKey)
+      setCreatedApiKeyName(data.name)
+      setShowCreateApiKeyDialog(false)
+      setShowApiKeyResultDialog(true)
+      setApiKeyForm({ name: "", scopes: [], expiresIn: "never" })
+      fetchApiKeys()
+    } catch (error: any) {
+      toast.error(error.message || "创建 API Key 失败")
+    }
+  }
+
+  const handleConfirmRevoke = async () => {
+    if (!revokeApiKeyTarget) return
+    try {
+      const res = await fetch(`/api/api-keys/${revokeApiKeyTarget.id}`, {
+        method: "DELETE",
+        credentials: "include",
+      })
+      if (!res.ok) throw new Error("撤销失败")
+      toast.success("API Key 已撤销")
+      setShowRevokeApiKeyDialog(false)
+      setRevokeApiKeyTarget(null)
+      fetchApiKeys()
+    } catch (error: any) {
+      toast.error(error.message || "撤销失败")
+    }
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!deleteApiKeyTarget) return
+    try {
+      const res = await fetch(`/api/api-keys/${deleteApiKeyTarget.id}?permanent=true`, {
+        method: "DELETE",
+        credentials: "include",
+      })
+      if (!res.ok) throw new Error("删除失败")
+      toast.success("API Key 已永久删除")
+      setShowDeleteApiKeyDialog(false)
+      setDeleteApiKeyTarget(null)
+      fetchApiKeys()
+    } catch (error: any) {
+      toast.error(error.message || "删除失败")
+    }
+  }
+
+  const toggleApiKeyScope = (scope: string) => {
+    setApiKeyForm(prev => ({
+      ...prev,
+      scopes: prev.scopes.includes(scope)
+        ? prev.scopes.filter(s => s !== scope)
+        : [...prev.scopes, scope],
+    }))
+  }
+
+  const toggleApiKeyGroup = (groupScopes: string[], checked: boolean) => {
+    setApiKeyForm(prev => ({
+      ...prev,
+      scopes: checked
+        ? [...new Set([...prev.scopes, ...groupScopes])]
+        : prev.scopes.filter(s => !groupScopes.includes(s)),
+    }))
+  }
+
+  const applyApiKeyPreset = (presetScopes: readonly string[]) => {
+    setApiKeyForm(prev => ({ ...prev, scopes: [...presetScopes] }))
+  }
+
   useEffect(() => {
     if (activeMenu === "users" && user?.isAdmin) {
       fetchAdminUsers(adminPage, adminSearch)
     }
   }, [activeMenu, user, adminPage])
+
+  useEffect(() => {
+    if (activeMenu === "api-keys") {
+      fetchApiKeys()
+    }
+  }, [activeMenu])
 
   const handleAdminCreate = async () => {
     if (!adminFormData.email || !adminFormData.password) {
@@ -895,6 +1020,112 @@ function SettingsContent() {
                 </Card>
               )}
 
+              {/* API 密钥 */}
+              {activeMenu === "api-keys" && (
+                <Card>
+                  <CardHeader>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                      <div>
+                        <CardTitle>API 密钥</CardTitle>
+                        <CardDescription>管理用于 API 访问的密钥</CardDescription>
+                      </div>
+                      <Button onClick={() => { setApiKeyForm({ name: "", scopes: [], expiresIn: "never" }); setShowCreateApiKeyDialog(true) }}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        创建密钥
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {apiKeysLoading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <p>加载中...</p>
+                      </div>
+                    ) : apiKeys.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-8 text-center">
+                        <Key className="h-12 w-12 text-muted-foreground mb-4" />
+                        <p className="text-muted-foreground">暂无 API 密钥</p>
+                      </div>
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>名称</TableHead>
+                            <TableHead>前缀</TableHead>
+                            <TableHead>权限</TableHead>
+                            <TableHead>状态</TableHead>
+                            <TableHead>过期时间</TableHead>
+                            <TableHead>最后使用</TableHead>
+                            <TableHead className="text-right">操作</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {apiKeys.map((key: any) => {
+                            const scopes = typeof key.scopes === 'string' ? JSON.parse(key.scopes) : key.scopes
+                            const isExpired = key.expiresAt && new Date() > new Date(key.expiresAt)
+                            const isActive = key.isActive
+                            const lastUsed = key.lastUsedAt ? new Date(key.lastUsedAt).toLocaleDateString("zh-CN") : "从未使用"
+                            const expiresDisplay = !key.expiresAt ? "永不过期" : isExpired ? "已过期" : new Date(key.expiresAt).toLocaleDateString("zh-CN")
+
+                            return (
+                              <TableRow key={key.id} className={!isActive ? "opacity-60" : ""}>
+                                <TableCell className="font-medium">{key.name}</TableCell>
+                                <TableCell className="font-mono text-sm">{key.prefix}...</TableCell>
+                                <TableCell>
+                                  <div className="flex flex-wrap gap-1">
+                                    {scopes.map((s: string) => {
+                                      const scopeInfo = API_KEY_SCOPES[s as keyof typeof API_KEY_SCOPES]
+                                      const label = scopeInfo?.label ||
+                                        (s === 'read:*' ? '读取全部' :
+                                         s === 'write:*' ? '写入全部' : s)
+                                      return (
+                                        <Badge key={s} variant="outline" className="text-xs">{label}</Badge>
+                                      )
+                                    })}
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  {isActive ? (
+                                    <Badge variant="outline" className="text-xs border-success text-success">有效</Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="text-xs text-destructive">已撤销</Badge>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  <span className={isExpired ? "text-destructive" : ""}>{expiresDisplay}</span>
+                                </TableCell>
+                                <TableCell className="text-sm text-muted-foreground">{lastUsed}</TableCell>
+                                <TableCell className="text-right">
+                                  <div className="flex justify-end gap-1">
+                                    {isActive && (
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => { setRevokeApiKeyTarget(key); setShowRevokeApiKeyDialog(true) }}
+                                        title="撤销"
+                                      >
+                                        <XCircle className="h-4 w-4 text-destructive" />
+                                      </Button>
+                                    )}
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => { setDeleteApiKeyTarget(key); setShowDeleteApiKeyDialog(true) }}
+                                      title="永久删除"
+                                    >
+                                      <Trash className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            )
+                          })}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
               {/* 用户管理 */}
               {activeMenu === "users" && (
                 <Card>
@@ -989,6 +1220,171 @@ function SettingsContent() {
                   </CardContent>
                 </Card>
               )}
+
+              {/* API Key 创建 Dialog */}
+              <Dialog open={showCreateApiKeyDialog} onOpenChange={setShowCreateApiKeyDialog}>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>创建 API 密钥</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="api-key-name">密钥名称</Label>
+                      <Input
+                        id="api-key-name"
+                        value={apiKeyForm.name}
+                        onChange={(e) => setApiKeyForm({ ...apiKeyForm, name: e.target.value })}
+                        placeholder="例如：CI/CD 集成"
+                      />
+                    </div>
+
+                    <div className="space-y-3">
+                      <Label>权限设置</Label>
+                      <div className="flex gap-2">
+                        {Object.entries(SCOPE_PRESETS).map(([key, preset]) => (
+                          <Button
+                            key={key}
+                            variant="outline"
+                            size="sm"
+                            onClick={() => applyApiKeyPreset(preset.scopes)}
+                          >
+                            {preset.label}
+                          </Button>
+                        ))}
+                      </div>
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {SCOPE_GROUPS.map((group) => {
+                          const groupChecked = group.scopes.every(s => apiKeyForm.scopes.includes(s))
+                          return (
+                            <div key={group.key} className="border border-border rounded-lg p-3">
+                              <div className="flex items-center gap-2 mb-2">
+                                <input
+                                  type="checkbox"
+                                  id={`group-${group.key}`}
+                                  checked={groupChecked}
+                                  onChange={(e) => toggleApiKeyGroup(group.scopes, e.target.checked)}
+                                  className="rounded"
+                                />
+                                <Label htmlFor={`group-${group.key}`} className="font-medium">{group.label}</Label>
+                              </div>
+                              <div className="flex flex-wrap gap-2 ml-5">
+                                {group.scopes.map((scope) => {
+                                  const scopeInfo = API_KEY_SCOPES[scope as keyof typeof API_KEY_SCOPES]
+                                  return (
+                                    <label key={scope} className="flex items-center gap-1.5 text-sm">
+                                      <input
+                                        type="checkbox"
+                                        checked={apiKeyForm.scopes.includes(scope)}
+                                        onChange={() => toggleApiKeyScope(scope)}
+                                        className="rounded"
+                                      />
+                                      {scopeInfo?.label || scope}
+                                    </label>
+                                  )
+                                })}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="api-key-expires">过期时间</Label>
+                      <Select
+                        value={apiKeyForm.expiresIn}
+                        onValueChange={(v) => setApiKeyForm({ ...apiKeyForm, expiresIn: v })}
+                      >
+                        <SelectTrigger id="api-key-expires">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="never">永不过期</SelectItem>
+                          <SelectItem value="24h">24 小时</SelectItem>
+                          <SelectItem value="7d">7 天</SelectItem>
+                          <SelectItem value="30d">30 天</SelectItem>
+                          <SelectItem value="90d">90 天</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowCreateApiKeyDialog(false)}>取消</Button>
+                    <Button onClick={handleCreateApiKey}>创建</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              {/* 撤销确认 Dialog */}
+              <AlertDialog open={showRevokeApiKeyDialog} onOpenChange={setShowRevokeApiKeyDialog}>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>确认撤销</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      确定要撤销 API 密钥 "{revokeApiKeyTarget?.name}" 吗？
+                      撤销后该密钥将立即失效，但可重新激活。
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel onClick={() => setRevokeApiKeyTarget(null)}>取消</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleConfirmRevoke}>确认撤销</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+
+              {/* 永久删除确认 Dialog */}
+              <AlertDialog open={showDeleteApiKeyDialog} onOpenChange={setShowDeleteApiKeyDialog}>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>确认永久删除</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      确定要永久删除 API 密钥 "{deleteApiKeyTarget?.name}" 吗？
+                      此操作不可恢复，密钥将彻底从数据库中移除。
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel onClick={() => setDeleteApiKeyTarget(null)}>取消</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">
+                      确认删除
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+
+              {/* API Key 创建成功 Dialog */}
+              <Dialog open={showApiKeyResultDialog} onOpenChange={setShowApiKeyResultDialog}>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>密钥创建成功</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <p className="text-sm text-muted-foreground">
+                      密钥 "{createdApiKeyName}" 已创建。请立即保存，关闭后不会再次显示。
+                    </p>
+                    <div className="relative">
+                      <pre className="bg-muted p-4 rounded-lg font-mono text-xs break-all whitespace-pre-wrap select-all">
+                        {createdApiKey}
+                      </pre>
+                    </div>
+                    <Button
+                      className="w-full gap-2"
+                      onClick={async () => {
+                        await navigator.clipboard.writeText(createdApiKey)
+                        setApiKeyCopied(true)
+                        setTimeout(() => setApiKeyCopied(false), 2000)
+                      }}
+                    >
+                      {apiKeyCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                      {apiKeyCopied ? "已复制" : "复制密钥"}
+                    </Button>
+                  </div>
+                  <DialogFooter>
+                    <Button onClick={() => { setShowApiKeyResultDialog(false); setCreatedApiKey("") }}>
+                      我已保存，关闭
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
 
               {/* Dialogs */}
               <Dialog open={showCreateUserDialog} onOpenChange={setShowCreateUserDialog}>

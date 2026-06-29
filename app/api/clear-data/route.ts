@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUserId } from '@/lib/auth'
+import { authenticateRequest } from '@/lib/auth'
 import bcrypt from 'bcrypt'
 
 export async function POST(request: NextRequest) {
   try {
-    const userId = await getCurrentUserId(request)
-    if (!userId) {
-      return NextResponse.json({ error: "未授权" }, { status: 401 })
-    }
+    const auth = await authenticateRequest(request, { rejectApiKey: true })
+    if (auth instanceof NextResponse) return auth
+    const { userId } = auth
 
     const { password } = await request.json()
     if (!password) {
@@ -71,6 +70,13 @@ export async function POST(request: NextRequest) {
 
       // 清空账户
       await tx.account.deleteMany({
+        where: {
+          userId
+        }
+      })
+
+      // 清空 API Key
+      await tx.apiKey.deleteMany({
         where: {
           userId
         }

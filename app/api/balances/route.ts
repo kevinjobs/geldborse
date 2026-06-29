@@ -1,12 +1,11 @@
 import { NextResponse, NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { getCurrentUserId } from "@/lib/auth"
+import { authenticateRequest } from "@/lib/auth"
 
 export async function GET(request: NextRequest) {
-  const userId = await getCurrentUserId(request)
-  if (!userId) {
-    return NextResponse.json({ error: "未授权" }, { status: 401 })
-  }
+  const auth = await authenticateRequest(request, { requiredScope: 'assets:read' })
+  if (auth instanceof NextResponse) return auth
+  const { userId } = auth
 
   const { searchParams } = new URL(request.url)
   const assetId = searchParams.get("assetId")
@@ -74,10 +73,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const userId = await getCurrentUserId(request)
-  if (!userId) {
-    return NextResponse.json({ error: "未授权" }, { status: 401 })
-  }
+  const auth = await authenticateRequest(request, { requiredScope: 'assets:write' })
+  if (auth instanceof NextResponse) return auth
+  const { userId } = auth
 
   const { amount, recordedAt, assetId } = await request.json()
 

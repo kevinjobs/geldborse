@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getCurrentUserId } from '@/lib/auth';
+import { authenticateRequest } from '@/lib/auth';
 import bcrypt from 'bcrypt';
 
 export async function PUT(request: NextRequest) {
@@ -13,10 +13,9 @@ export async function PUT(request: NextRequest) {
     }
 
     // 从认证中获取用户ID
-    const userId = await getCurrentUserId(request);
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await authenticateRequest(request, { rejectApiKey: true });
+    if (auth instanceof NextResponse) return auth;
+    const { userId } = auth;
 
     // 查找用户
     const user = await prisma.user.findUnique({ where: { id: userId } });

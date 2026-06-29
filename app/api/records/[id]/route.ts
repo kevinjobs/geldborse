@@ -1,15 +1,14 @@
 import { NextResponse, NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { getCurrentUserId } from "@/lib/auth"
+import { authenticateRequest } from "@/lib/auth"
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const userId = await getCurrentUserId(request)
-  if (!userId) {
-    return NextResponse.json({ error: "未授权" }, { status: 401 })
-  }
+  const auth = await authenticateRequest(request, { requiredScope: 'records:read' })
+  if (auth instanceof NextResponse) return auth
+  const { userId } = auth
 
   const { id } = await params
   const record = await prisma.record.findFirst({
@@ -29,10 +28,9 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const userId = await getCurrentUserId(request)
-  if (!userId) {
-    return NextResponse.json({ error: "未授权" }, { status: 401 })
-  }
+  const auth = await authenticateRequest(request, { requiredScope: 'records:write' })
+  if (auth instanceof NextResponse) return auth
+  const { userId } = auth
 
   const { id } = await params
 
@@ -101,10 +99,9 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const userId = await getCurrentUserId(request)
-  if (!userId) {
-    return NextResponse.json({ error: "未授权" }, { status: 401 })
-  }
+  const auth = await authenticateRequest(request, { requiredScope: 'records:write' })
+  if (auth instanceof NextResponse) return auth
+  const { userId } = auth
 
   const { id } = await params
 

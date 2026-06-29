@@ -1,13 +1,12 @@
 import { NextResponse, NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { getCurrentUserId } from "@/lib/auth"
+import { authenticateRequest } from "@/lib/auth"
 
 export async function GET(request: NextRequest) {
   try {
-    const userId = await getCurrentUserId(request)
-    if (!userId) {
-      return NextResponse.json({ error: "未授权" }, { status: 401 })
-    }
+    const auth = await authenticateRequest(request, { requiredScope: 'snapshots:read' })
+    if (auth instanceof NextResponse) return auth
+    const { userId } = auth
 
     const snapshots = await prisma.dailySnapshot.findMany({
       where: {
@@ -54,10 +53,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const userId = await getCurrentUserId(request)
-    if (!userId) {
-      return NextResponse.json({ error: "未授权" }, { status: 401 })
-    }
+    const auth = await authenticateRequest(request, { requiredScope: 'snapshots:write' })
+    if (auth instanceof NextResponse) return auth
+    const { userId } = auth
 
     const now = new Date()
 
@@ -155,10 +153,9 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const userId = await getCurrentUserId(request)
-    if (!userId) {
-      return NextResponse.json({ error: "未授权" }, { status: 401 })
-    }
+    const auth = await authenticateRequest(request, { requiredScope: 'snapshots:write' })
+    if (auth instanceof NextResponse) return auth
+    const { userId } = auth
 
     const { searchParams } = new URL(request.url)
     const snapshotAt = searchParams.get("snapshotAt")

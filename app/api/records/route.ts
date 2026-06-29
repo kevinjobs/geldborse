@@ -1,13 +1,12 @@
 import { NextResponse, NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { getCurrentUserId } from "@/lib/auth"
+import { authenticateRequest } from "@/lib/auth"
 
 export async function GET(request: NextRequest) {
   try {
-    const userId = await getCurrentUserId(request)
-    if (!userId) {
-      return NextResponse.json({ error: "未授权" }, { status: 401 })
-    }
+    const auth = await authenticateRequest(request, { requiredScope: 'records:read' })
+    if (auth instanceof NextResponse) return auth
+    const { userId } = auth
 
     const records = await prisma.record.findMany({
       where: {
@@ -27,10 +26,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const userId = await getCurrentUserId(request)
-    if (!userId) {
-      return NextResponse.json({ error: "未授权" }, { status: 401 })
-    }
+    const auth = await authenticateRequest(request, { requiredScope: 'records:write' })
+    if (auth instanceof NextResponse) return auth
+    const { userId } = auth
 
     const { date, accountId, assetId, amount, type, note } = await request.json()
 

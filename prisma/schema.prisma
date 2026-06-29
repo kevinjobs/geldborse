@@ -25,6 +25,7 @@ model User {
   accounts  Account[]
   accountMembers AccountMember[]
   loginHistories LoginHistory[]
+  apiKeys   ApiKey[]
 }
 
 model Account {
@@ -134,4 +135,21 @@ model LoginHistory {
 
   @@index([userId])
   @@index([loginAt])
+}
+
+model ApiKey {
+  id         String    @id @default(cuid())
+  name       String
+  prefix     String
+  keyHash    String    @unique
+  scopes     String    @default("[]")
+  lastUsedAt DateTime?
+  expiresAt  DateTime?
+  isActive   Boolean   @default(true)
+  userId     String
+  user       User      @relation(fields: [userId], references: [id])
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([userId])
 }
