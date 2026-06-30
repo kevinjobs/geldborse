@@ -33,7 +33,7 @@ export async function PUT(
   const { userId } = auth
 
   const { id } = await params
-  const { name, type, accountNumber, initialBalance } = await request.json()
+  const { name, type, accountNumber } = await request.json()
 
   if (!name || !name.trim()) {
     return NextResponse.json({ error: "账户名称不能为空" }, { status: 400 })
@@ -54,7 +54,6 @@ export async function PUT(
         name: name.trim(),
         type,
         accountNumber: accountNumber?.trim() || null,
-        initialBalance: parseFloat(initialBalance) || 0,
       },
     })
     return NextResponse.json(account)
