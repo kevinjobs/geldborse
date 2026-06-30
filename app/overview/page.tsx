@@ -7,7 +7,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ResponsiveTable, ResponsiveTableBody, ResponsiveTableCell, ResponsiveTableHeader, ResponsiveTableRow } from "@/components/responsive-table"
 import { Badge } from "@/components/ui/badge"
-import { ChevronDown, ChevronRight, Zap, PlugZap, Gauge, TriangleAlert } from "lucide-react"
+import { ChevronDown, ChevronRight, Zap, PlugZap, Gauge } from "lucide-react"
 import {
   getAccountNameColor,
   getAssetTypeConfig,
@@ -58,6 +58,18 @@ interface Balance {
   updatedAt: string
 }
 
+interface DailySnapshot {
+  id: string
+  snapshotAt: string
+  accountId: string
+  assetId: string | null
+  amount: number
+  account: Account
+  asset: Asset | null
+  createdAt: string
+  updatedAt: string
+}
+
 import { ProtectedRoute } from "@/components/protected-route"
 
 function OverviewPageContent() {
@@ -66,6 +78,7 @@ function OverviewPageContent() {
   const [assets, setAssets] = useState<Asset[]>([])
   const [records, setRecords] = useState<Record[]>([])
   const [balances, setBalances] = useState<Balance[]>([])
+  const [snapshots, setSnapshots] = useState<DailySnapshot[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedAccounts, setExpandedAccounts] = useState<Set<string>>(new Set())
 
@@ -81,22 +94,25 @@ function OverviewPageContent() {
     try {
       const headers = user?.id ? { 'Authorization': `Bearer ${user.id}` } : undefined
 
-      const [accountsRes, assetsRes, recordsRes, balancesRes] = await Promise.all([
+      const [accountsRes, assetsRes, recordsRes, balancesRes, snapshotsRes] = await Promise.all([
         fetch("/api/accounts", headers ? { headers } : {}),
         fetch("/api/assets", headers ? { headers } : {}),
         fetch("/api/records", headers ? { headers } : {}),
         fetch("/api/balances", headers ? { headers } : {}),
+        fetch("/api/daily-snapshots", headers ? { headers } : {}),
       ])
 
       if (!accountsRes.ok) throw new Error(`Accounts API error: ${accountsRes.status}`)
       if (!assetsRes.ok) throw new Error(`Assets API error: ${assetsRes.status}`)
       if (!recordsRes.ok) throw new Error(`Records API error: ${recordsRes.status}`)
       if (!balancesRes.ok) throw new Error(`Balances API error: ${balancesRes.status}`)
+      if (!snapshotsRes.ok) throw new Error(`Snapshots API error: ${snapshotsRes.status}`)
 
       const accountsData = await accountsRes.json()
       const assetsData = await assetsRes.json()
       const recordsData = await recordsRes.json()
       const balancesData = await balancesRes.json()
+      const snapshotsData = await snapshotsRes.json()
 
       const userAccounts = accountsData.filter((account: Account) => account.userId === user?.id)
       const userAccountIds = new Set(userAccounts.map((account: Account) => account.id))
@@ -109,6 +125,7 @@ function OverviewPageContent() {
       setAssets(userAssets)
       setRecords(userRecords)
       setBalances(userBalances)
+      setSnapshots(Array.isArray(snapshotsData) ? snapshotsData : [])
     } catch (error) {
       console.error("获取数据失败:", error)
     } finally {
@@ -126,10 +143,6 @@ function OverviewPageContent() {
       }
       return newSet
     })
-  }
-
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString("zh-CN")
   }
 
   const formatAmount = (amount: number) => {
@@ -258,22 +271,25 @@ function OverviewPageContent() {
   const totalAssets = accounts.reduce((sum, account) => sum + getAccountTotal(account.id).total, 0)
   const totalRecords = records.length
   const totalAccounts = accounts.length
-  const latestRecords = records.slice(0, 5)
 
-  const chartData = React.useMemo(() => {
-    const dateMap = new Map<string, number>()
-    records.forEach((r) => {
-      const day = r.date.slice(0, 10)
-      dateMap.set(day, (dateMap.get(day) || 0) + r.amount)
-    })
-    return Array.from(dateMap.entries())
+  const snapshotChartData = React.useMemo(() => {
+    const oneYearAgo = new Date()
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
+
+    const timeMap = new Map<string, number>()
+    snapshots
+      .filter((s) => new Date(s.snapshotAt) >= oneYearAgo)
+      .forEach((s) => {
+        timeMap.set(s.snapshotAt, (timeMap.get(s.snapshotAt) || 0) + s.amount)
+      })
+
+    return Array.from(timeMap.entries())
       .sort((a, b) => a[0].localeCompare(b[0]))
-      .slice(-30)
-      .map(([date, amount]) => ({
+      .map(([date, total]) => ({
         date,
-        amount,
+        total,
       }))
-  }, [records])
+  }, [snapshots])
 
   const getChangeTrend = (): { value: number; isPositive: boolean } => {
     const sortedRecords = [...records].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -359,129 +375,78 @@ function OverviewPageContent() {
                   </div>
                 </div>
 
-                {/* Main Chart (8 cols) + Alerts Panel (4 cols) */}
+                {/* Asset Trend Chart */}
                 <div className="px-4 lg:px-6">
-                  <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-                    {/* Chart - 8 columns */}
-                    <div className="lg:col-span-8">
-                      <Card className="h-full">
-                        <CardHeader>
-                          <CardTitle>资产趋势</CardTitle>
-                          <CardDescription>近30天收支变化</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          {chartData.length === 0 ? (
-                            <div className="flex items-center justify-center h-[250px] text-muted-foreground text-sm">
-                              暂无数据
-                            </div>
-                          ) : (
-                            <div className="h-[250px] w-full">
-                              <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-                                  <defs>
-                                    <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                                      <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.3} />
-                                      <stop offset="95%" stopColor="var(--primary)" stopOpacity={0.05} />
-                                    </linearGradient>
-                                  </defs>
-                                  <CartesianGrid stroke="var(--border)" vertical={false} strokeDasharray="3 3" />
-                                  <XAxis
-                                    dataKey="date"
-                                    tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
-                                    tickLine={false}
-                                    axisLine={false}
-                                    tickFormatter={(v) => {
-                                      const d = new Date(v)
-                                      return `${d.getMonth() + 1}/${d.getDate()}`
-                                    }}
-                                  />
-                                  <YAxis
-                                    tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
-                                    tickLine={false}
-                                    axisLine={false}
-                                    tickFormatter={formatAmountShort}
-                                    width={50}
-                                  />
-                                  <Tooltip
-                                    contentStyle={{
-                                      backgroundColor: "var(--card)",
-                                      border: "1px solid var(--border)",
-                                      borderRadius: "8px",
-                                      fontSize: "12px",
-                                    }}
-                                    labelStyle={{ color: "var(--muted-foreground)" }}
-                                    formatter={(value: number) => [formatAmount(value), "金额"]}
-                                    labelFormatter={(label) => `日期: ${label}`}
-                                  />
-                                  <Area
-                                    type="monotone"
-                                    dataKey="amount"
-                                    stroke="var(--primary)"
-                                    strokeWidth={2}
-                                    fill="url(#areaGradient)"
-                                    dot={false}
-                                  />
-                                </AreaChart>
-                              </ResponsiveContainer>
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    </div>
-
-                    {/* Alert Panel - 4 columns */}
-                    <div className="lg:col-span-4">
-                      <Card className="h-full">
-                        <CardHeader>
-                          <CardTitle className="flex items-center gap-2">
-                            <TriangleAlert className="h-4 w-4 text-destructive" />
-                            最近收支
-                          </CardTitle>
-                          <CardDescription>最新5条记录</CardDescription>
-                        </CardHeader>
-                        <CardContent className="p-0">
-                          {latestRecords.length === 0 ? (
-                            <div className="flex items-center justify-center h-[200px] text-muted-foreground text-sm">
-                              暂无记录
-                            </div>
-                          ) : (
-                            <div className="flex flex-col">
-                              {latestRecords.map((record) => (
-                                <div
-                                  key={record.id}
-                                  className="border-l-[3px] border-l-destructive bg-destructive/10 px-4 py-3 mx-5 mb-2 rounded-r-[4px] last:mb-5"
-                                >
-                                  <div className="flex items-center justify-between mb-1">
-                                    <span className="text-xs text-muted-foreground">{formatDate(record.date)}</span>
-                                    <Badge
-                                      variant="outline"
-                                      className={`text-[10px] px-1.5 py-0 h-5 border-none font-normal ${
-                                        record.type === "INCOME"
-                                          ? "bg-success/10 text-success"
-                                          : "bg-destructive/10 text-destructive"
-                                      }`}
-                                    >
-                                      {record.type === "INCOME" ? "收入" : "支出"}
-                                    </Badge>
-                                  </div>
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-xs text-muted-foreground truncate max-w-[100px]">
-                                      {record.account.name}
-                                    </span>
-                                    <span className={`font-mono text-sm font-semibold ${
-                                      record.amount >= 0 ? "text-success" : "text-destructive"
-                                    }`}>
-                                      {record.amount >= 0 ? "+" : ""}{formatAmount(record.amount)}
-                                    </span>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </div>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>资产趋势（近一年）</CardTitle>
+                      <CardDescription>基于资产快照的总资产变化趋势</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {snapshotChartData.length === 0 ? (
+                        <div className="flex items-center justify-center h-[250px] text-muted-foreground text-sm">
+                          暂无数据
+                        </div>
+                      ) : (
+                        <div className="h-[250px] w-full">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={snapshotChartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                              <defs>
+                                <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.3} />
+                                  <stop offset="95%" stopColor="var(--primary)" stopOpacity={0.05} />
+                                </linearGradient>
+                              </defs>
+                              <CartesianGrid stroke="var(--border)" vertical={false} strokeDasharray="3 3" />
+                              <XAxis
+                                dataKey="date"
+                                tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
+                                tickLine={false}
+                                axisLine={false}
+                                interval="preserveStartEnd"
+                                tickFormatter={(v) => {
+                                  const d = new Date(v)
+                                  return `${d.getMonth() + 1}/${d.getDate()}`
+                                }}
+                              />
+                              <YAxis
+                                tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
+                                tickLine={false}
+                                axisLine={false}
+                                tickFormatter={formatAmountShort}
+                                width={50}
+                              />
+                              <Tooltip
+                                contentStyle={{
+                                  backgroundColor: "var(--card)",
+                                  border: "1px solid var(--border)",
+                                  borderRadius: "8px",
+                                  fontSize: "12px",
+                                }}
+                                labelStyle={{ color: "var(--muted-foreground)" }}
+                                formatter={(value: number) => [formatAmount(value), "总资产"]}
+                                labelFormatter={(label) => {
+                                  const d = new Date(label)
+                                  return d.toLocaleString("zh-CN", {
+                                    year: "numeric", month: "2-digit", day: "2-digit",
+                                    hour: "2-digit", minute: "2-digit",
+                                  })
+                                }}
+                              />
+                              <Area
+                                type="monotone"
+                                dataKey="total"
+                                stroke="var(--primary)"
+                                strokeWidth={2}
+                                fill="url(#areaGradient)"
+                                dot={false}
+                              />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
                 </div>
 
                 {/* Account Summary Table */}
