@@ -12,6 +12,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/accounts": "账户管理",
   "/snapshots": "每日快照",
   "/export": "导出",
+  "/help": "帮助中心",
 }
 
 export function SiteHeader() {
