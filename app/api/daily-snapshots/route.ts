@@ -57,7 +57,21 @@ export async function POST(request: NextRequest) {
     if (auth instanceof NextResponse) return auth
     const { userId } = auth
 
-    const now = new Date()
+    const body = await request.json().catch(() => ({}))
+    const snapshotAtStr: string | undefined = body?.snapshotAt
+
+    let snapshotAt: Date | undefined
+    if (snapshotAtStr) {
+      snapshotAt = new Date(snapshotAtStr)
+      if (isNaN(snapshotAt.getTime())) {
+        return NextResponse.json({ error: "无效的日期时间" }, { status: 400 })
+      }
+      if (snapshotAt > new Date()) {
+        return NextResponse.json({ error: "快照时间不能为未来" }, { status: 400 })
+      }
+    }
+
+    const snapshotTime = snapshotAt || new Date()
 
     const accounts = await prisma.account.findMany({
       where: { userId },
@@ -67,6 +81,7 @@ export async function POST(request: NextRequest) {
             balances: {
               orderBy: { recordedAt: "desc" },
               take: 1,
+              ...(snapshotAt ? { where: { recordedAt: { lte: snapshotAt } } } : {}),
             },
           },
         },
@@ -92,10 +107,15 @@ export async function POST(request: NextRequest) {
         let recordsAfterBalance = 0
         if (latestBalanceDate) {
           recordsAfterBalance = account.records
-            .filter((r) => new Date(r.date) > latestBalanceDate)
+            .filter((r) => {
+              const date = new Date(r.date)
+              return date > latestBalanceDate && (!snapshotAt || date <= snapshotAt)
+            })
             .reduce((sum, r) => sum + r.amount, 0)
         } else {
-          recordsAfterBalance = account.records.reduce((sum, r) => sum + r.amount, 0)
+          recordsAfterBalance = account.records
+            .filter((r) => !snapshotAt || new Date(r.date) <= snapshotAt)
+            .reduce((sum, r) => sum + r.amount, 0)
         }
 
         for (const asset of account.assets) {
@@ -104,7 +124,7 @@ export async function POST(request: NextRequest) {
 
           const snapshot = await prisma.dailySnapshot.create({
             data: {
-              snapshotAt: now,
+              snapshotAt: snapshotTime,
               accountId: account.id,
               assetId: asset.id,
               amount: baseAmount,
@@ -116,7 +136,7 @@ export async function POST(request: NextRequest) {
         if (recordsAfterBalance !== 0) {
           const recordSnapshot = await prisma.dailySnapshot.create({
             data: {
-              snapshotAt: now,
+              snapshotAt: snapshotTime,
               accountId: account.id,
               assetId: null,
               amount: recordsAfterBalance,
@@ -125,12 +145,14 @@ export async function POST(request: NextRequest) {
           snapshots.push(recordSnapshot)
         }
       } else {
-        const recordsTotal = account.records.reduce((sum, r) => sum + r.amount, 0)
+        const recordsTotal = account.records
+          .filter((r) => !snapshotAt || new Date(r.date) <= snapshotAt)
+          .reduce((sum, r) => sum + r.amount, 0)
         const realTimeAmount = account.initialBalance + recordsTotal
 
         const snapshot = await prisma.dailySnapshot.create({
           data: {
-            snapshotAt: now,
+            snapshotAt: snapshotTime,
             accountId: account.id,
             assetId: null,
             amount: realTimeAmount,
@@ -143,7 +165,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: `已创建 ${snapshots.length} 条快照`,
-      snapshotAt: now.toISOString(),
+      snapshotAt: snapshotTime.toISOString(),
     })
   } catch (error) {
     console.error("创建每日快照失败:", error)

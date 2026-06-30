@@ -61,6 +61,12 @@ export default function SnapshotsPage() {
   const [expandedSnapshots, setExpandedSnapshots] = useState<Set<string>>(new Set())
   const [chartPeriod, setChartPeriod] = useState<PeriodType>("1")
   const [generating, setGenerating] = useState(false)
+
+  const now = new Date()
+  const pad = (n: number) => String(n).padStart(2, "0")
+  const defaultTime = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`
+
+  const [selectedSnapshotTime, setSelectedSnapshotTime] = useState<string>(defaultTime)
   const [deleteDialog, setDeleteDialog] = useState<{
     open: boolean
     type: "single" | "group"
@@ -86,7 +92,8 @@ export default function SnapshotsPage() {
   const generateSnapshot = async () => {
     setGenerating(true)
     try {
-      await api.post("/api/daily-snapshots")
+      const isoTime = new Date(selectedSnapshotTime).toISOString()
+      await api.post("/api/daily-snapshots", { snapshotAt: isoTime })
       await fetchSnapshots()
     } catch (error) {
       console.error("生成快照失败:", error)
@@ -487,6 +494,14 @@ export default function SnapshotsPage() {
                         <CardDescription>查看每次快照的账户资产记录</CardDescription>
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
+                        <input
+                          type="datetime-local"
+                          value={selectedSnapshotTime}
+                          onChange={(e) => setSelectedSnapshotTime(e.target.value)}
+                          max={defaultTime}
+                          className="bg-[#1E1E1E] border border-[#2C2C2E] text-white rounded-lg px-3 py-1.5 text-sm
+                                     [color-scheme:dark] focus:outline-none focus:border-[#00E5FF]"
+                        />
                         <Button
                           onClick={generateSnapshot}
                           disabled={generating}
