@@ -43,6 +43,7 @@ interface Record {
   amount: number
   type: string
   accountId: string
+  assetId: string | null
   createdAt: string
   updatedAt: string
   account: Account
@@ -186,13 +187,25 @@ function OverviewPageContent() {
     }
 
     const latestBalance = getLatestBalanceByAsset(assetId)
+    const accountAssets = getAssetsByAccount(asset.accountId).sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    )
+    const activeAssetIds = new Set(accountAssets.map((a) => a.id))
+    const isFirstAsset = accountAssets.length > 0 && accountAssets[0].id === assetId
     const accountRecords = getRecordsByAccount(asset.accountId)
 
     if (latestBalance) {
       const balanceDate = new Date(latestBalance.recordedAt)
-      const recordsAfterBalance = accountRecords
-        .filter((r) => new Date(r.date) > balanceDate)
+      let recordsAfterBalance = accountRecords
+        .filter((r) => r.assetId === assetId && new Date(r.date) > balanceDate)
         .reduce((sum, r) => sum + r.amount, 0)
+
+      if (isFirstAsset) {
+        const unattributedSum = accountRecords
+          .filter((r) => r.assetId === null || (r.assetId !== null && !activeAssetIds.has(r.assetId)))
+          .reduce((sum, r) => sum + r.amount, 0)
+        recordsAfterBalance += unattributedSum
+      }
 
       return {
         total: latestBalance.amount + recordsAfterBalance,
@@ -202,7 +215,17 @@ function OverviewPageContent() {
       }
     }
 
-    const recordsTotal = accountRecords.reduce((sum, r) => sum + r.amount, 0)
+    let recordsTotal = accountRecords
+      .filter((r) => r.assetId === assetId)
+      .reduce((sum, r) => sum + r.amount, 0)
+
+    if (isFirstAsset) {
+      const unattributedSum = accountRecords
+        .filter((r) => r.assetId === null || (r.assetId !== null && !activeAssetIds.has(r.assetId)))
+        .reduce((sum, r) => sum + r.amount, 0)
+      recordsTotal += unattributedSum
+    }
+
     return {
       total: asset.amount + recordsTotal,
       baseType: "initial",
@@ -217,39 +240,45 @@ function OverviewPageContent() {
     baseAmount: number
     recordsTotal: number
   } => {
-    const accountAssets = getAssetsByAccount(accountId)
+    const accountAssets = getAssetsByAccount(accountId).sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    )
     const accountRecords = getRecordsByAccount(accountId)
 
     if (accountAssets.length > 0) {
       let baseAmount = 0
-      let latestBalanceDate: Date | null = null
+      let recordsAfterBalanceTotal = 0
       let hasBalance = false
+      const activeAssetIds = new Set(accountAssets.map((a) => a.id))
 
-      for (const asset of accountAssets) {
+      for (let i = 0; i < accountAssets.length; i++) {
+        const asset = accountAssets[i]
         const latestBalance = getLatestBalanceByAsset(asset.id)
+        const balanceDate = latestBalance ? new Date(latestBalance.recordedAt) : null
+
         if (latestBalance) {
           baseAmount += latestBalance.amount
           hasBalance = true
-          const balanceDate = new Date(latestBalance.recordedAt)
-          if (!latestBalanceDate || balanceDate > latestBalanceDate) {
-            latestBalanceDate = balanceDate
-          }
         } else {
           baseAmount += asset.amount
         }
-      }
 
-      let recordsAfterBalance = 0
-      if (latestBalanceDate) {
-        recordsAfterBalance = accountRecords
-          .filter((r) => new Date(r.date) > latestBalanceDate!)
+        let assetRecords = accountRecords
+          .filter((r) => r.assetId === asset.id && (!balanceDate || new Date(r.date) > balanceDate))
           .reduce((sum, r) => sum + r.amount, 0)
-      } else {
-        recordsAfterBalance = accountRecords.reduce((sum, r) => sum + r.amount, 0)
+
+        if (i === 0) {
+          const unattributedSum = accountRecords
+            .filter((r) => r.assetId === null || (r.assetId !== null && !activeAssetIds.has(r.assetId)))
+            .reduce((sum, r) => sum + r.amount, 0)
+          assetRecords += unattributedSum
+        }
+
+        recordsAfterBalanceTotal += assetRecords
       }
 
       return {
-        total: baseAmount + recordsAfterBalance,
+        total: baseAmount + recordsAfterBalanceTotal,
         hasBalance,
         baseAmount,
         recordsTotal: accountRecords.reduce((sum, r) => sum + r.amount, 0),

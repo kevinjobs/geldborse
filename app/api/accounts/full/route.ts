@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
         select: { records: true, assets: true },
       },
       assets: {
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: "asc" },
         include: {
           balances: {
             orderBy: { recordedAt: "desc" },
@@ -32,50 +32,39 @@ export async function GET(request: NextRequest) {
   // 计算每个账户的总金额和其他统计数据
   const accountsWithTotal = accounts.map((account) => {
     let totalAmount = 0
-    let latestBalanceTime: Date | null = null
     let recordsAfterBalanceTotal = 0
     let latestSnapshotTotal = 0
 
     if (account.assets.length > 0) {
-      // 计算所有资产的最新余额总和，并找到最新的余额时间
-      for (const asset of account.assets) {
+      const activeAssetIds = new Set(account.assets.map((a) => a.id))
+
+      for (let i = 0; i < account.assets.length; i++) {
+        const asset = account.assets[i]
         const latestBalance = asset.balances[0]
-        if (latestBalance) {
-          latestSnapshotTotal += latestBalance.amount
-          totalAmount += latestBalance.amount
-          const balanceTime = new Date(latestBalance.recordedAt)
-          if (!latestBalanceTime || balanceTime > latestBalanceTime) {
-            latestBalanceTime = balanceTime
-          }
-        } else {
-          latestSnapshotTotal += asset.amount || 0
-          totalAmount += asset.amount || 0
+        const baseAmount = latestBalance ? latestBalance.amount : (asset.amount || 0)
+        const balanceDate = latestBalance ? new Date(latestBalance.recordedAt) : null
+
+        latestSnapshotTotal += baseAmount
+
+        let assetRecordsTotal = account.records
+          .filter((r) => r.assetId === asset.id && (!balanceDate || new Date(r.date) > balanceDate))
+          .reduce((sum, r) => sum + r.amount, 0)
+
+        if (i === 0) {
+          const unattributedTotal = account.records
+            .filter((r) => r.assetId === null || (r.assetId !== null && !activeAssetIds.has(r.assetId)))
+            .reduce((sum, r) => sum + r.amount, 0)
+          assetRecordsTotal += unattributedTotal
         }
-      }
-      
-      // 计算在最新余额时间之后的收支记录
-      if (latestBalanceTime) {
-        const latestBalanceTimeSec = Math.floor(latestBalanceTime.getTime() / 1000)
-        
-        const recordsAfterBalance = account.records.filter(record => {
-          const recordTimeSec = Math.floor(new Date(record.date).getTime() / 1000)
-          return recordTimeSec > latestBalanceTimeSec
-        })
-        
-        recordsAfterBalanceTotal = recordsAfterBalance.reduce((sum, r) => sum + r.amount, 0)
-        totalAmount += recordsAfterBalanceTotal
-      } else {
-        // 对于没有余额记录的资产，计算所有收支记录
-        recordsAfterBalanceTotal = account.records.reduce((sum, r) => sum + r.amount, 0)
-        totalAmount += recordsAfterBalanceTotal
+
+        recordsAfterBalanceTotal += assetRecordsTotal
+        totalAmount += baseAmount + assetRecordsTotal
       }
     } else {
-      // 对于没有资产的账户，使用初始余额 + 所有收支
       latestSnapshotTotal = account.initialBalance
-      totalAmount = account.initialBalance
-      
-      recordsAfterBalanceTotal = account.records.reduce((sum, r) => sum + r.amount, 0)
-      totalAmount += recordsAfterBalanceTotal
+      const recordsTotal = account.records.reduce((sum, r) => sum + r.amount, 0)
+      recordsAfterBalanceTotal = recordsTotal
+      totalAmount = account.initialBalance + recordsTotal
     }
 
     return {
