@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
           userId
         }
       },
-      include: { account: true },
+      include: { account: true, asset: true },
       orderBy: { date: "desc" },
     })
     return NextResponse.json(records)

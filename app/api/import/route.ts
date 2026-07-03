@@ -18,6 +18,8 @@ export async function POST(request: NextRequest) {
     let accountsCount = 0
     let assetsCount = 0
     let recordsCount = 0
+    let balancesCount = 0
+    let snapshotsCount = 0
     let duplicatesCount = 0
     let invalidCount = 0
 
@@ -50,7 +52,8 @@ export async function POST(request: NextRequest) {
                 where: { id: existingAccount.id },
                 data: {
                   type: accountData.type,
-                  accountNumber: accountData.accountNumber
+                  accountNumber: accountData.accountNumber,
+                  initialBalance: accountData.initialBalance || 0
                 }
               })
               accountId = updatedAccount.id
@@ -62,7 +65,7 @@ export async function POST(request: NextRequest) {
                   name: accountData.name,
                   type: accountData.type,
                   accountNumber: accountData.accountNumber,
-                  initialBalance: 0,
+                  initialBalance: accountData.initialBalance || 0,
                   userId
                 }
               })
@@ -97,9 +100,27 @@ export async function POST(request: NextRequest) {
                     }
                   })
                   duplicatesCount++
+
+                  // 导入资产余额
+                  if (assetData.balances && Array.isArray(assetData.balances)) {
+                    for (const balanceData of assetData.balances) {
+                      if (balanceData.amount === undefined || !balanceData.recordedAt) {
+                        invalidCount++
+                        continue
+                      }
+                      await tx.balance.create({
+                        data: {
+                          amount: balanceData.amount,
+                          recordedAt: new Date(balanceData.recordedAt),
+                          assetId: existingAsset.id
+                        }
+                      })
+                      balancesCount++
+                    }
+                  }
                 } else {
                   // 创建新资产
-                  await tx.asset.create({
+                  const newAsset = await tx.asset.create({
                     data: {
                       name: assetData.name,
                       type: assetData.type,
@@ -108,6 +129,24 @@ export async function POST(request: NextRequest) {
                     }
                   })
                   assetsCount++
+
+                  // 导入资产余额
+                  if (assetData.balances && Array.isArray(assetData.balances)) {
+                    for (const balanceData of assetData.balances) {
+                      if (balanceData.amount === undefined || !balanceData.recordedAt) {
+                        invalidCount++
+                        continue
+                      }
+                      await tx.balance.create({
+                        data: {
+                          amount: balanceData.amount,
+                          recordedAt: new Date(balanceData.recordedAt),
+                          assetId: newAsset.id
+                        }
+                      })
+                      balancesCount++
+                    }
+                  }
                 }
               }
             }
@@ -246,6 +285,7 @@ export async function POST(request: NextRequest) {
                       snapshotAt: new Date(snapshotData.snapshotAt)
                     }
                   })
+                  snapshotsCount++
                 }
               }
             }
@@ -261,6 +301,8 @@ export async function POST(request: NextRequest) {
       accounts: accountsCount,
       assets: assetsCount,
       records: recordsCount,
+      balances: balancesCount,
+      snapshots: snapshotsCount,
       duplicates: duplicatesCount,
       invalid: invalidCount
     })

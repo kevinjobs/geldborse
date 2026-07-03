@@ -25,6 +25,7 @@ interface Account {
   name: string
   type: string
   accountNumber: string | null
+  initialBalance: number
   assets?: Asset[]
 }
 
@@ -34,7 +35,7 @@ interface Asset {
   type: string
   accountId: string
   amount: number | null
-  balances: { amount: number }[]
+  balances: { amount: number; recordedAt: string }[]
 }
 
 interface DailySnapshot {
@@ -45,6 +46,8 @@ interface DailySnapshot {
   amount: number
   account: Account
   asset: Asset | null
+  createdAt: string
+  updatedAt: string
 }
 
 interface Record {
@@ -52,9 +55,20 @@ interface Record {
   date: string
   type: string
   amount: number
-  description: string | null
+  note: string | null
   accountId: string
+  assetId: string | null
   account: Account
+  asset?: { name: string } | null
+}
+
+interface Balance {
+  id: string
+  amount: number
+  recordedAt: string
+  assetId: string
+  createdAt: string
+  updatedAt: string
 }
 
 type ExportFormat = "pdf" | "xlsx" | "jpg"
@@ -82,6 +96,7 @@ export default function ExportPage() {
   const [snapshots, setSnapshots] = useState<DailySnapshot[]>([])
   const [accounts, setAccounts] = useState<(Account & { assets: Asset[]; totalAmount: number })[]>([])
   const [records, setRecords] = useState<Record[]>([])
+  const [balances, setBalances] = useState<Balance[]>([])
   const [loading, setLoading] = useState(true)
 
   const [activeTab, setActiveTab] = useState<string>("snapshot")
@@ -91,7 +106,7 @@ export default function ExportPage() {
   const [recordFormat, setRecordFormat] = useState<ExportFormat>("xlsx")
   const [importStatus, setImportStatus] = useState<'idle' | 'loading' | 'preview' | 'success' | 'error'>('idle')
   const [importError, setImportError] = useState<string>('')
-  const [importStats, setImportStats] = useState({ accounts: 0, assets: 0, records: 0, duplicates: 0, invalid: 0 })
+  const [importStats, setImportStats] = useState({ accounts: 0, assets: 0, records: 0, balances: 0, snapshots: 0, duplicates: 0, invalid: 0 })
   const [previewData, setPreviewData] = useState<any>(null)
 
   const snapshotPreviewRef = useRef<HTMLDivElement>(null)
@@ -106,23 +121,27 @@ export default function ExportPage() {
   const fetchData = async () => {
     try {
       const headers = user?.id ? { 'Authorization': `Bearer ${user.id}` } : undefined
-      const [snapshotsRes, accountsRes, recordsRes] = await Promise.all([
+      const [snapshotsRes, accountsRes, recordsRes, balancesRes] = await Promise.all([
         fetch("/api/daily-snapshots", headers ? { headers } : {}),
         fetch("/api/accounts", headers ? { headers } : {}),
         fetch("/api/records", headers ? { headers } : {}),
+        fetch("/api/balances", headers ? { headers } : {}),
       ])
 
       // 检查响应状态
       if (!snapshotsRes.ok) throw new Error(`Snapshots API error: ${snapshotsRes.status}`)
       if (!accountsRes.ok) throw new Error(`Accounts API error: ${accountsRes.status}`)
       if (!recordsRes.ok) throw new Error(`Records API error: ${recordsRes.status}`)
+      if (!balancesRes.ok) throw new Error(`Balances API error: ${balancesRes.status}`)
 
       const snapshotsData = await snapshotsRes.json()
       const accountsData = await accountsRes.json()
       const recordsData = await recordsRes.json()
+      const balancesData = await balancesRes.json()
       setSnapshots(Array.isArray(snapshotsData) ? snapshotsData : [])
       setAccounts(Array.isArray(accountsData) ? accountsData : [])
       setRecords(Array.isArray(recordsData) ? recordsData : [])
+      setBalances(Array.isArray(balancesData) ? balancesData : [])
     } catch (error) {
       console.error("获取数据失败:", error)
     } finally {
@@ -203,22 +222,41 @@ export default function ExportPage() {
   const exportAllData = () => {
     const allData = {
       exportDate: new Date().toISOString(),
-      version: "1.0",
+      version: "1.1",
       data: {
         accounts: accounts.map(account => ({
           id: account.id,
           name: account.name,
           type: account.type,
           accountNumber: account.accountNumber,
+          initialBalance: (account as any).initialBalance || 0,
           assets: account.assets.map(asset => ({
             id: asset.id,
             name: asset.name,
             type: asset.type,
             amount: asset.amount || 0,
+            accountId: asset.accountId,
+            balances: asset.balances || [],
           }))
         })),
         snapshots: snapshots,
-        records: records
+        records: records.map(r => ({
+          id: r.id,
+          date: r.date,
+          type: r.type,
+          amount: r.amount,
+          note: (r as any).note || null,
+          accountId: r.accountId,
+          assetId: (r as any).assetId || null,
+          account: r.account ? { name: r.account.name } : null,
+          asset: (r as any).asset ? { name: (r as any).asset.name } : null,
+        })),
+        balances: balances.map(b => ({
+          id: b.id,
+          amount: b.amount,
+          recordedAt: b.recordedAt,
+          assetId: b.assetId,
+        })),
       }
     }
 
@@ -237,7 +275,7 @@ export default function ExportPage() {
 
     setImportStatus('loading')
     setImportError('')
-    setImportStats({ accounts: 0, assets: 0, records: 0, duplicates: 0, invalid: 0 })
+    setImportStats({ accounts: 0, assets: 0, records: 0, balances: 0, snapshots: 0, duplicates: 0, invalid: 0 })
 
     try {
       const reader = new FileReader()
@@ -258,7 +296,8 @@ export default function ExportPage() {
               return total + (account.assets?.length || 0)
             }, 0) || 0,
             records: importData.data.records?.length || 0,
-            snapshots: importData.data.snapshots?.length || 0
+            snapshots: importData.data.snapshots?.length || 0,
+            balances: importData.data.balances?.length || 0
           }
 
           setPreviewData({
@@ -308,6 +347,8 @@ export default function ExportPage() {
         accounts: result.accounts || 0,
         assets: result.assets || 0,
         records: result.records || 0,
+        balances: result.balances || 0,
+        snapshots: result.snapshots || 0,
         duplicates: result.duplicates || 0,
         invalid: result.invalid || 0
       })
@@ -325,7 +366,7 @@ export default function ExportPage() {
     setImportStatus('idle')
     setPreviewData(null)
     setImportError('')
-    setImportStats({ accounts: 0, assets: 0, records: 0, duplicates: 0, invalid: 0 })
+    setImportStats({ accounts: 0, assets: 0, records: 0, balances: 0, snapshots: 0, duplicates: 0, invalid: 0 })
   }
 
   const exportSnapshotXLSX = () => {
@@ -452,7 +493,7 @@ export default function ExportPage() {
         record.type === "INCOME" ? "收入" : "支出",
         record.account.name,
         record.amount || 0,
-        record.description || "-",
+        record.note || "-",
       ])
     })
 
@@ -963,7 +1004,7 @@ export default function ExportPage() {
                                 {record.type === "INCOME" ? "+" : "-"}
                                 {formatAmount(Math.abs(record.amount || 0))}
                               </ResponsiveTableCell>
-                              <ResponsiveTableCell mobileLabel="说明">{record.description || "-"}</ResponsiveTableCell>
+                              <ResponsiveTableCell mobileLabel="说明">{record.note || "-"}</ResponsiveTableCell>
                             </ResponsiveTableRow>
                           )
                         })}
@@ -1051,6 +1092,7 @@ export default function ExportPage() {
                             <div>
                               <p className="text-sm text-muted-foreground">账户数量: <span className="font-medium">{previewData.stats.accounts}</span></p>
                               <p className="text-sm text-muted-foreground">资产数量: <span className="font-medium">{previewData.stats.assets}</span></p>
+                              <p className="text-sm text-muted-foreground">余额记录: <span className="font-medium">{previewData.stats.balances || 0}</span></p>
                             </div>
                             <div>
                               <p className="text-sm text-muted-foreground">收支记录: <span className="font-medium">{previewData.stats.records}</span></p>
@@ -1088,7 +1130,7 @@ export default function ExportPage() {
                         <div className="mt-3 space-y-2">
                           <p className="text-sm text-muted-foreground">
                             <span className="font-medium">成功导入：</span>
-                            {importStats.accounts} 个账户，{importStats.assets} 个资产，{importStats.records} 条记录
+                            {importStats.accounts} 个账户，{importStats.assets} 个资产，{importStats.balances} 条余额记录，{importStats.records} 条收支记录，{importStats.snapshots} 条快照记录
                           </p>
                           {importStats.duplicates > 0 && (
                             <p className="text-sm text-warning">
