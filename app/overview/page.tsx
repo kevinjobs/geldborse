@@ -1,13 +1,13 @@
 "use client"
 
-import React, { useState, useEffect, Fragment } from "react"
+import React, { useState, useEffect, useMemo, Fragment } from "react"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ResponsiveTable, ResponsiveTableBody, ResponsiveTableCell, ResponsiveTableHeader, ResponsiveTableRow } from "@/components/responsive-table"
 import { Badge } from "@/components/ui/badge"
-import { ChevronDown, ChevronRight, Zap, PlugZap, Gauge } from "lucide-react"
+import { ChevronDown, ChevronRight, Zap, PlugZap, Gauge, Banknote } from "lucide-react"
 import {
   getAccountNameColor,
   getAssetTypeConfig,
@@ -15,6 +15,13 @@ import {
 } from "@/lib/account-config"
 import { useAuth } from "@/lib/auth-context"
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 interface Account {
   id: string
@@ -82,6 +89,7 @@ function OverviewPageContent() {
   const [snapshots, setSnapshots] = useState<DailySnapshot[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedAccounts, setExpandedAccounts] = useState<Set<string>>(new Set())
+  const [chartPeriod, setChartPeriod] = useState<string>("3")
 
   useEffect(() => {
     if (user) {
@@ -322,19 +330,86 @@ function OverviewPageContent() {
       }))
   }, [snapshots])
 
-  const getChangeTrend = (): { value: number; isPositive: boolean } => {
-    const sortedRecords = [...records].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    const now = new Date()
-    const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())
-    const recentRecords = sortedRecords.filter((r) => new Date(r.date) >= monthAgo)
-    const recentTotal = recentRecords.reduce((sum, r) => sum + r.amount, 0)
+  // ── Global trend data (aggregated from all balances) ──
+  const globalTrend = useMemo(() => {
+    const dateMap = new Map<string, { net: number; pos: number; neg: number }>()
+    assets.forEach((asset) => {
+      const assetBalances = balances.filter((b) => b.assetId === asset.id)
+      assetBalances.forEach((b) => {
+        const dateKey = b.recordedAt.slice(0, 10)
+        const entry = dateMap.get(dateKey) || { net: 0, pos: 0, neg: 0 }
+        entry.net += b.amount
+        if (b.amount >= 0) entry.pos += b.amount
+        else entry.neg += b.amount
+        dateMap.set(dateKey, entry)
+      })
+    })
+    const sorted = Array.from(dateMap.entries()).sort((a, b) => a[0].localeCompare(b[0]))
     return {
-      value: recentTotal,
-      isPositive: recentTotal >= 0,
+      net: sorted.map(([date, v]) => ({ date, total: v.net })),
+      pos: sorted.map(([date, v]) => ({ date, total: v.pos })),
+      neg: sorted.map(([date, v]) => ({ date, total: Math.abs(v.neg) })),
+    }
+  }, [assets, balances])
+
+  // ── Monthly change (latest balance - ~30 days ago) ──
+  const getMonthlyChange = (): { value: number; percent: number; isPositive: boolean } => {
+    const trend = globalTrend.net
+    if (trend.length < 2) return { value: 0, percent: 0, isPositive: true }
+    const latest = trend[trend.length - 1].total
+    const thirtyDaysAgo = new Date()
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+    const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().slice(0, 10)
+    let prevTotal = latest
+    for (let i = trend.length - 2; i >= 0; i--) {
+      if (trend[i].date <= thirtyDaysAgoStr) {
+        prevTotal = trend[i].total
+        break
+      }
+    }
+    const value = latest - prevTotal
+    return {
+      value,
+      percent: prevTotal !== 0 ? (value / prevTotal) * 100 : 0,
+      isPositive: value >= 0,
     }
   }
 
-  const trend = getChangeTrend()
+  const monthlyChange = getMonthlyChange()
+
+  // ── Total assets / liabilities for KPI ──
+  const latestNet = globalTrend.net.length > 0 ? globalTrend.net[globalTrend.net.length - 1].total : 0
+  const latestPos = globalTrend.pos.length > 0 ? globalTrend.pos[globalTrend.pos.length - 1].total : 0
+  const latestNeg = globalTrend.neg.length > 0 ? globalTrend.neg[globalTrend.neg.length - 1].total : 0
+  const posCount = accounts.filter(a => {
+    const t = accounts.reduce((s, ac) => s + getAccountTotal(ac.id).total, 0)
+    return false // computed below
+  }).length
+  // Simplified:
+  const posAccountCount = accounts.filter(a => getAccountTotal(a.id).total >= 0).length
+  const negAccountCount = accounts.length - posAccountCount
+
+  // ── Chart data (filtered by period) ──
+  const chartData = useMemo(() => {
+    if (globalTrend.net.length === 0) return []
+    const now = new Date()
+    let startDate: Date | null = null
+    if (chartPeriod === "0.5") {
+      startDate = new Date(now); startDate.setMonth(startDate.getMonth() - 6)
+    } else if (chartPeriod === "1") {
+      startDate = new Date(now); startDate.setFullYear(startDate.getFullYear() - 1)
+    } else if (chartPeriod === "2") {
+      startDate = new Date(now); startDate.setFullYear(startDate.getFullYear() - 2)
+    } else if (chartPeriod === "3") {
+      startDate = new Date(now); startDate.setFullYear(startDate.getFullYear() - 3)
+    }
+    return globalTrend.net.filter(d => !startDate || new Date(d.date) >= startDate)
+  }, [globalTrend.net, chartPeriod])
+
+  // ── Earliest/latest date helpers ──
+  const allBalanceDates = globalTrend.net.map(d => d.date)
+  const earliestDate = allBalanceDates[0] || ""
+  const latestDate = allBalanceDates[allBalanceDates.length - 1] || ""
 
   return (
     <SidebarProvider>
@@ -350,78 +425,148 @@ function OverviewPageContent() {
             <div className="@container/main flex flex-1 flex-col gap-2">
               <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
 
-                {/* 3-column KPI Cards */}
+                {/* ── 4-column KPI Cards ── */}
                 <div className="px-4 lg:px-6">
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                     <Card className="border-l-[3px] border-l-primary">
                       <CardHeader className="pb-1">
                         <CardDescription className="flex items-center gap-2 text-xs uppercase tracking-wider">
                           <Zap className="h-3.5 w-3.5 text-primary" />
+                          净资产
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className={`font-mono text-lg md:text-2xl font-bold tracking-tight truncate max-w-full ${latestNet < 0 ? "text-destructive" : "text-success"}`}>
+                          {formatAmount(latestNet)}
+                        </div>
+                        <div className="h-7 w-full mt-1 mb-1">
+                          <ResponsiveContainer width="100%" height={28}>
+                            <AreaChart data={globalTrend.net} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                              <defs>
+                                <linearGradient id="ovNetGrad" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.3} />
+                                  <stop offset="100%" stopColor="var(--primary)" stopOpacity={0.02} />
+                                </linearGradient>
+                              </defs>
+                              <Area type="monotone" dataKey="total" stroke="var(--primary)" strokeWidth={1.5} fill="url(#ovNetGrad)" isAnimationActive={false} />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        </div>
+                        <p className="text-xs text-muted-foreground">{totalAccounts} 个账户</p>
+                      </CardContent>
+                    </Card>
+                    <Card className="border-l-[3px] border-l-success">
+                      <CardHeader className="pb-1">
+                        <CardDescription className="flex items-center gap-2 text-xs uppercase tracking-wider">
+                          <Banknote className="h-3.5 w-3.5 text-success" />
                           总资产
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <div className="font-mono text-3xl font-bold tracking-tight text-foreground">
-                          {formatAmount(totalAssets)}
+                        <div className="font-mono text-lg md:text-2xl font-bold tracking-tight truncate max-w-full text-success">
+                          {formatAmount(latestPos)}
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {totalAccounts} 个账户
-                        </p>
+                        <div className="h-7 w-full mt-1 mb-1">
+                          <ResponsiveContainer width="100%" height={28}>
+                            <AreaChart data={globalTrend.pos} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                              <defs>
+                                <linearGradient id="ovPosGrad" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="0%" stopColor="var(--color-success)" stopOpacity={0.3} />
+                                  <stop offset="100%" stopColor="var(--color-success)" stopOpacity={0.02} />
+                                </linearGradient>
+                              </defs>
+                              <Area type="monotone" dataKey="total" stroke="var(--color-success)" strokeWidth={1.5} fill="url(#ovPosGrad)" isAnimationActive={false} />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        </div>
+                        <p className="text-xs text-muted-foreground">{posAccountCount} 个盈馀账户</p>
                       </CardContent>
                     </Card>
-
-                    <Card className="border-l-[3px] border-l-success">
+                    <Card className="border-l-[3px] border-l-destructive">
                       <CardHeader className="pb-1">
                         <CardDescription className="flex items-center gap-2 text-xs uppercase tracking-wider">
-                          <Gauge className="h-3.5 w-3.5 text-success" />
-                          近一月变化
+                          <Gauge className="h-3.5 w-3.5 text-destructive" />
+                          总负债
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <div className={`font-mono text-3xl font-bold tracking-tight ${trend.isPositive ? "text-success" : "text-destructive"}`}>
-                          {trend.isPositive ? "+" : ""}{formatAmount(trend.value)}
+                        <div className="font-mono text-lg md:text-2xl font-bold tracking-tight truncate max-w-full text-destructive">
+                          {formatAmount(latestNeg)}
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {trend.isPositive ? "↑ 净增长" : "↓ 净减少"}
-                        </p>
+                        <div className="h-7 w-full mt-1 mb-1">
+                          <ResponsiveContainer width="100%" height={28}>
+                            <AreaChart data={globalTrend.neg} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                              <defs>
+                                <linearGradient id="ovNegGrad" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="0%" stopColor="var(--destructive)" stopOpacity={0.3} />
+                                  <stop offset="100%" stopColor="var(--destructive)" stopOpacity={0.02} />
+                                </linearGradient>
+                              </defs>
+                              <Area type="monotone" dataKey="total" stroke="var(--destructive)" strokeWidth={1.5} fill="url(#ovNegGrad)" isAnimationActive={false} />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        </div>
+                        <p className="text-xs text-muted-foreground">{negAccountCount} 个负债账户</p>
                       </CardContent>
                     </Card>
-
                     <Card className="border-l-[3px] border-l-warning">
                       <CardHeader className="pb-1">
                         <CardDescription className="flex items-center gap-2 text-xs uppercase tracking-wider">
                           <PlugZap className="h-3.5 w-3.5 text-warning" />
-                          收支笔数
+                          近一月变化
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <div className="font-mono text-3xl font-bold tracking-tight text-foreground">
-                          {totalRecords}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <div className={`font-mono text-lg md:text-2xl font-bold tracking-tight truncate ${monthlyChange.isPositive ? "text-success" : "text-destructive"}`}>
+                            {monthlyChange.isPositive ? "+" : ""}{formatAmount(monthlyChange.value)}
+                          </div>
+                          {monthlyChange.value !== 0 && (
+                            <span className={`inline-flex items-center gap-1 font-mono text-xs font-semibold px-1.5 py-0.5 rounded-[4px] flex-shrink-0 whitespace-nowrap ${
+                              monthlyChange.isPositive ? "text-success bg-success/10" : "text-destructive bg-destructive/10"
+                            }`}>
+                              {monthlyChange.isPositive ? "↑" : "↓"} {Math.abs(monthlyChange.percent).toFixed(1)}%
+                            </span>
+                          )}
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          累计记录
-                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">较 30 天前</p>
                       </CardContent>
                     </Card>
                   </div>
                 </div>
 
-                {/* Asset Trend Chart */}
+                {/* ── Asset Trend Chart ── */}
                 <div className="px-4 lg:px-6">
                   <Card>
                     <CardHeader>
-                      <CardTitle>资产趋势（近一年）</CardTitle>
-                      <CardDescription>基于资产快照的总资产变化趋势</CardDescription>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle>资产趋势</CardTitle>
+                          <CardDescription>基于余额记录的总资产变化趋势</CardDescription>
+                        </div>
+                        <Select value={chartPeriod} onValueChange={setChartPeriod}>
+                          <SelectTrigger className="w-[100px] h-8">
+                            <SelectValue placeholder="选择周期" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="0.5">半年</SelectItem>
+                            <SelectItem value="1">一年</SelectItem>
+                            <SelectItem value="2">二年</SelectItem>
+                            <SelectItem value="3">三年</SelectItem>
+                            <SelectItem value="all">全部</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </CardHeader>
                     <CardContent>
-                      {snapshotChartData.length === 0 ? (
+                      {chartData.length === 0 ? (
                         <div className="flex items-center justify-center h-[250px] text-muted-foreground text-sm">
                           暂无数据
                         </div>
                       ) : (
-                        <div className="h-[250px] w-full">
+                        <div className="h-[250px] md:h-[550px] w-full">
                           <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={snapshotChartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                            <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
                               <defs>
                                 <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
                                   <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.3} />
@@ -480,215 +625,7 @@ function OverviewPageContent() {
                   </Card>
                 </div>
 
-                {/* Account Summary Table */}
-                <div className="px-4 lg:px-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>账户汇总</CardTitle>
-                      <CardDescription>各账户及资产余额统计</CardDescription>
-                    </CardHeader>
-                    <CardContent className="min-h-[300px] p-0">
-                      <div className="hidden md:block">
-                        <ResponsiveTable className="select-none">
-                          <thead>
-                            <ResponsiveTableRow>
-                              <ResponsiveTableHeader className="text-muted-foreground font-normal text-xs uppercase tracking-wider">名称</ResponsiveTableHeader>
-                              <ResponsiveTableHeader className="text-muted-foreground font-normal text-xs uppercase tracking-wider">账户号码</ResponsiveTableHeader>
-                              <ResponsiveTableHeader className="text-right text-muted-foreground font-normal text-xs uppercase tracking-wider">总资产</ResponsiveTableHeader>
-                              <ResponsiveTableHeader className="text-right text-muted-foreground font-normal text-xs uppercase tracking-wider">最新快照总额</ResponsiveTableHeader>
-                              <ResponsiveTableHeader className="text-right text-muted-foreground font-normal text-xs uppercase tracking-wider">收支总额</ResponsiveTableHeader>
-                              <ResponsiveTableHeader className="text-center text-muted-foreground font-normal text-xs uppercase tracking-wider">收支数</ResponsiveTableHeader>
-                              <ResponsiveTableHeader className="text-center text-muted-foreground font-normal text-xs uppercase tracking-wider">资产数</ResponsiveTableHeader>
-                            </ResponsiveTableRow>
-                          </thead>
-                          <ResponsiveTableBody>
-                            {accounts.length === 0 ? (
-                              <ResponsiveTableRow>
-                                <ResponsiveTableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                                  暂无账户
-                                </ResponsiveTableCell>
-                              </ResponsiveTableRow>
-                            ) : (
-                              accounts.map((account, index) => {
-                                const { total, hasBalance, baseAmount, recordsTotal } = getAccountTotal(account.id)
-                                const accountAssets = getAssetsByAccount(account.id)
-                                const nameColor = getAccountNameColor(account.name)
-                                const isExpanded = expandedAccounts.has(account.id)
-                                const hasAssets = accountAssets.length > 0
-                                const isNegative = total < 0
-                                const bgColor = nameColor.darkBgColor
-                                return (
-                                  <Fragment key={account.id}>
-                                    <ResponsiveTableRow
-                                      className={`${bgColor} ${hasAssets ? "cursor-pointer" : ""} transition-colors`}
-                                      style={{ animationDelay: `${index * 0.1}s` }}
-                                      onClick={() => hasAssets && toggleAccountExpand(account.id)}
-                                    >
-                                      <ResponsiveTableCell mobileLabel="名称" className="py-3">
-                                        <div className="flex items-center gap-2">
-                                          {hasAssets && (
-                                            <span className="w-4 h-4 flex items-center justify-center shrink-0">
-                                              {isExpanded ? (
-                                                <ChevronDown className="h-4 w-4 text-primary" />
-                                              ) : (
-                                                <ChevronRight className="h-4 w-4 text-primary" />
-                                              )}
-                                            </span>
-                                          )}
-                                          {!hasAssets && <span className="w-4 shrink-0" />}
-                                          <AccountDisplay name={account.name} type={account.type} variant="table" />
-                                        </div>
-                                      </ResponsiveTableCell>
-                                      <ResponsiveTableCell mobileLabel="账户号码">{account.accountNumber || "-"}</ResponsiveTableCell>
-                                      <ResponsiveTableCell mobileLabel="总资产" className={`text-right font-mono font-semibold ${isNegative ? "text-destructive" : "text-success"}`}>
-                                        {formatAmount(total)}
-                                      </ResponsiveTableCell>
-                                      <ResponsiveTableCell mobileLabel="最新快照总额" className="text-right text-muted-foreground font-mono">
-                                        {formatAmount(baseAmount)}
-                                      </ResponsiveTableCell>
-                                      <ResponsiveTableCell mobileLabel="收支总额" className={`text-right font-mono ${recordsTotal < 0 ? "text-destructive" : "text-success"}`}>
-                                        {formatAmount(recordsTotal)}
-                                      </ResponsiveTableCell>
-                                      <ResponsiveTableCell mobileLabel="收支数" className="text-center text-muted-foreground">{records.filter((r) => r.accountId === account.id).length}</ResponsiveTableCell>
-                                      <ResponsiveTableCell mobileLabel="资产数" className="text-center text-muted-foreground">{accountAssets.length}</ResponsiveTableCell>
-                                    </ResponsiveTableRow>
-                                    {isExpanded && accountAssets.map((asset, assetIndex) => {
-                                      const assetTotal = getAssetRealTimeTotal(asset.id)
-                                      const assetTypeConfig = getAssetTypeConfig(asset.type)
-                                      const AssetIcon = assetTypeConfig.icon
-                                      const isLast = assetIndex === accountAssets.length - 1
-                                      return (
-                                        <ResponsiveTableRow key={asset.id} className="bg-muted/30 hover:bg-muted/50 transition-colors">
-                                          <ResponsiveTableCell mobileLabel="名称" className="relative py-3">
-                                            {!isLast && (
-                                              <div className="absolute left-4 top-0 bottom-0 w-px bg-border" />
-                                            )}
-                                            {isLast && (
-                                              <div className="absolute left-4 top-0 h-1/2 w-px bg-border" />
-                                            )}
-                                            <div className="absolute left-4 top-1/2 w-3 h-px bg-border" />
-                                            <div className="pl-10">
-                                              <span className="text-sm text-muted-foreground">{asset.name}</span>
-                                            </div>
-                                          </ResponsiveTableCell>
-                                          <ResponsiveTableCell mobileLabel="类型" className="py-3">
-                                            <Badge className="gap-1 text-xs font-normal bg-accent text-muted-foreground hover:bg-accent border-none">
-                                              <AssetIcon className="h-3 w-3" />
-                                              {assetTypeConfig.label}
-                                            </Badge>
-                                          </ResponsiveTableCell>
-                                          <ResponsiveTableCell mobileLabel="基准金额" className="text-right py-3">
-                                            <span className="text-xs text-muted-foreground mr-1">
-                                              {assetTotal.baseType === "balance" ? "(快照)" : "(初始)"}
-                                            </span>
-                                            <span className="font-mono text-muted-foreground">{formatAmount(assetTotal.baseAmount)}</span>
-                                          </ResponsiveTableCell>
-                                          <ResponsiveTableCell mobileLabel="实时余额" className={`text-right font-mono font-semibold py-3 ${assetTotal.total >= 0 ? "text-success" : "text-destructive"}`}>
-                                            {formatAmount(assetTotal.total)}
-                                          </ResponsiveTableCell>
-                                        </ResponsiveTableRow>
-                                      )
-                                    })}
-                                  </Fragment>
-                                )
-                              })
-                            )}
-                          </ResponsiveTableBody>
-                        </ResponsiveTable>
-                      </div>
-                      <div className="md:hidden space-y-3 px-5 pb-5">
-                        {accounts.length === 0 ? (
-                          <div className="text-center text-muted-foreground py-8">暂无账户</div>
-                        ) : (
-                          accounts.map((account) => {
-                            const { total, hasBalance, baseAmount, recordsTotal } = getAccountTotal(account.id)
-                            const accountAssets = getAssetsByAccount(account.id)
-                            const nameColor = getAccountNameColor(account.name)
-                            const isExpanded = expandedAccounts.has(account.id)
-                            const hasAssets = accountAssets.length > 0
-                            const isNegative = total < 0
-                            const bgColor = nameColor.darkBgColor
-                            return (
-                              <div key={account.id} className={`rounded-[16px] ${bgColor} border border-border overflow-hidden`}>
-                                <div className={`p-4 ${hasAssets ? "cursor-pointer" : ""}`} onClick={() => hasAssets && toggleAccountExpand(account.id)}>
-                                  <div className="flex justify-between items-start mb-3">
-                                    <div>
-                                      <div className="flex items-center gap-2">
-                                        {hasAssets && (
-                                          <span className="w-4 h-4 flex items-center justify-center shrink-0">
-                                            {isExpanded ? (
-                                              <ChevronDown className="h-4 w-4 text-primary" />
-                                            ) : (
-                                              <ChevronRight className="h-4 w-4 text-primary" />
-                                            )}
-                                          </span>
-                                        )}
-                                        <AccountDisplay name={account.name} type={account.type} variant="card" />
-                                      </div>
-                                      <div className="text-sm text-muted-foreground mt-1">
-                                        账户号码: {account.accountNumber || "-"}
-                                      </div>
-                                    </div>
-                                    <div className={`font-mono text-lg font-semibold ${isNegative ? "text-destructive" : "text-success"}`}>
-                                      {formatAmount(total)}
-                                    </div>
-                                  </div>
-                                  <div className="flex justify-between text-sm text-muted-foreground">
-                                    <span>最新快照总额:</span>
-                                    <span className="font-mono">{formatAmount(baseAmount)}</span>
-                                  </div>
-                                  <div className="flex justify-between text-sm">
-                                    <span className="text-muted-foreground">收支总额:</span>
-                                    <span className={`font-mono ${recordsTotal < 0 ? "text-destructive" : "text-success"}`}>
-                                      {formatAmount(recordsTotal)}
-                                    </span>
-                                  </div>
-                                  <div className="flex justify-between text-sm text-muted-foreground">
-                                    <span>收支数: {records.filter((r) => r.accountId === account.id).length}</span>
-                                    <span>资产数: {accountAssets.length}</span>
-                                  </div>
-                                </div>
-                                {isExpanded && hasAssets && (
-                                  <div className="border-t border-border">
-                                    {accountAssets.map((asset, index) => {
-                                      const assetTotal = getAssetRealTimeTotal(asset.id)
-                                      const assetTypeConfig = getAssetTypeConfig(asset.type)
-                                      const AssetIcon = assetTypeConfig.icon
-                                      const isLast = index === accountAssets.length - 1
-                                      return (
-                                        <div key={asset.id} className={`p-4 ${!isLast ? "border-b border-border" : ""}`}>
-                                          <div className="flex justify-between items-start">
-                                            <div>
-                                              <div className="flex items-center gap-2">
-                                                <span className="text-sm text-muted-foreground">{asset.name}</span>
-                                                <Badge className="gap-1 text-xs font-normal bg-accent text-muted-foreground hover:bg-accent border-none">
-                                                  <AssetIcon className="h-3 w-3" />
-                                                  {assetTypeConfig.label}
-                                                </Badge>
-                                              </div>
-                                              <div className="text-xs text-muted-foreground mt-1">
-                                                基准: {assetTotal.baseType === "balance" ? "(快照) " : "(初始) "}
-                                                <span className="font-mono">{formatAmount(assetTotal.baseAmount)}</span>
-                                              </div>
-                                            </div>
-                                            <div className={`font-mono text-sm font-semibold ${assetTotal.total >= 0 ? "text-success" : "text-destructive"}`}>
-                                              {formatAmount(assetTotal.total)}
-                                            </div>
-                                          </div>
-                                        </div>
-                                      )
-                                    })}
-                                  </div>
-                                )}
-                              </div>
-                            )
-                          })
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
                 </div>
-              </div>
             </div>
           </div>
         )}
