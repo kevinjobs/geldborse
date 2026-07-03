@@ -90,6 +90,7 @@ function OverviewPageContent() {
   const [loading, setLoading] = useState(true)
   const [expandedAccounts, setExpandedAccounts] = useState<Set<string>>(new Set())
   const [chartPeriod, setChartPeriod] = useState<string>("3")
+  const [visibleLines, setVisibleLines] = useState({ net: true, pos: true, neg: false })
 
   useEffect(() => {
     if (user) {
@@ -389,22 +390,30 @@ function OverviewPageContent() {
   const posAccountCount = accounts.filter(a => getAccountTotal(a.id).total >= 0).length
   const negAccountCount = accounts.length - posAccountCount
 
-  // ── Chart data (filtered by period) ──
-  const chartData = useMemo(() => {
-    if (globalTrend.net.length === 0) return []
+  // ── Merged chart data (3 lines combined, filtered by period) ──
+  const mergedChartData = useMemo(() => {
     const now = new Date()
     let startDate: Date | null = null
-    if (chartPeriod === "0.5") {
-      startDate = new Date(now); startDate.setMonth(startDate.getMonth() - 6)
-    } else if (chartPeriod === "1") {
-      startDate = new Date(now); startDate.setFullYear(startDate.getFullYear() - 1)
-    } else if (chartPeriod === "2") {
-      startDate = new Date(now); startDate.setFullYear(startDate.getFullYear() - 2)
-    } else if (chartPeriod === "3") {
-      startDate = new Date(now); startDate.setFullYear(startDate.getFullYear() - 3)
+    if (chartPeriod === "0.5") { startDate = new Date(now); startDate.setMonth(startDate.getMonth() - 6) }
+    else if (chartPeriod === "1") { startDate = new Date(now); startDate.setFullYear(startDate.getFullYear() - 1) }
+    else if (chartPeriod === "2") { startDate = new Date(now); startDate.setFullYear(startDate.getFullYear() - 2) }
+    else if (chartPeriod === "3") { startDate = new Date(now); startDate.setFullYear(startDate.getFullYear() - 3) }
+
+    const dateMap = new Map<string, { net: number; pos: number; neg: number }>()
+    const addToMap = (arr: Array<{ date: string; total: number }>, key: "net" | "pos" | "neg") => {
+      arr.forEach(d => {
+        if (startDate && new Date(d.date) < startDate) return
+        const entry = dateMap.get(d.date) || { net: 0, pos: 0, neg: 0 }
+        entry[key] = d.total
+        dateMap.set(d.date, entry)
+      })
     }
-    return globalTrend.net.filter(d => !startDate || new Date(d.date) >= startDate)
-  }, [globalTrend.net, chartPeriod])
+    addToMap(globalTrend.net, "net")
+    addToMap(globalTrend.pos, "pos")
+    addToMap(globalTrend.neg, "neg")
+    return Array.from(dateMap.entries()).sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([date, v]) => ({ date, ...v }))
+  }, [globalTrend, chartPeriod])
 
   // ── Earliest/latest date helpers ──
   const allBalanceDates = globalTrend.net.map(d => d.date)
@@ -559,18 +568,45 @@ function OverviewPageContent() {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      {chartData.length === 0 ? (
+                      {/* Clickable legend */}
+                      <div className="flex items-center gap-4 mb-3 flex-wrap">
+                        {[
+                          { key: "net" as const, label: "净资产", color: "var(--primary)" },
+                          { key: "pos" as const, label: "总资产", color: "var(--color-success)" },
+                          { key: "neg" as const, label: "总负债", color: "var(--destructive)" },
+                        ].map((item) => (
+                          <button
+                            key={item.key}
+                            onClick={() => setVisibleLines(prev => ({ ...prev, [item.key]: !prev[item.key] }))}
+                            className={`inline-flex items-center gap-1.5 text-xs transition-opacity ${
+                              visibleLines[item.key] ? "opacity-100" : "opacity-30 hover:opacity-60"
+                            }`}
+                          >
+                            <span className="w-3 h-0.5 rounded-full" style={{ backgroundColor: item.color }} />
+                            {item.label}
+                          </button>
+                        ))}
+                      </div>
+                      {mergedChartData.length === 0 ? (
                         <div className="flex items-center justify-center h-[250px] text-muted-foreground text-sm">
                           暂无数据
                         </div>
                       ) : (
-                        <div className="h-[250px] md:h-[550px] w-full">
+                        <div className="h-[250px] md:h-[450px] w-full">
                           <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                            <AreaChart data={mergedChartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
                               <defs>
-                                <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+                                <linearGradient id="areaNetGrad" x1="0" y1="0" x2="0" y2="1">
                                   <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.3} />
                                   <stop offset="95%" stopColor="var(--primary)" stopOpacity={0.05} />
+                                </linearGradient>
+                                <linearGradient id="areaPosGrad" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="0%" stopColor="var(--color-success)" stopOpacity={0.25} />
+                                  <stop offset="95%" stopColor="var(--color-success)" stopOpacity={0.03} />
+                                </linearGradient>
+                                <linearGradient id="areaNegGrad" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="0%" stopColor="var(--destructive)" stopOpacity={0.25} />
+                                  <stop offset="95%" stopColor="var(--destructive)" stopOpacity={0.03} />
                                 </linearGradient>
                               </defs>
                               <CartesianGrid stroke="var(--border)" vertical={false} strokeDasharray="3 3" />
@@ -600,7 +636,10 @@ function OverviewPageContent() {
                                   fontSize: "12px",
                                 }}
                                 labelStyle={{ color: "var(--muted-foreground)" }}
-                                formatter={(value: number) => [formatAmount(value), "总资产"]}
+                                formatter={(value: number, name: string) => {
+                                  const m: { [k: string]: string } = { net: "净资产", pos: "总资产", neg: "总负债" }
+                                  return [formatAmount(value), m[name] || name]
+                                }}
                                 labelFormatter={(label) => {
                                   const d = new Date(label)
                                   return d.toLocaleString("zh-CN", {
@@ -609,14 +648,15 @@ function OverviewPageContent() {
                                   })
                                 }}
                               />
-                              <Area
-                                type="monotone"
-                                dataKey="total"
-                                stroke="var(--primary)"
-                                strokeWidth={2}
-                                fill="url(#areaGradient)"
-                                dot={false}
-                              />
+                              {visibleLines.net && (
+                                <Area type="monotone" dataKey="net" stroke="var(--primary)" strokeWidth={2} fill="url(#areaNetGrad)" dot={false} isAnimationActive={false} />
+                              )}
+                              {visibleLines.pos && (
+                                <Area type="monotone" dataKey="pos" stroke="var(--color-success)" strokeWidth={1.5} fill="url(#areaPosGrad)" dot={false} isAnimationActive={false} />
+                              )}
+                              {visibleLines.neg && (
+                                <Area type="monotone" dataKey="neg" stroke="var(--destructive)" strokeWidth={1.5} fill="url(#areaNegGrad)" dot={false} isAnimationActive={false} />
+                              )}
                             </AreaChart>
                           </ResponsiveContainer>
                         </div>
