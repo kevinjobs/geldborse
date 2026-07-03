@@ -131,15 +131,14 @@ export function AccountDetailModal({
               <div className="flex items-center gap-2">
                 {LogoComponent && <LogoComponent size={22} className={nameColor.darkColor} />}
                 <DialogTitle className="text-xl">{account.name}</DialogTitle>
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal gap-0.5 h-5">
+                  <TypeIcon className="h-2.5 w-2.5" />
+                  {typeConfig.label}
+                </Badge>
               </div>
             </div>
             <DialogDescription className="flex items-center gap-2 mt-1">
               {account.accountNumber && <span className="text-xs">{account.accountNumber}</span>}
-              {account.accountNumber && <span>·</span>}
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal gap-0.5 h-5">
-                <TypeIcon className="h-2.5 w-2.5" />
-                {typeConfig.label}
-              </Badge>
             </DialogDescription>
             {snapshotDate && (
               <Badge variant="outline" className="mt-2 text-xs w-fit gap-1">
