@@ -52,7 +52,8 @@ export async function GET(request: NextRequest) {
 
         if (i === 0) {
           const unattributedTotal = account.records
-            .filter((r) => r.assetId === null || (r.assetId !== null && !activeAssetIds.has(r.assetId)))
+            .filter((r) => (r.assetId === null || (r.assetId !== null && !activeAssetIds.has(r.assetId))) &&
+              (!balanceDate || new Date(r.date) > balanceDate))
             .reduce((sum, r) => sum + r.amount, 0)
           assetRecordsTotal += unattributedTotal
         }

@@ -115,7 +115,8 @@ export async function POST(request: NextRequest) {
           if (i === 0) {
             let unattributedDelta = 0
             for (const record of account.records) {
-              if (record.assetId === null || (record.assetId !== null && !activeAssetIds.has(record.assetId))) {
+              if ((record.assetId === null || (record.assetId !== null && !activeAssetIds.has(record.assetId))) &&
+                  (!balanceDate || new Date(record.date) > balanceDate)) {
                 unattributedDelta += record.amount
               }
             }

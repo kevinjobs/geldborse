@@ -5,14 +5,14 @@ import {
   Coins,
   Bitcoin,
   TrendingUp,
+  Smartphone,
   Landmark,
   PiggyBank,
   Clock,
   Building2,
   BarChart3,
+  MinusCircle,
   FileText,
-  Smartphone,
-  MinusCircle
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { ACCOUNT_LOGOS } from "./account-logos"
@@ -292,6 +292,8 @@ export const ACCOUNT_TYPE_CONFIG: Record<string, { label: string; icon: typeof B
   STOCK: { label: "股票证券", icon: TrendingUp },
   ONLINE_PAYMENT: { label: "网络支付", icon: Smartphone },
   DEBT_CLAIM: { label: "债权", icon: FileText },
+  DEBT: { label: "债务", icon: MinusCircle },
+  LOAN: { label: "贷款", icon: MinusCircle },
   OTHER: { label: "其他", icon: Landmark },
 }
 

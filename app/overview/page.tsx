@@ -202,7 +202,8 @@ function OverviewPageContent() {
 
       if (isFirstAsset) {
         const unattributedSum = accountRecords
-          .filter((r) => r.assetId === null || (r.assetId !== null && !activeAssetIds.has(r.assetId)))
+          .filter((r) => (r.assetId === null || (r.assetId !== null && !activeAssetIds.has(r.assetId))) &&
+            (!balanceDate || new Date(r.date) > balanceDate))
           .reduce((sum, r) => sum + r.amount, 0)
         recordsAfterBalance += unattributedSum
       }
@@ -269,7 +270,8 @@ function OverviewPageContent() {
 
         if (i === 0) {
           const unattributedSum = accountRecords
-            .filter((r) => r.assetId === null || (r.assetId !== null && !activeAssetIds.has(r.assetId)))
+            .filter((r) => (r.assetId === null || (r.assetId !== null && !activeAssetIds.has(r.assetId))) &&
+              (!balanceDate || new Date(r.date) > balanceDate))
             .reduce((sum, r) => sum + r.amount, 0)
           assetRecords += unattributedSum
         }

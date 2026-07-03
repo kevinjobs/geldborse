@@ -80,3 +80,4 @@ logs/error.log
 
 # CodeGraph index
 .codegraph/
+*.xlsx
