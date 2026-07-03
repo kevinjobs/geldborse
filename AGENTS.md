@@ -71,3 +71,7 @@ Singleton client at `@/lib/prisma.ts`. Schema at `prisma/schema.prisma` (models:
 - **Mobile**: breakpoint 768px, `use-mobile.ts` hook available
 - **Package registry**: `bunfig.toml` sets mirror to `registry.npmmirror.com`
 - **Bun config**: `bunfig.toml` in root — only sets registry mirror
+
+## IMPORTANT RULES
+
+ - DO NOT RUN `bun run build` when you done a small fix

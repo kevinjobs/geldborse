@@ -921,18 +921,18 @@ export default function AccountsPage() {
                           </p>
                         </CardContent>
                       </Card>
-                      <Card className="border-l-[3px] border-l-muted">
+                      <Card className="border-l-[3px] border-l-[#6366F1]">
                         <CardHeader className="pb-1">
                           <CardDescription className="flex items-center gap-2 text-xs uppercase tracking-wider">
-                            <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
+                            <CalendarDays className="h-3.5 w-3.5 text-[#6366F1]" />
                             数据范围
                           </CardDescription>
                         </CardHeader>
                         <CardContent>
-                          <div className="font-mono text-base font-bold tracking-tight text-foreground">
-                            {kpiData.earliestDate?.slice(5) ?? "-"}
-                            <span className="text-muted-foreground mx-1">→</span>
-                            {kpiData.latestDate?.slice(5) ?? "-"}
+                          <div className="font-mono text-xs md:text-sm font-bold tracking-tight text-foreground flex flex-col md:flex-row md:items-center md:gap-0.5 items-start">
+                            <span>{kpiData.earliestDate ?? "-"}</span>
+                            <span className="text-muted-foreground md:mx-1 text-[10px] leading-none my-0.5 md:my-0">↓</span>
+                            <span>{kpiData.latestDate ?? "-"}</span>
                           </div>
                           <p className="text-xs text-muted-foreground mt-1">
                             {allBalanceDates.length} 个数据点
