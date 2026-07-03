@@ -24,30 +24,24 @@ export async function POST(request: NextRequest) {
     let invalidCount = 0
 
     // 导入账户和资产（分批处理）
-    const accountsBatchSize = 20 // 减少每批处理的账户数量
+    const accountsBatchSize = 20
     for (let i = 0; i < importData.data.accounts.length; i += accountsBatchSize) {
       const batch = importData.data.accounts.slice(i, i + accountsBatchSize)
-      // 为每个批次创建独立的事务
       try {
-        await prisma.$transaction(async (tx) => {
+        const result = await prisma.$transaction(async (tx) => {
+          let a = 0, as = 0, b = 0, d = 0, inv = 0
           for (const accountData of batch) {
-            // 跳过无效的账户数据
             if (!accountData.name || typeof accountData.name !== 'string') {
-              invalidCount++
+              inv++
               continue
             }
 
-            // 检查账户是否已存在
             const existingAccount = await tx.account.findFirst({
-              where: {
-                userId,
-                name: accountData.name
-              }
+              where: { userId, name: accountData.name }
             })
 
             let accountId
             if (existingAccount) {
-              // 更新现有账户
               const updatedAccount = await tx.account.update({
                 where: { id: existingAccount.id },
                 data: {
@@ -57,9 +51,8 @@ export async function POST(request: NextRequest) {
                 }
               })
               accountId = updatedAccount.id
-              duplicatesCount++
+              d++
             } else {
-              // 创建新账户
               const newAccount = await tx.account.create({
                 data: {
                   name: accountData.name,
@@ -70,56 +63,56 @@ export async function POST(request: NextRequest) {
                 }
               })
               accountId = newAccount.id
-              accountsCount++
+              a++
             }
 
-            // 导入资产
             if (accountData.assets && Array.isArray(accountData.assets)) {
               for (const assetData of accountData.assets) {
-                // 跳过无效的资产数据
                 if (!assetData.name || typeof assetData.name !== 'string') {
-                  invalidCount++
+                  inv++
                   continue
                 }
 
-                // 检查资产是否已存在
                 const existingAsset = await tx.asset.findFirst({
-                  where: {
-                    accountId,
-                    name: assetData.name
-                  }
+                  where: { accountId, name: assetData.name }
                 })
 
                 if (existingAsset) {
-                  // 更新现有资产
                   await tx.asset.update({
                     where: { id: existingAsset.id },
-                    data: {
-                      type: assetData.type,
-                      amount: assetData.amount
-                    }
+                    data: { type: assetData.type, amount: assetData.amount }
                   })
-                  duplicatesCount++
+                  d++
 
-                  // 导入资产余额
                   if (assetData.balances && Array.isArray(assetData.balances)) {
                     for (const balanceData of assetData.balances) {
                       if (balanceData.amount === undefined || !balanceData.recordedAt) {
-                        invalidCount++
+                        inv++
                         continue
                       }
-                      await tx.balance.create({
-                        data: {
-                          amount: balanceData.amount,
-                          recordedAt: new Date(balanceData.recordedAt),
-                          assetId: existingAsset.id
+
+                      const existingBalance = await tx.balance.findFirst({
+                        where: {
+                          assetId: existingAsset.id,
+                          recordedAt: new Date(balanceData.recordedAt)
                         }
                       })
-                      balancesCount++
+
+                      if (existingBalance) {
+                        d++
+                      } else {
+                        await tx.balance.create({
+                          data: {
+                            amount: balanceData.amount,
+                            recordedAt: new Date(balanceData.recordedAt),
+                            assetId: existingAsset.id
+                          }
+                        })
+                        b++
+                      }
                     }
                   }
                 } else {
-                  // 创建新资产
                   const newAsset = await tx.asset.create({
                     data: {
                       name: assetData.name,
@@ -128,64 +121,76 @@ export async function POST(request: NextRequest) {
                       accountId
                     }
                   })
-                  assetsCount++
+                  as++
 
-                  // 导入资产余额
                   if (assetData.balances && Array.isArray(assetData.balances)) {
                     for (const balanceData of assetData.balances) {
                       if (balanceData.amount === undefined || !balanceData.recordedAt) {
-                        invalidCount++
+                        inv++
                         continue
                       }
-                      await tx.balance.create({
-                        data: {
-                          amount: balanceData.amount,
-                          recordedAt: new Date(balanceData.recordedAt),
-                          assetId: newAsset.id
+
+                      const existingBalance = await tx.balance.findFirst({
+                        where: {
+                          assetId: newAsset.id,
+                          recordedAt: new Date(balanceData.recordedAt)
                         }
                       })
-                      balancesCount++
+
+                      if (existingBalance) {
+                        d++
+                      } else {
+                        await tx.balance.create({
+                          data: {
+                            amount: balanceData.amount,
+                            recordedAt: new Date(balanceData.recordedAt),
+                            assetId: newAsset.id
+                          }
+                        })
+                        b++
+                      }
                     }
                   }
                 }
               }
             }
           }
+          return { accounts: a, assets: as, balances: b, duplicates: d, invalid: inv }
         })
+
+        accountsCount += result.accounts
+        assetsCount += result.assets
+        balancesCount += result.balances
+        duplicatesCount += result.duplicates
+        invalidCount += result.invalid
       } catch (error) {
         console.error('处理账户批次失败:', error)
-        // 继续处理下一批次
       }
     }
 
     // 导入收支记录
     if (importData.data.records && Array.isArray(importData.data.records)) {
-      // 分批处理记录，每批50条
       const batchSize = 50
       for (let i = 0; i < importData.data.records.length; i += batchSize) {
         const batch = importData.data.records.slice(i, i + batchSize)
         try {
-          await prisma.$transaction(async (tx) => {
+          const result = await prisma.$transaction(async (tx) => {
+            let r = 0, d = 0, inv = 0
             for (const recordData of batch) {
-              // 查找对应的账户
               const account = await tx.account.findFirst({
-                where: {
-                  userId,
-                  name: recordData.account?.name
-                }
+                where: { userId, name: recordData.account?.name }
               })
 
               if (!account) {
-                invalidCount++
+                inv++
                 continue
               }
 
               if (!recordData.date || !recordData.amount || !recordData.type) {
-                invalidCount++
+                inv++
                 continue
               }
 
-              // 检查记录是否已存在
               const existingRecord = await tx.record.findFirst({
                 where: {
                   accountId: account.id,
@@ -196,23 +201,16 @@ export async function POST(request: NextRequest) {
               })
 
               if (existingRecord) {
-                duplicatesCount++
+                d++
               } else {
-                // 查找对应的资产
                 let assetId = null
                 if (recordData.asset?.name) {
                   const asset = await tx.asset.findFirst({
-                    where: {
-                      accountId: account.id,
-                      name: recordData.asset.name
-                    }
+                    where: { accountId: account.id, name: recordData.asset.name }
                   })
-                  if (asset) {
-                    assetId = asset.id
-                  }
+                  if (asset) assetId = asset.id
                 }
 
-                // 创建新记录
                 await tx.record.create({
                   data: {
                     date: new Date(recordData.date),
@@ -223,50 +221,43 @@ export async function POST(request: NextRequest) {
                     note: recordData.note || recordData.description || null
                   }
                 })
-                recordsCount++
+                r++
               }
             }
+            return { records: r, duplicates: d, invalid: inv }
           })
+
+          recordsCount += result.records
+          duplicatesCount += result.duplicates
+          invalidCount += result.invalid
         } catch (error) {
           console.error('处理记录批次失败:', error)
-          // 继续处理下一批次
         }
       }
     }
 
     // 导入快照（可选）
     if (importData.data.snapshots && Array.isArray(importData.data.snapshots)) {
-      // 分批处理快照，每批50条
       const batchSize = 50
       for (let i = 0; i < importData.data.snapshots.length; i += batchSize) {
         const batch = importData.data.snapshots.slice(i, i + batchSize)
         try {
-          await prisma.$transaction(async (tx) => {
+          const result = await prisma.$transaction(async (tx) => {
+            let s = 0
             for (const snapshotData of batch) {
-              // 查找对应的账户
               const account = await tx.account.findFirst({
-                where: {
-                  userId,
-                  name: snapshotData.account?.name
-                }
+                where: { userId, name: snapshotData.account?.name }
               })
 
               if (account) {
-                // 查找对应的资产
                 let assetId = null
                 if (snapshotData.asset?.name) {
                   const asset = await tx.asset.findFirst({
-                    where: {
-                      accountId: account.id,
-                      name: snapshotData.asset.name
-                    }
+                    where: { accountId: account.id, name: snapshotData.asset.name }
                   })
-                  if (asset) {
-                    assetId = asset.id
-                  }
+                  if (asset) assetId = asset.id
                 }
 
-                // 检查快照是否已存在
                 const existingSnapshot = await tx.dailySnapshot.findFirst({
                   where: {
                     accountId: account.id,
@@ -276,7 +267,6 @@ export async function POST(request: NextRequest) {
                 })
 
                 if (!existingSnapshot) {
-                  // 创建新快照
                   await tx.dailySnapshot.create({
                     data: {
                       accountId: account.id,
@@ -285,14 +275,16 @@ export async function POST(request: NextRequest) {
                       snapshotAt: new Date(snapshotData.snapshotAt)
                     }
                   })
-                  snapshotsCount++
+                  s++
                 }
               }
             }
+            return { snapshots: s }
           })
+
+          snapshotsCount += result.snapshots
         } catch (error) {
           console.error('处理快照批次失败:', error)
-          // 继续处理下一批次
         }
       }
     }

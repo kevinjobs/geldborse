@@ -220,6 +220,14 @@ export default function ExportPage() {
   }
 
   const exportAllData = () => {
+    // 构建 assetId → 全部余额记录的映射
+    const balancesByAssetId = new Map<string, { amount: number; recordedAt: string }[]>()
+    balances.forEach(b => {
+      const list = balancesByAssetId.get(b.assetId) || []
+      list.push({ amount: b.amount, recordedAt: b.recordedAt })
+      balancesByAssetId.set(b.assetId, list)
+    })
+
     const allData = {
       exportDate: new Date().toISOString(),
       version: "1.1",
@@ -236,7 +244,7 @@ export default function ExportPage() {
             type: asset.type,
             amount: asset.amount || 0,
             accountId: asset.accountId,
-            balances: asset.balances || [],
+            balances: balancesByAssetId.get(asset.id) || [],
           }))
         })),
         snapshots: snapshots,
@@ -250,12 +258,6 @@ export default function ExportPage() {
           assetId: (r as any).assetId || null,
           account: r.account ? { name: r.account.name } : null,
           asset: (r as any).asset ? { name: (r as any).asset.name } : null,
-        })),
-        balances: balances.map(b => ({
-          id: b.id,
-          amount: b.amount,
-          recordedAt: b.recordedAt,
-          assetId: b.assetId,
         })),
       }
     }
@@ -297,7 +299,11 @@ export default function ExportPage() {
             }, 0) || 0,
             records: importData.data.records?.length || 0,
             snapshots: importData.data.snapshots?.length || 0,
-            balances: importData.data.balances?.length || 0
+            balances: importData.data.accounts?.reduce((total: number, account: any) => {
+              return total + (account.assets?.reduce((sum: number, asset: any) => {
+                return sum + (asset.balances?.length || 0)
+              }, 0) || 0)
+            }, 0) || 0
           }
 
           setPreviewData({
