@@ -194,6 +194,14 @@ export const ACCOUNT_NAME_COLORS: Record<string, { color: string; bgColor: strin
     darkBgColor: "bg-amber-900/40",
     darkBorderColor: "border-l-amber-700"
   },
+  "债务": {
+    color: "text-orange-500",
+    bgColor: "bg-orange-50",
+    borderColor: "border-l-orange-400",
+    darkColor: "text-orange-400",
+    darkBgColor: "bg-orange-900/40",
+    darkBorderColor: "border-l-orange-700"
+  },
 }
 
 const FALLBACK_COLORS = [

@@ -141,6 +141,15 @@ export const OtherLogo = ({ size = 24, className = "" }: LogoProps) => (
   <Image src={`${BASE_PATH}其他.svg`} alt="其他" width={size} height={size} className={className} />
 )
 
+export const DebtLogo = ({ size = 24, className = "" }: LogoProps) => (
+  <svg width={size} height={size} viewBox="0 0 1024 1024" className={className}>
+    <path
+      fill="currentColor"
+      d="M512 64C264.6 64 64 264.6 64 512s200.6 448 448 448 448-200.6 448-448S759.4 64 512 64z m232 480H280c-17.7 0-32-14.3-32-32s14.3-32 32-32h464c17.7 0 32 14.3 32 32s-14.3 32-32 32z"
+    />
+  </svg>
+)
+
 export const ACCOUNT_LOGOS: Record<string, React.ComponentType<LogoProps>> = {
   "支付宝": AlipayLogo,
   "微信": WechatLogo,
@@ -171,9 +180,14 @@ export const ACCOUNT_LOGOS: Record<string, React.ComponentType<LogoProps>> = {
   "南京银行": NJCBankLogo,
   "微众银行": WebankLogo,
   "债权": DebtClaimLogo,
+  "债务": DebtLogo,
   "其他": OtherLogo,
 }
 
 export const getAccountLogo = (name: string): React.ComponentType<LogoProps> | null => {
-  return ACCOUNT_LOGOS[name] || null
+  if (ACCOUNT_LOGOS[name]) return ACCOUNT_LOGOS[name]
+  for (const [key, logo] of Object.entries(ACCOUNT_LOGOS)) {
+    if (name.includes(key)) return logo
+  }
+  return null
 }
