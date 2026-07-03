@@ -77,3 +77,6 @@ app/dashboard/data.json
 .DS_Store?
 logs/combined.log
 logs/error.log
+
+# CodeGraph index
+.codegraph/
