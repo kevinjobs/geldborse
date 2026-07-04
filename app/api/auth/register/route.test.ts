@@ -80,6 +80,7 @@ describe('POST /api/auth/register', () => {
       id: '1',
       email: 'test@example.com',
       name: 'Test User',
+      isAdmin: false,
     })
   })
 
@@ -110,6 +111,7 @@ describe('POST /api/auth/register', () => {
       id: '1',
       email: 'test@example.com',
       name: '',
+      isAdmin: false,
     })
   })
 

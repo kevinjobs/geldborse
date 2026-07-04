@@ -3,35 +3,12 @@ import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcrypt';
 import { signToken } from '@/lib/jwt';
 import { checkRateLimit } from '@/lib/rate-limit';
-
-function parseUserAgent(userAgent: string) {
-  if (userAgent.includes('Chrome')) {
-    if (userAgent.includes('Windows')) {
-      return 'Chrome on Windows';
-    } else if (userAgent.includes('macOS') || userAgent.includes('Macintosh')) {
-      return 'Chrome on macOS';
-    } else if (userAgent.includes('Linux')) {
-      return 'Chrome on Linux';
-    } else if (userAgent.includes('Mobile')) {
-      return 'Chrome on Mobile';
-    }
-  } else if (userAgent.includes('Safari')) {
-    if (userAgent.includes('macOS') || userAgent.includes('Macintosh')) {
-      return 'Safari on macOS';
-    } else if (userAgent.includes('Mobile')) {
-      return 'Safari on Mobile';
-    }
-  } else if (userAgent.includes('Firefox')) {
-    return 'Firefox';
-  } else if (userAgent.includes('Edge')) {
-    return 'Edge';
-  }
-  return 'Unknown';
-}
+import { parseUserAgent } from '@/lib/ua-parser';
+import { getLocationFromIP } from '@/lib/ip-geo';
 
 // Test mode - for testing only
 let testMode = false;
-let testUser: { id: string; email: string; password: string; name?: string | null; avatar?: string | null } | null = null;
+let testUser: { id: string; email: string; password: string; name?: string | null; avatar?: string | null; isAdmin?: boolean } | null = null;
 let testError: Error | null = null;
 let testPasswordMatch = false;
 
@@ -93,31 +70,34 @@ export async function POST(request: NextRequest) {
     // 创建登录历史记录
     if (!testMode) {
       const userAgent = request.headers.get('user-agent') || '';
-      const ip = request.headers.get('x-forwarded-for') || 'unknown';
-      const deviceInfo = parseUserAgent(userAgent);
+      const parsed = parseUserAgent(userAgent);
+      const location = await getLocationFromIP(ip);
 
-      // 首先将所有登录历史标记为非当前
-      await prisma.loginHistory.updateMany({
-        where: { userId: user.id, isCurrent: true },
-        data: { isCurrent: false }
-      });
-
-      // 创建新的登录历史记录
-      await prisma.loginHistory.create({
-        data: {
-          userId: user.id,
-          ip,
-          userAgent,
-          deviceInfo,
-          isCurrent: true
-        }
-      });
+      await prisma.$transaction([
+        // 首先将所有登录历史标记为非当前
+        prisma.loginHistory.updateMany({
+          where: { userId: user.id, isCurrent: true },
+          data: { isCurrent: false }
+        }),
+        // 创建新的登录历史记录
+        prisma.loginHistory.create({
+          data: {
+            userId: user.id,
+            ip,
+            userAgent,
+            deviceInfo: parsed.deviceName,
+            deviceFingerprint: parsed.fingerprint,
+            location,
+            isCurrent: true
+          }
+        })
+      ]);
     }
 
     const token = await signToken(user.id)
 
     const response = NextResponse.json(
-      { user: { id: user.id, email: user.email, name: user.name, avatar: user.avatar } },
+      { user: { id: user.id, email: user.email, name: user.name, avatar: user.avatar, isAdmin: user.isAdmin } },
       { status: 200 }
     )
 

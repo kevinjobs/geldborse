@@ -6,7 +6,7 @@ import { checkRateLimit } from '@/lib/rate-limit';
 // Test mode - for testing only
 let testMode = false;
 let testExistingUser: { id: string; email: string; password: string; name?: string | null; avatar?: string | null } | null = null;
-let testCreateResult: { id: string; email: string; password: string; name?: string | null; avatar?: string | null } | null = null;
+let testCreateResult: { id: string; email: string; password: string; name?: string | null; avatar?: string | null; isAdmin?: boolean } | null = null;
 let testError: Error | null = null;
 
 export function setTestMode(enabled: boolean) {
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User creation failed' }, { status: 500 });
     }
 
-    return NextResponse.json({ user: { id: user.id, email: user.email, name: user.name, avatar: user.avatar } }, { status: 201 });
+    return NextResponse.json({ user: { id: user.id, email: user.email, name: user.name, avatar: user.avatar, isAdmin: user.isAdmin ?? false } }, { status: 201 });
   } catch (error) {
     console.error('Registration error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

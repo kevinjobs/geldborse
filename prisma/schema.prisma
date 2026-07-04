@@ -124,17 +124,20 @@ model DailySnapshot {
 }
 
 model LoginHistory {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  ip        String
-  userAgent String
-  deviceInfo String
-  loginAt   DateTime @default(now())
-  isCurrent Boolean  @default(false)
+  id                 String    @id @default(cuid())
+  userId             String
+  user               User      @relation(fields: [userId], references: [id])
+  ip                 String
+  userAgent          String
+  deviceInfo         String
+  deviceFingerprint  String?
+  location           String?
+  loginAt            DateTime  @default(now())
+  isCurrent          Boolean   @default(false)
 
   @@index([userId])
   @@index([loginAt])
+  @@index([userId, deviceFingerprint])
 }
 
 model ApiKey {

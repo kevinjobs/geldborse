@@ -80,6 +80,9 @@ logs/error.log
 
 # CodeGraph index
 .codegraph/
+
+# Deepwork session files
+.slim/
 *.xlsx
 # Sentry Config File
 .env.sentry-build-plugin
