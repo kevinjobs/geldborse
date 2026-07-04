@@ -1,4 +1,9 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+
+// Mock JWT signToken to avoid jose Uint8Array instanceof issue in jsdom
+vi.mock('@/lib/jwt', () => ({
+  signToken: vi.fn(() => Promise.resolve('mock-jwt-token')),
+}))
 
 // Import the route and test mode functions
 import { POST, setTestMode, setTestUser, setTestError, setTestPasswordMatch } from './route'

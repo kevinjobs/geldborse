@@ -1,57 +1,5 @@
 import { describe, it, expect } from 'vitest'
-
-// 模拟账户总额计算函数
-function testGetAccountTotal(assets: any[], records: any[]) {
-  let total = 0
-  let baseAmount = 0
-  let recordsTotal = 0
-  let hasBalance = false
-
-  if (assets.length > 0) {
-    // 计算所有资产的最新余额总和
-    for (const asset of assets) {
-      if (asset.balances && asset.balances.length > 0) {
-        const latestBalance = asset.balances[0]
-        baseAmount += latestBalance.amount
-        hasBalance = true
-      } else {
-        baseAmount += 0
-      }
-    }
-
-    // 找到最新的余额时间
-    let latestBalanceTime: Date | null = null
-    for (const asset of assets) {
-      if (asset.balances && asset.balances.length > 0) {
-        const balanceTime = new Date(asset.balances[0].recordedAt)
-        if (!latestBalanceTime || balanceTime > latestBalanceTime) {
-          latestBalanceTime = balanceTime
-        }
-      }
-    }
-
-    // 只计算在最新余额时间之后的收支记录
-    if (latestBalanceTime) {
-      const latestBalanceTimeSec = Math.floor(latestBalanceTime.getTime() / 1000)
-      const recordsAfterBalance = records.filter(record => {
-        const recordTimeSec = Math.floor(new Date(record.date).getTime() / 1000)
-        return recordTimeSec > latestBalanceTimeSec
-      })
-      
-      recordsTotal = recordsAfterBalance.reduce((sum, r) => sum + r.amount, 0)
-    } else {
-      // 对于没有余额记录的资产，计算所有收支记录
-      recordsTotal = records.reduce((sum, r) => sum + r.amount, 0)
-    }
-  } else {
-    // 对于没有资产的账户，计算所有收支记录
-    recordsTotal = records.reduce((sum, r) => sum + r.amount, 0)
-  }
-
-  total = baseAmount + recordsTotal
-
-  return { total, baseAmount, recordsTotal, hasBalance }
-}
+import { testGetAccountTotal } from '@/lib/__tests__/account-total'
 
 // 模拟资产数据
 const mockAssets = [
