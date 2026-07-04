@@ -1,4 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { useAuth } from '@/lib/auth-context'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 
 // NOTE: This test environment (Bun's vitest with node runner) cannot render React components.
 // React 19's createRoot needs a real DOM, and jsdom is not available with Bun's vitest.
@@ -40,9 +50,8 @@ vi.mock('@phosphor-icons/react', () => {
   }
 })
 
-let mockLogout: any
+const { mockLogout } = vi.hoisted(() => ({ mockLogout: vi.fn(async () => Promise.resolve()) }))
 vi.mock('@/lib/auth-context', () => {
-  mockLogout = vi.fn(async () => Promise.resolve())
   return {
     useAuth: vi.fn(() => ({
       user: { id: '1', email: 'test@example.com', name: 'Test User' },
@@ -61,22 +70,18 @@ beforeEach(() => {
 
 describe('NavUser', () => {
   it('reads user data from auth context', () => {
-    const { useAuth } = require('@/lib/auth-context')
     const auth = useAuth()
     expect(auth.user?.name).toBe('Test User')
     expect(auth.user?.email).toBe('test@example.com')
   })
 
   it('provides a callable logout function', async () => {
-    const { useAuth } = require('@/lib/auth-context')
     const auth = useAuth()
     await auth.logout()
     expect(mockLogout).toHaveBeenCalledTimes(1)
   })
 
   it('mocked DropdownMenu components exist and are spies', () => {
-    const { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } =
-      require('@/components/ui/dropdown-menu')
     expect(DropdownMenu).toBeDefined()
     expect(DropdownMenuContent).toBeDefined()
     expect(DropdownMenuItem).toBeDefined()
@@ -86,7 +91,6 @@ describe('NavUser', () => {
   })
 
   it('mocked Avatar components exist and are spies', () => {
-    const { Avatar, AvatarImage, AvatarFallback } = require('@/components/ui/avatar')
     expect(Avatar).toBeDefined()
     expect(AvatarImage).toBeDefined()
     expect(AvatarFallback).toBeDefined()
