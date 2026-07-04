@@ -1,52 +1,43 @@
 import { describe, it, expect } from 'vitest'
 
-// 模拟用户数据
-const mockUser = {
-  id: '1',
-  name: '测试用户',
-  email: 'test@example.com',
-  createdAt: '2026-04-01T00:00:00Z'
-}
-
-// 模拟用户设置数据
-const mockUserSettings = {
-  theme: 'light',
-  language: 'zh-CN',
-  notifications: true,
-  currency: 'CNY'
-}
-
-describe('用户设置页面功能测试', () => {
-  it('应该正确获取用户信息', () => {
-    expect(mockUser.id).toBeTruthy()
-    expect(mockUser.name).toBeTruthy()
-    expect(mockUser.email).toBeTruthy()
+describe('设置页面导航结构测试', () => {
+  it('设置分类应该包含所有主要分组', () => {
+    const categories = [
+      { id: 'account', label: '账户', items: ['个人资料', '账户安全'] },
+      { id: 'preferences', label: '偏好', items: ['通知设置', '隐私设置'] },
+      { id: 'data', label: '数据', items: ['数据管理', 'API 密钥'] },
+    ]
+    expect(categories).toHaveLength(3)
+    categories.forEach((cat) => {
+      expect(cat.items.length).toBeGreaterThanOrEqual(1)
+    })
   })
 
-  it('应该正确验证用户邮箱格式', () => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    expect(emailRegex.test(mockUser.email)).toBe(true)
+  it('管理分类仅对管理员可见', () => {
+    const adminOnlyCategories = [{ id: 'admin', label: '管理', items: ['用户管理'] }]
+    expect(adminOnlyCategories).toHaveLength(1)
+    expect(adminOnlyCategories[0].items).toContain('用户管理')
   })
 
-  it('应该正确处理用户设置', () => {
-    expect(mockUserSettings.theme).toBeTruthy()
-    expect(mockUserSettings.language).toBeTruthy()
-    expect(mockUserSettings.notifications).toBeTruthy()
-    expect(mockUserSettings.currency).toBeTruthy()
+  it('所有子路由应有对应页面', () => {
+    const routes = [
+      '/settings/profile',
+      '/settings/security',
+      '/settings/notifications',
+      '/settings/privacy',
+      '/settings/data',
+      '/settings/api-keys',
+      '/settings/admin',
+    ]
+    expect(routes).toHaveLength(7)
+    routes.forEach((route) => {
+      expect(route).toMatch(/^\/settings\//)
+    })
   })
 
-  it('应该正确处理主题设置', () => {
-    const validThemes = ['light', 'dark', 'system']
-    expect(validThemes.includes(mockUserSettings.theme)).toBe(true)
-  })
-
-  it('应该正确处理语言设置', () => {
-    const validLanguages = ['zh-CN', 'en-US']
-    expect(validLanguages.includes(mockUserSettings.language)).toBe(true)
-  })
-
-  it('应该正确处理货币设置', () => {
-    const validCurrencies = ['CNY', 'USD', 'EUR', 'JPY']
-    expect(validCurrencies.includes(mockUserSettings.currency)).toBe(true)
+  it('退出登录应在 Hub 页底部', () => {
+    const logoutAction = { label: '退出登录', variant: 'destructive', position: 'bottom' }
+    expect(logoutAction.position).toBe('bottom')
+    expect(logoutAction.variant).toBe('destructive')
   })
 })

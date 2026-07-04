@@ -1,40 +1,12 @@
 export interface AvatarPreset {
-  id: number
-  style: string
   seed: string
+  style: string
+  dataUrl: string
 }
 
-const STYLES = [
-  'avataaars',
-  'lorelei',
-  'micah',
-  'open-peeps',
-  'miniavs',
-  'personas',
-  'notionists',
-  'adventurer',
-  'big-ears',
-  'dylan',
-  'toon-head',
-  'fun-emoji',
-  'pixel-art',
-  'croodles',
-  'bottts',
-  'big-smile',
-]
-
-function randomSeed() {
-  return Math.random().toString(36).substring(2, 8)
-}
-
-export function generateRandomPresets(): AvatarPreset[] {
-  return STYLES.map((style, i) => ({
-    id: i + 1,
-    style,
-    seed: randomSeed(),
-  }))
-}
-
-export function getAvatarUrl(preset: AvatarPreset) {
-  return `https://api.dicebear.com/9.x/${preset.style}/svg?seed=${preset.seed}`
+export async function fetchAvatarPresets(): Promise<AvatarPreset[]> {
+  const res = await fetch('/api/avatars/presets')
+  if (!res.ok) throw new Error('Failed to load avatar presets')
+  const data = await res.json()
+  return data.presets
 }

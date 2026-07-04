@@ -5,7 +5,7 @@ import { authenticateRequest } from '@/lib/auth';
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, avatarPresetUrl, avatarData, avatarType } = body;
+    const { name, avatarData } = body;
 
     if (!name) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
@@ -17,18 +17,7 @@ export async function PUT(request: NextRequest) {
 
     const updateData: { name: string; avatar?: string } = { name };
 
-    if (avatarPresetUrl) {
-      const dicebearRes = await fetch(avatarPresetUrl);
-      if (dicebearRes.ok) {
-        const svg = await dicebearRes.text();
-        const base64 = Buffer.from(svg).toString('base64');
-        updateData.avatar = `data:image/svg+xml;base64,${base64}`;
-      }
-    } else if (avatarData) {
-      const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
-      if (avatarType && !validTypes.includes(avatarType)) {
-        return NextResponse.json({ error: 'Invalid file type.' }, { status: 400 });
-      }
+    if (avatarData) {
       updateData.avatar = avatarData;
     }
 
