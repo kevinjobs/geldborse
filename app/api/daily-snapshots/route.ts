@@ -91,114 +91,123 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    const snapshots = []
+    const snapshots = await prisma.$transaction(async (tx) => {
+      const results = []
 
-    for (const account of accounts) {
-      if (account.assets.length > 0) {
-        const activeAssetIds = new Set(account.assets.map((a) => a.id))
+      for (const account of accounts) {
+        if (account.assets.length > 0) {
+          const activeAssetIds = new Set(account.assets.map((a) => a.id))
 
-        for (let i = 0; i < account.assets.length; i++) {
-          const asset = account.assets[i]
-          const latestBalance = asset.balances[0]
-          const baseAmount = latestBalance ? latestBalance.amount : 0
-          const balanceDate = latestBalance ? new Date(latestBalance.recordedAt) : null
+          for (let i = 0; i < account.assets.length; i++) {
+            const asset = account.assets[i]
+            const latestBalance = asset.balances[0]
+            const baseAmount = latestBalance ? latestBalance.amount : 0
+            const balanceDate = latestBalance ? new Date(latestBalance.recordedAt) : null
 
-          let delta = 0
-          for (const record of account.records) {
-            if (record.assetId === asset.id) {
-              if (!balanceDate || new Date(record.date) > balanceDate) {
-                delta += record.amount
-              }
-            }
-          }
-
-          if (i === 0) {
-            let unattributedDelta = 0
+            let delta = 0
             for (const record of account.records) {
-              if ((record.assetId === null || (record.assetId !== null && !activeAssetIds.has(record.assetId))) &&
-                  (!balanceDate || new Date(record.date) > balanceDate)) {
-                unattributedDelta += record.amount
+              if (record.assetId === asset.id) {
+                if (!balanceDate || new Date(record.date) > balanceDate) {
+                  delta += record.amount
+                }
               }
             }
-            delta += unattributedDelta
+
+            if (i === 0) {
+              let unattributedDelta = 0
+              for (const record of account.records) {
+                if ((record.assetId === null || (record.assetId !== null && !activeAssetIds.has(record.assetId))) &&
+                    (!balanceDate || new Date(record.date) > balanceDate)) {
+                  unattributedDelta += record.amount
+                }
+              }
+              delta += unattributedDelta
+            }
+
+            const total = baseAmount + delta
+
+            const existing = await tx.dailySnapshot.findFirst({
+              where: {
+                accountId: account.id,
+                assetId: asset.id,
+                snapshotAt: snapshotTime,
+              },
+            })
+
+            if (existing) {
+              await tx.dailySnapshot.update({
+                where: { id: existing.id },
+                data: { amount: total },
+              })
+              results.push(existing)
+            } else {
+              const snapshot = await tx.dailySnapshot.create({
+                data: {
+                  snapshotAt: snapshotTime,
+                  accountId: account.id,
+                  assetId: asset.id,
+                  amount: total,
+                },
+              })
+              results.push(snapshot)
+            }
+          }
+        } else {
+          // DEDUP: check for existing BALANCE asset before creating
+          let defaultAsset = await tx.asset.findFirst({
+            where: { accountId: account.id, type: "BALANCE" }
+          })
+          if (!defaultAsset) {
+            defaultAsset = await tx.asset.create({
+              data: {
+                name: account.name,
+                type: "BALANCE",
+                amount: 0,
+                accountId: account.id,
+              },
+            })
+
+            await tx.balance.create({
+              data: {
+                amount: 0,
+                recordedAt: snapshotTime,
+                assetId: defaultAsset.id,
+              },
+            })
           }
 
-          const total = baseAmount + delta
+          const recordsTotal = account.records.reduce((sum, r) => sum + r.amount, 0)
+          const total = recordsTotal
 
-          const existingSnapshot = await prisma.dailySnapshot.findFirst({
+          const existing = await tx.dailySnapshot.findFirst({
             where: {
               accountId: account.id,
-              assetId: asset.id,
+              assetId: defaultAsset.id,
               snapshotAt: snapshotTime,
             },
           })
 
-          if (existingSnapshot) {
-            await prisma.dailySnapshot.update({
-              where: { id: existingSnapshot.id },
+          if (existing) {
+            await tx.dailySnapshot.update({
+              where: { id: existing.id },
               data: { amount: total },
             })
-            snapshots.push(existingSnapshot)
+            results.push(existing)
           } else {
-            const snapshot = await prisma.dailySnapshot.create({
+            const snapshot = await tx.dailySnapshot.create({
               data: {
                 snapshotAt: snapshotTime,
                 accountId: account.id,
-                assetId: asset.id,
+                assetId: defaultAsset.id,
                 amount: total,
               },
             })
-            snapshots.push(snapshot)
+            results.push(snapshot)
           }
         }
-      } else {
-        const defaultAsset = await prisma.asset.create({
-          data: {
-            name: account.name,
-            type: "BALANCE",
-            amount: 0,
-            accountId: account.id,
-          },
-        })
-
-        await prisma.balance.create({
-          data: {
-            amount: 0,
-            recordedAt: snapshotTime,
-            assetId: defaultAsset.id,
-          },
-        })
-
-        const recordsTotal = account.records.reduce((sum, r) => sum + r.amount, 0)
-        const total = recordsTotal
-
-        const existingSnapshot = await prisma.dailySnapshot.findFirst({
-          where: {
-            accountId: account.id,
-            assetId: defaultAsset.id,
-            snapshotAt: snapshotTime,
-          },
-        })
-
-        if (existingSnapshot) {
-          await prisma.dailySnapshot.update({
-            where: { id: existingSnapshot.id },
-            data: { amount: total },
-          })
-          snapshots.push(existingSnapshot)
-        } else {
-          const snapshot = await prisma.dailySnapshot.create({
-            data: {
-              snapshotAt: snapshotTime,
-              accountId: account.id,
-              assetId: defaultAsset.id,
-              amount: total,
-            },
-          })
-          snapshots.push(snapshot)
-        }
       }
-    }
+      return results
+    })
 
     return NextResponse.json({
       success: true,
