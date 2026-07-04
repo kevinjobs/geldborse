@@ -123,7 +123,7 @@ export default function AddRecordPage() {
           "Content-Type": "application/json",
           ...(user?.id ? { 'Authorization': `Bearer ${user.id}` } : {})
         },
-        body: JSON.stringify({ date, accountId: account, assetId: asset || null, amount, type, note: note || null }),
+        body: JSON.stringify({ date: new Date(date + "T00:00:00").toISOString(), accountId: account, assetId: asset || null, amount, type, note: note || null }),
       })
       if (res.ok) {
         alert("收支保存成功")

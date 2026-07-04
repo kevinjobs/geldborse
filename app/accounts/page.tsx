@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
@@ -554,7 +554,7 @@ export default function AccountsPage() {
         const res = await fetch(`/api/balances/${editingBalance.id}`, {
           method: "PUT",
           headers,
-          body: JSON.stringify({ amount: balanceAmount, recordedAt: balanceDate }),
+          body: JSON.stringify({ amount: balanceAmount, recordedAt: new Date(balanceDate).toISOString() }),
         })
         if (res.ok) {
           const updatedBalance = await res.json()
@@ -578,7 +578,7 @@ export default function AccountsPage() {
         const res = await fetch("/api/balances", {
           method: "POST",
           headers,
-          body: JSON.stringify({ amount: balanceAmount, recordedAt: balanceDate, assetId: selectedAsset!.id }),
+          body: JSON.stringify({ amount: balanceAmount, recordedAt: new Date(balanceDate).toISOString(), assetId: selectedAsset!.id }),
         })
         if (res.ok) {
           const newBalance = await res.json()
@@ -644,59 +644,87 @@ export default function AccountsPage() {
     if (!snapshotDate) {
       return (account as { totalAmount?: number }).totalAmount || 0
     }
-    const targetDate = new Date(snapshotDate)
-    targetDate.setHours(23, 59, 59, 999)
-    const assets = accountAssets[account.id] || []
-    const accountRecords = (account as { records?: any[] }).records || []
-    const recordsUpToDate = accountRecords.filter(r => new Date(r.date) <= targetDate)
+    const targetDate = new Date(snapshotDate + "T23:59:59.999")
+    return computeAccountTotalUpTo(account, targetDate)
+  }
+
+  // ── Compute account total at a point in time ──
+  const computeAccountTotalUpTo = useCallback((acct: Account, upToDate: Date): number => {
+    const assets: Asset[] = accountAssets[acct.id] || []
+    const accountRecords: Array<{ id: string; amount: number; date: string; assetId: string | null }> =
+      ((acct as Account & { records?: Array<{ id: string; amount: number; date: string; assetId: string | null }> }).records) || []
+    const recordsUpToDate = accountRecords.filter((r) => new Date(r.date) <= upToDate)
+
     if (assets.length > 0) {
-      const sortedAssets = [...assets].sort((a, b) => new Date(a.createdAt || "").getTime() - new Date(b.createdAt || "").getTime())
-      const activeAssetIds = new Set(sortedAssets.map(a => a.id))
+      const sortedAssets = [...assets].sort(
+        (a, b) => new Date(a.createdAt || "").getTime() - new Date(b.createdAt || "").getTime()
+      )
+      const activeAssetIds = new Set(sortedAssets.map((a) => a.id))
       let total = 0
+
       for (let i = 0; i < sortedAssets.length; i++) {
         const asset = sortedAssets[i]
         const balanceList = assetBalances[asset.id] || []
-        const sortedBalances = [...balanceList].sort((a, b) => new Date(b.recordedAt).getTime() - new Date(a.recordedAt).getTime())
-        const balanceAtDate = sortedBalances.find(b => new Date(b.recordedAt) <= targetDate)
-        const baseAmount = balanceAtDate ? balanceAtDate.amount : (asset.amount || 0)
+        const sortedBalances = [...balanceList].sort(
+          (a, b) => new Date(b.recordedAt).getTime() - new Date(a.recordedAt).getTime()
+        )
+        const balanceAtDate = sortedBalances.find((b) => new Date(b.recordedAt) <= upToDate)
+        const baseAmount = balanceAtDate
+          ? balanceAtDate.amount
+          : (asset.createdAt && new Date(asset.createdAt) > upToDate ? 0 : (asset.amount || 0))
         const balanceDate = balanceAtDate ? new Date(balanceAtDate.recordedAt) : null
+
         let assetRecords = recordsUpToDate
-          .filter(r => r.assetId === asset.id && (!balanceDate || new Date(r.date) > balanceDate))
+          .filter((r) => r.assetId === asset.id && (!balanceDate || new Date(r.date) > balanceDate))
           .reduce((sum, r) => sum + r.amount, 0)
+
         if (i === 0) {
           const unattributed = recordsUpToDate
-            .filter(r => (r.assetId === null || (r.assetId !== null && !activeAssetIds.has(r.assetId))) &&
-              (!balanceDate || new Date(r.date) > balanceDate))
+            .filter((r) =>
+              (r.assetId === null || (r.assetId !== null && !activeAssetIds.has(r.assetId))) &&
+              (!balanceDate || new Date(r.date) > balanceDate)
+            )
             .reduce((sum, r) => sum + r.amount, 0)
           assetRecords += unattributed
         }
+
         total += baseAmount + assetRecords
       }
       return total
     }
-    const recordsTotal = recordsUpToDate.reduce((sum, r) => sum + r.amount, 0)
-    return account.initialBalance + recordsTotal
-  }
 
-  // ── Memoized trend data per account ──
+    const recordsTotal = recordsUpToDate.reduce((sum, r) => sum + r.amount, 0)
+    return acct.initialBalance + recordsTotal
+  }, [accountAssets, assetBalances])
+
+  // ── Memoized trend data per account (full total per date) ──
   const accountTrends = useMemo(() => {
     const result: Record<string, Array<{ date: string; total: number }>> = {}
     accounts.forEach((acct) => {
-      const assets = accountAssets[acct.id] || []
-      const dateMap = new Map<string, number>()
+      const assets: Asset[] = accountAssets[acct.id] || []
+
+      // Collect all unique dates from this account's balance snapshots
+      const dateSet = new Set<string>()
       assets.forEach((asset) => {
         const balances = assetBalances[asset.id] || []
         balances.forEach((b) => {
-          const dateKey = b.recordedAt.slice(0, 10)
-          dateMap.set(dateKey, (dateMap.get(dateKey) || 0) + b.amount)
+          dateSet.add(b.recordedAt.slice(0, 10))
         })
       })
-      result[acct.id] = Array.from(dateMap.entries())
-        .sort((a, b) => a[0].localeCompare(b[0]))
-        .map(([date, total]) => ({ date, total }))
+
+      if (dateSet.size === 0) {
+        result[acct.id] = []
+        return
+      }
+
+      const sortedDates = Array.from(dateSet).sort()
+      result[acct.id] = sortedDates.map((dateStr) => {
+        const targetDate = new Date(dateStr + "T23:59:59.999")
+        return { date: dateStr, total: computeAccountTotalUpTo(acct, targetDate) }
+      })
     })
     return result
-  }, [accounts, accountAssets, assetBalances])
+  }, [accounts, accountAssets, assetBalances, computeAccountTotalUpTo])
 
   // ── Balance change (latest trend point - previous) ──
   const accountBalanceChanges = useMemo(() => {
@@ -763,11 +791,12 @@ export default function AccountsPage() {
   const earliestBalanceDate = allBalanceDates[0] || ""
   const latestBalanceDate = allBalanceDates[allBalanceDates.length - 1] || ""
 
-  // ── KPI trend data (net / assets / liabilities across all dates) ──
+  // ── KPI trend data (net / assets / liabilities, forward-filled) ──
   const kpiTrends = useMemo(() => {
     const netTrend: Array<{ date: string; total: number }> = []
     const assetTrend: Array<{ date: string; total: number }> = []
     const liabilityTrend: Array<{ date: string; total: number }> = []
+    const lastValues: Record<string, number | null> = {}
 
     allBalanceDates.forEach((date) => {
       let netSum = 0
@@ -775,12 +804,14 @@ export default function AccountsPage() {
       let negSum = 0
       accounts.forEach((acct) => {
         const trend = accountTrends[acct.id]
-        if (trend) {
+        if (trend && trend.length > 0) {
           const point = trend.find((p) => p.date === date)
-          if (point) {
-            netSum += point.total
-            if (point.total >= 0) posSum += point.total
-            else negSum += point.total
+          if (point) lastValues[acct.id] = point.total
+          const val = lastValues[acct.id]
+          if (val != null) {
+            netSum += val
+            if (val >= 0) posSum += val
+            else negSum += val
           }
         }
       })

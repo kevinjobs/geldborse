@@ -187,7 +187,7 @@ export default function RecordsPage() {
           ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
         },
         body: JSON.stringify({
-          date: editDate,
+          date: new Date(editDate + "T00:00:00").toISOString(),
           accountId: editAccount,
           assetId: editAsset || null,
           amount: editAmount,
