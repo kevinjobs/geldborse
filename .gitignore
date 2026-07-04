@@ -83,3 +83,6 @@ logs/error.log
 *.xlsx
 # Sentry Config File
 .env.sentry-build-plugin
+scripts/screenshot-homepage.mjs
+scripts/screenshot.mjs
+scripts/seed-demo.mjs
