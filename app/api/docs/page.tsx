@@ -284,7 +284,7 @@ export default function ApiDocsPage() {
                 {
                   method: "POST", path: "/api/accounts",
                   auth: "accounts:write",
-                  body: JSON.stringify({ name: "工商银行", type: "BANK", accountNumber: "6222****1234", initialBalance: 10000, assets: [{ name: "活期存款", type: "DEPOSIT", amount: 10000 }] }, null, 2),
+                  body: JSON.stringify({ name: "工商银行", type: "BANK", accountNumber: "6222****1234", assets: [{ name: "活期存款", type: "DEPOSIT", amount: 10000 }] }, null, 2),
                   response: "201 — 创建的 Account 对象",
                   errors: "400 — 缺少名称 / 资产名称重复, 500",
                   description: "创建账户并附带初始化资产（事务操作）。",
@@ -300,7 +300,7 @@ export default function ApiDocsPage() {
                 {
                   method: "PUT", path: "/api/accounts/:id",
                   auth: "accounts:write",
-                  body: JSON.stringify({ name: "工商银行更新", type: "BANK", accountNumber: "6222****5678", initialBalance: 20000 }, null, 2),
+                  body: JSON.stringify({ name: "工商银行更新", type: "BANK", accountNumber: "6222****5678" }, null, 2),
                   response: "200 — 更新后的 Account",
                   errors: "400 — 参数错误, 404 — 账户不存在, 500",
                   description: "更新账户基本信息。",
@@ -576,7 +576,7 @@ export default function ApiDocsPage() {
                 {
                   method: "POST", path: "/api/import",
                   auth: "import",
-                  body: JSON.stringify({ data: { accounts: [{ name: "账户", type: "BANK", initialBalance: 0, assets: [{ name: "现金", type: "CASH", amount: 0 }] }], records: [], snapshots: [] } }, null, 2),
+                  body: JSON.stringify({ data: { accounts: [{ name: "账户", type: "BANK", assets: [{ name: "现金", type: "CASH", amount: 0 }] }], records: [], snapshots: [] } }, null, 2),
                   response: "200 — { accounts: N, assets: N, records: N, duplicates: N, invalid: N }",
                   errors: "400 — 数据格式错误, 500",
                   description: "批量导入账户、资产、收支记录和快照。重复数据会自动跳过，无效数据计数但不中断。",

@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
         for (let i = 0; i < account.assets.length; i++) {
           const asset = account.assets[i]
           const latestBalance = asset.balances[0]
-          const baseAmount = latestBalance ? latestBalance.amount : (asset.amount || 0)
+          const baseAmount = latestBalance ? latestBalance.amount : 0
           const balanceDate = latestBalance ? new Date(latestBalance.recordedAt) : null
 
           let delta = 0
@@ -161,8 +161,16 @@ export async function POST(request: NextRequest) {
           },
         })
 
+        await prisma.balance.create({
+          data: {
+            amount: 0,
+            recordedAt: snapshotTime,
+            assetId: defaultAsset.id,
+          },
+        })
+
         const recordsTotal = account.records.reduce((sum, r) => sum + r.amount, 0)
-        const total = account.initialBalance + recordsTotal
+        const total = recordsTotal
 
         const existingSnapshot = await prisma.dailySnapshot.findFirst({
           where: {

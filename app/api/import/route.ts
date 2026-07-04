@@ -41,7 +41,6 @@ export async function POST(request: NextRequest) {
             data: {
               type: accountData.type,
               accountNumber: accountData.accountNumber,
-              initialBalance: accountData.initialBalance || 0
             }
           })
           accountId = existingAccount.id
@@ -52,7 +51,6 @@ export async function POST(request: NextRequest) {
               name: accountData.name,
               type: accountData.type,
               accountNumber: accountData.accountNumber,
-              initialBalance: accountData.initialBalance || 0,
               userId
             }
           })
@@ -89,7 +87,11 @@ if (existingAsset) {
                   })
                   assetsCount++
 
-                  const result = await importBalances(prisma, newAsset.id, assetData.balances)
+                  // Ensure at least one balance snapshot exists
+                  const balanceData = (assetData.balances && assetData.balances.length > 0)
+                    ? assetData.balances
+                    : [{ amount: assetData.amount || 0, recordedAt: newAsset.createdAt.toISOString() }]
+                  const result = await importBalances(prisma, newAsset.id, balanceData)
                   balancesCount += result.created
                   duplicatesCount += result.duplicates
                   invalidCount += result.invalid

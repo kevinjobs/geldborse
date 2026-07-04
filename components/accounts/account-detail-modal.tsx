@@ -94,7 +94,7 @@ export function AccountDetailModal({
   const typeConfig = getAccountTypeConfig(account.type)
   const TypeIcon = typeConfig.icon
   const LogoComponent = getAccountLogo(account.name)
-  const totalBalance = getBalanceAtDate("__account_total__", 0) || assets.reduce((sum, a) => sum + getBalanceAtDate(a.id, a.amount), 0)
+  const totalBalance = getBalanceAtDate("__account_total__", 0) || assets.reduce((sum, a) => sum + getBalanceAtDate(a.id, 0), 0)
 
   // ── Compute account trend for sparkline ──
   const accountTrendData = useMemo(() => {
@@ -216,7 +216,7 @@ export function AccountDetailModal({
               const AssetIcon = assetTypeConfig.icon
               const isExpanded = expandedAssets.has(asset.id)
               const assetBalanceList = balances[asset.id] || []
-              const balanceAmount = getBalanceAtDate(asset.id, asset.amount)
+              const balanceAmount = getBalanceAtDate(asset.id, 0)
               const isLastAsset = assetIndex === assets.length - 1
 
               // Sparkline data sorted ascending

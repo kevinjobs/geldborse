@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
       for (let i = 0; i < sortedAssets.length; i++) {
         const asset = sortedAssets[i]
         const latestBalance = asset.balances[0]
-        const baseAmount = latestBalance ? latestBalance.amount : (asset.amount || 0)
+        const baseAmount = latestBalance ? latestBalance.amount : 0
         const balanceDate = latestBalance ? new Date(latestBalance.recordedAt) : null
 
         latestSnapshotTotal += baseAmount
@@ -62,10 +62,10 @@ export async function GET(request: NextRequest) {
         totalAmount += baseAmount + assetRecordsTotal
       }
     } else {
-      latestSnapshotTotal = account.initialBalance
       const recordsTotal = account.records.reduce((sum, r) => sum + r.amount, 0)
+      latestSnapshotTotal = recordsTotal
       recordsAfterBalanceTotal = recordsTotal
-      totalAmount = account.initialBalance + recordsTotal
+      totalAmount = recordsTotal
     }
 
     return {

@@ -15,7 +15,7 @@ function testGetAccountTotal(assets: any[], records: any[]) {
         baseAmount += latestBalance.amount
         hasBalance = true
       } else {
-        baseAmount += asset.amount || 0
+        baseAmount += 0
       }
     }
 

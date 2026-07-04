@@ -74,5 +74,20 @@ export async function POST(request: NextRequest) {
     },
     include: { account: true },
   })
-  return NextResponse.json(asset)
+
+  // Auto-create first balance snapshot from the initial amount
+  await prisma.balance.create({
+    data: {
+      amount: parseFloat(amount) || 0,
+      recordedAt: new Date(),
+      assetId: asset.id,
+    },
+  })
+
+  const assetWithBalances = await prisma.asset.findUnique({
+    where: { id: asset.id },
+    include: { account: true, balances: { orderBy: { recordedAt: "desc" } } },
+  })
+
+  return NextResponse.json(assetWithBalances)
 }

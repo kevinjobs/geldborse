@@ -437,7 +437,7 @@ export default function ExportPage() {
       if (account.assets && account.assets.length > 0) {
         account.assets.forEach((asset, index) => {
           const assetTypeConfig = getAssetTypeConfig(asset.type)
-          const assetAmount = asset.balances?.[0]?.amount ?? asset.amount ?? 0
+          const assetAmount = asset.balances?.[0]?.amount ?? 0
           data.push([
             index === 0 ? account.name : "",
             index === 0 ? accountTypeConfig.label : "",
@@ -846,7 +846,7 @@ export default function ExportPage() {
 
                           return assets.map((asset, assetIndex) => {
                             const assetTypeConfig = getAssetTypeConfig(asset.type)
-                            const assetAmount = asset.balances?.[0]?.amount ?? asset.amount ?? 0
+                            const assetAmount = asset.balances?.[0]?.amount ?? 0
                             return (
                               <ResponsiveTableRow
                                 key={`${account.id}-${asset.id}`}

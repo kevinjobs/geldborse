@@ -33,7 +33,7 @@ export async function PUT(
   const { userId } = auth
 
   const { id } = await params
-  const { name, type, amount } = await request.json()
+  const { name, type } = await request.json()
 
   try {
     const existing = await prisma.asset.findFirst({
@@ -47,45 +47,15 @@ export async function PUT(
       return NextResponse.json({ error: "资产不存在或无权操作" }, { status: 404 })
     }
 
-    const existingBalances = await prisma.balance.findMany({
-      where: { assetId: id },
+    const asset = await prisma.asset.update({
+      where: { id },
+      data: {
+        name,
+        type,
+      },
+      include: { account: true },
     })
-
-    if (existingBalances.length === 0) {
-      const asset = await prisma.asset.update({
-        where: { id },
-        data: {
-          name,
-          type,
-          amount: parseFloat(amount) || 0,
-        },
-        include: { account: true },
-      })
-      return NextResponse.json(asset)
-    } else {
-      await prisma.asset.update({
-        where: { id },
-        data: {
-          name,
-          type,
-        },
-      })
-
-      const balance = await prisma.balance.create({
-        data: {
-          amount: parseFloat(amount) || 0,
-          recordedAt: new Date(),
-          assetId: id,
-        },
-      })
-
-      const asset = await prisma.asset.findUnique({
-        where: { id },
-        include: { account: true },
-      })
-
-      return NextResponse.json({ ...asset, newBalance: balance })
-    }
+    return NextResponse.json(asset)
   } catch {
     return NextResponse.json({ error: "更新失败" }, { status: 500 })
   }

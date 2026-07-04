@@ -278,6 +278,7 @@ export default function AccountsPage() {
         if (res.ok) {
           fetchAccounts()
           setDialogOpen(false)
+          alert("账户创建成功，请前往添加子资产")
         } else {
           alert("创建失败")
         }
@@ -340,7 +341,6 @@ export default function AccountsPage() {
     setEditingAsset(asset)
     setAssetName(asset.name)
     setAssetType(asset.type)
-    setAssetAmount(asset.amount.toString())
     setAssetDialogOpen(true)
   }
 
@@ -395,6 +395,10 @@ export default function AccountsPage() {
       alert("请输入资产名称")
       return
     }
+    if (!editingAsset && !assetAmount) {
+      alert("请输入金额")
+      return
+    }
 
     // 获取用户认证信息
     const storedUser = typeof window !== 'undefined' ? localStorage.getItem('geldborse_user') : null
@@ -415,7 +419,7 @@ export default function AccountsPage() {
         const res = await fetch(`/api/assets/${editingAsset.id}`, {
           method: "PUT",
           headers,
-          body: JSON.stringify({ name: assetName, type: assetType, amount: assetAmount }),
+          body: JSON.stringify({ name: assetName, type: assetType }),
         })
         if (res.ok) {
           const updatedAsset = await res.json()
@@ -671,7 +675,7 @@ export default function AccountsPage() {
         const balanceAtDate = sortedBalances.find((b) => new Date(b.recordedAt) <= upToDate)
         const baseAmount = balanceAtDate
           ? balanceAtDate.amount
-          : (asset.createdAt && new Date(asset.createdAt) > upToDate ? 0 : (asset.amount || 0))
+          : 0
         const balanceDate = balanceAtDate ? new Date(balanceAtDate.recordedAt) : null
 
         let assetRecords = recordsUpToDate
@@ -694,7 +698,7 @@ export default function AccountsPage() {
     }
 
     const recordsTotal = recordsUpToDate.reduce((sum, r) => sum + r.amount, 0)
-    return acct.initialBalance + recordsTotal
+    return recordsTotal
   }, [accountAssets, assetBalances])
 
   // ── Memoized trend data per account (full total per date) ──
@@ -1259,17 +1263,19 @@ export default function AccountsPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="assetAmount">金额</Label>
-              <Input
-                id="assetAmount"
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                value={assetAmount}
-                onChange={(e) => setAssetAmount(e.target.value)}
-              />
-            </div>
+            {!editingAsset && (
+              <div className="space-y-2">
+                <Label htmlFor="assetAmount">金额</Label>
+                <Input
+                  id="assetAmount"
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={assetAmount}
+                  onChange={(e) => setAssetAmount(e.target.value)}
+                />
+              </div>
+            )}
             {editingAsset && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">

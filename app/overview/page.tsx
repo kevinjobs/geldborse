@@ -7,7 +7,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ResponsiveTable, ResponsiveTableBody, ResponsiveTableCell, ResponsiveTableHeader, ResponsiveTableRow } from "@/components/responsive-table"
 import { Badge } from "@/components/ui/badge"
-import { ChevronDown, ChevronRight, Zap, PlugZap, Gauge, Banknote } from "lucide-react"
+import { ChevronDown, ChevronRight, Zap, PlugZap, Gauge, Banknote, CalendarDays } from "lucide-react"
 import {
   getAccountNameColor,
   getAssetTypeConfig,
@@ -237,9 +237,9 @@ function OverviewPageContent() {
     }
 
     return {
-      total: asset.amount + recordsTotal,
+      total: recordsTotal,
       baseType: "initial",
-      baseAmount: asset.amount,
+      baseAmount: 0,
       balanceDate: null,
     }
   }
@@ -269,8 +269,6 @@ function OverviewPageContent() {
         if (latestBalance) {
           baseAmount += latestBalance.amount
           hasBalance = true
-        } else {
-          baseAmount += asset.amount
         }
 
         let assetRecords = accountRecords
@@ -296,14 +294,12 @@ function OverviewPageContent() {
       }
     }
 
-    const account = accounts.find((a) => a.id === accountId)
-    const initialBalance = account?.initialBalance || 0
     const recordsTotal = accountRecords.reduce((sum, r) => sum + r.amount, 0)
 
     return {
-      total: initialBalance + recordsTotal,
+      total: recordsTotal,
       hasBalance: false,
-      baseAmount: initialBalance,
+      baseAmount: 0,
       recordsTotal,
     }
   }
@@ -331,36 +327,100 @@ function OverviewPageContent() {
       }))
   }, [snapshots])
 
-  // ── Global trend data (aggregated from all balances) ──
+  // ── Compute account total at a given date ──
+  const getAccountTotalAtDate = (accountId: string, upToDate: Date): number => {
+    const accountAssetsList = getAssetsByAccount(accountId).sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    )
+    const accountRecordsUpTo = getRecordsByAccount(accountId).filter((r) => new Date(r.date) <= upToDate)
+    const activeAssetIds = new Set(accountAssetsList.map((a) => a.id))
+
+    if (accountAssetsList.length > 0) {
+      let total = 0
+      for (let i = 0; i < accountAssetsList.length; i++) {
+        const asset = accountAssetsList[i]
+        const assetBals = balances
+          .filter((b) => b.assetId === asset.id)
+          .sort((a, b) => new Date(b.recordedAt).getTime() - new Date(a.recordedAt).getTime())
+        const balAtDate = assetBals.find((b) => new Date(b.recordedAt) <= upToDate)
+        const baseAmt = balAtDate ? balAtDate.amount : 0
+        const balDate = balAtDate ? new Date(balAtDate.recordedAt) : null
+
+        let assetRecs = accountRecordsUpTo
+          .filter((r) => r.assetId === asset.id && (!balDate || new Date(r.date) > balDate))
+          .reduce((sum, r) => sum + r.amount, 0)
+
+        if (i === 0) {
+          const unattributed = accountRecordsUpTo
+            .filter((r) =>
+              (r.assetId === null || (r.assetId !== null && !activeAssetIds.has(r.assetId))) &&
+              (!balDate || new Date(r.date) > balDate)
+            )
+            .reduce((sum, r) => sum + r.amount, 0)
+          assetRecs += unattributed
+        }
+
+        total += baseAmt + assetRecs
+      }
+      return total
+    }
+
+    return accountRecordsUpTo.reduce((sum, r) => sum + r.amount, 0)
+  }
+
+  // ── Global trend data (full account total per date, forward-filled) ──
   const globalTrend = useMemo(() => {
-    const dateMap = new Map<string, { net: number; pos: number; neg: number }>()
+    // Collect all unique dates from all balance snapshots
+    const allDates = new Set<string>()
     assets.forEach((asset) => {
-      const assetBalances = balances.filter((b) => b.assetId === asset.id)
-      assetBalances.forEach((b) => {
-        const dateKey = b.recordedAt.slice(0, 10)
-        const entry = dateMap.get(dateKey) || { net: 0, pos: 0, neg: 0 }
-        entry.net += b.amount
-        if (b.amount >= 0) entry.pos += b.amount
-        else entry.neg += b.amount
-        dateMap.set(dateKey, entry)
+      balances.filter((b) => b.assetId === asset.id).forEach((b) => {
+        allDates.add(b.recordedAt.slice(0, 10))
       })
     })
-    const sorted = Array.from(dateMap.entries()).sort((a, b) => a[0].localeCompare(b[0]))
-    return {
-      net: sorted.map(([date, v]) => ({ date, total: v.net })),
-      pos: sorted.map(([date, v]) => ({ date, total: v.pos })),
-      neg: sorted.map(([date, v]) => ({ date, total: Math.abs(v.neg) })),
-    }
-  }, [assets, balances])
+    const sortedDates = Array.from(allDates).sort()
 
-  // ── Monthly change (latest balance - ~30 days ago) ──
+    const lastValues: { [key: string]: number | null } = {}
+    const net: Array<{ date: string; total: number }> = []
+    const pos: Array<{ date: string; total: number }> = []
+    const neg: Array<{ date: string; total: number }> = []
+
+    sortedDates.forEach((dateStr) => {
+      const upToDate = new Date(dateStr + "T23:59:59.999")
+      let netSum = 0
+      let posSum = 0
+      let negSum = 0
+
+      accounts.forEach((acct) => {
+        const accountAssetsList = getAssetsByAccount(acct.id)
+        if (accountAssetsList.length === 0) return
+        const val = getAccountTotalAtDate(acct.id, upToDate)
+        if (val !== 0 || accountAssetsList.some(a => balances.some(b => b.assetId === a.id && b.recordedAt.slice(0, 10) === dateStr))) {
+          lastValues[acct.id] = val
+        }
+        const lastVal = lastValues[acct.id]
+        if (lastVal != null) {
+          netSum += lastVal
+          if (lastVal >= 0) posSum += lastVal
+          else negSum += lastVal
+        }
+      })
+
+      net.push({ date: dateStr, total: netSum })
+      pos.push({ date: dateStr, total: posSum })
+      neg.push({ date: dateStr, total: Math.abs(negSum) })
+    })
+
+    return { net, pos, neg }
+  }, [accounts, assets, balances])
+
+  // ── Monthly change (latest balance - ~30 days ago, based on local date) ──
   const getMonthlyChange = (): { value: number; percent: number; isPositive: boolean } => {
     const trend = globalTrend.net
     if (trend.length < 2) return { value: 0, percent: 0, isPositive: true }
     const latest = trend[trend.length - 1].total
-    const thirtyDaysAgo = new Date()
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-    const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().slice(0, 10)
+    const now = new Date()
+    const thirtyDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30)
+    const thirtyDaysAgoStr = thirtyDaysAgo.toLocaleDateString("zh-CN").replace(/\//g, "-")
     let prevTotal = latest
     for (let i = trend.length - 2; i >= 0; i--) {
       if (trend[i].date <= thirtyDaysAgoStr) {
@@ -379,16 +439,21 @@ function OverviewPageContent() {
   const monthlyChange = getMonthlyChange()
 
   // ── Total assets / liabilities for KPI ──
-  const latestNet = globalTrend.net.length > 0 ? globalTrend.net[globalTrend.net.length - 1].total : 0
-  const latestPos = globalTrend.pos.length > 0 ? globalTrend.pos[globalTrend.pos.length - 1].total : 0
-  const latestNeg = globalTrend.neg.length > 0 ? globalTrend.neg[globalTrend.neg.length - 1].total : 0
-  const posCount = accounts.filter(a => {
-    const t = accounts.reduce((s, ac) => s + getAccountTotal(ac.id).total, 0)
-    return false // computed below
-  }).length
-  // Simplified:
-  const posAccountCount = accounts.filter(a => getAccountTotal(a.id).total >= 0).length
-  const negAccountCount = accounts.length - posAccountCount
+  const totalNet = accounts.reduce((sum, acct) => sum + getAccountTotal(acct.id).total, 0)
+  const posAccounts = accounts.filter(a => getAccountTotal(a.id).total >= 0)
+  const negAccounts = accounts.filter(a => getAccountTotal(a.id).total < 0)
+  const posAccountCount = posAccounts.length
+  const negAccountCount = negAccounts.length
+  const totalPos = posAccounts.reduce((sum, acct) => sum + getAccountTotal(acct.id).total, 0)
+  const totalNeg = Math.abs(negAccounts.reduce((sum, acct) => sum + getAccountTotal(acct.id).total, 0))
+
+  // ── Year-to-date change (vs Jan 1 net worth) ──
+  const currentYear = new Date().getFullYear().toString()
+  const jan1Date = new Date(currentYear + "-01-01T23:59:59.999")
+  const ytdStartNet = accounts.reduce((sum, acct) => sum + getAccountTotalAtDate(acct.id, jan1Date), 0)
+  const ytdNetChange = totalNet - ytdStartNet
+  const ytdNetPercent = ytdStartNet !== 0 ? (ytdNetChange / ytdStartNet) * 100 : 0
+  const ytdTrend = globalTrend.net.filter(d => d.date >= currentYear + "-01-01")
 
   // ── Merged chart data (3 lines combined, filtered by period) ──
   const mergedChartData = useMemo(() => {
@@ -436,7 +501,7 @@ function OverviewPageContent() {
 
                 {/* ── 4-column KPI Cards ── */}
                 <div className="px-4 lg:px-6">
-                  <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                  <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
                     <Card className="border-l-[3px] border-l-primary">
                       <CardHeader className="pb-1">
                         <CardDescription className="flex items-center gap-2 text-xs uppercase tracking-wider">
@@ -445,8 +510,8 @@ function OverviewPageContent() {
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <div className={`font-mono text-lg md:text-2xl font-bold tracking-tight truncate max-w-full ${latestNet < 0 ? "text-destructive" : "text-success"}`}>
-                          {formatAmount(latestNet)}
+                        <div className={`font-mono text-lg md:text-2xl font-bold tracking-tight truncate max-w-full ${totalNet < 0 ? "text-destructive" : "text-success"}`}>
+                          {formatAmount(totalNet)}
                         </div>
                         <div className="h-7 w-full mt-1 mb-1">
                           <ResponsiveContainer width="100%" height={28}>
@@ -473,7 +538,7 @@ function OverviewPageContent() {
                       </CardHeader>
                       <CardContent>
                         <div className="font-mono text-lg md:text-2xl font-bold tracking-tight truncate max-w-full text-success">
-                          {formatAmount(latestPos)}
+                          {formatAmount(totalPos)}
                         </div>
                         <div className="h-7 w-full mt-1 mb-1">
                           <ResponsiveContainer width="100%" height={28}>
@@ -500,7 +565,7 @@ function OverviewPageContent() {
                       </CardHeader>
                       <CardContent>
                         <div className="font-mono text-lg md:text-2xl font-bold tracking-tight truncate max-w-full text-destructive">
-                          {formatAmount(latestNeg)}
+                          {formatAmount(totalNeg)}
                         </div>
                         <div className="h-7 w-full mt-1 mb-1">
                           <ResponsiveContainer width="100%" height={28}>
@@ -539,6 +604,44 @@ function OverviewPageContent() {
                           )}
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">较 30 天前</p>
+                      </CardContent>
+                    </Card>
+                    <Card className="border-l-[3px] border-l-[#6366F1]">
+                      <CardHeader className="pb-1">
+                        <CardDescription className="flex items-center gap-2 text-xs uppercase tracking-wider">
+                          <CalendarDays className="h-3.5 w-3.5 text-[#6366F1]" />
+                          年初至今
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <div className={`font-mono text-lg md:text-2xl font-bold tracking-tight truncate ${ytdNetChange >= 0 ? "text-success" : "text-destructive"}`}>
+                            {ytdNetChange >= 0 ? "+" : ""}{formatAmount(ytdNetChange)}
+                          </div>
+                          {ytdNetChange !== 0 && (
+                            <span className={`inline-flex items-center gap-1 font-mono text-xs font-semibold px-1.5 py-0.5 rounded-[4px] flex-shrink-0 whitespace-nowrap ${
+                              ytdNetChange > 0 ? "text-success bg-success/10" : "text-destructive bg-destructive/10"
+                            }`}>
+                              {ytdNetChange > 0 ? "↑" : "↓"} {Math.abs(ytdNetPercent).toFixed(1)}%
+                            </span>
+                          )}
+                        </div>
+                        {ytdTrend.length >= 2 && (
+                          <div className="h-7 w-full mt-1 mb-1">
+                            <ResponsiveContainer width="100%" height={28}>
+                              <AreaChart data={ytdTrend} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                                <defs>
+                                  <linearGradient id="ovYtdGrad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.3} />
+                                    <stop offset="100%" stopColor="var(--primary)" stopOpacity={0.02} />
+                                  </linearGradient>
+                                </defs>
+                                <Area type="monotone" dataKey="total" stroke="var(--primary)" strokeWidth={1.5} fill="url(#ovYtdGrad)" isAnimationActive={false} />
+                              </AreaChart>
+                            </ResponsiveContainer>
+                          </div>
+                        )}
+                        <p className="text-xs text-muted-foreground">{currentYear} 年 1 月 1 日起</p>
                       </CardContent>
                     </Card>
                   </div>

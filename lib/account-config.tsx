@@ -309,6 +309,23 @@ export const getAccountTypeConfig = (type: string) => {
   return ACCOUNT_TYPE_CONFIG[type] || ACCOUNT_TYPE_CONFIG.OTHER
 }
 
+export const getDefaultAssetName = (type: string): string => {
+  const names: Record<string, string> = {
+    CASH: "活期余额",
+    CREDIT_CARD: "账单",
+    DEBIT_CARD: "活期余额",
+    DIGITAL: "活期余额",
+    CRYPTO: "活期余额",
+    STOCK: "活期余额",
+    ONLINE_PAYMENT: "活期余额",
+    DEBT_CLAIM: "借出",
+    DEBT: "借进",
+    LOAN: "借进",
+    OTHER: "活期余额",
+  }
+  return names[type] || "活期余额"
+}
+
 export const ASSET_TYPE_CONFIG: Record<string, { label: string; icon: typeof PiggyBank }> = {
   CASH_BALANCE: { label: "现金/余额", icon: Banknote },
   DEPOSIT: { label: "存款", icon: PiggyBank },
