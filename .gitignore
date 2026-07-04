@@ -81,3 +81,5 @@ logs/error.log
 # CodeGraph index
 .codegraph/
 *.xlsx
+# Sentry Config File
+.env.sentry-build-plugin

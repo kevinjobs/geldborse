@@ -20,6 +20,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@phosphor-icons/react": "^2.1.10",
     "@prisma/client": "5",
+    "@sentry/nextjs": "^10",
     "@tanstack/react-table": "^8.21.3",
     "@types/bcrypt": "^6.0.0",
     "@types/node-cron": "^3.0.11",

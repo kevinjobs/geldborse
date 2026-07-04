@@ -1,7 +1,13 @@
+import * as Sentry from "@sentry/nextjs";
+
 export async function register() {
-  // 已取消定时任务
-  // if (process.env.NEXT_RUNTIME === "nodejs") {
-  //   const { startDailySnapshotJob } = await import("./lib/cron")
-  //   startDailySnapshotJob()
-  // }
+  if (process.env.NEXT_RUNTIME === "nodejs") {
+    await import("./sentry.server.config");
+  }
+
+  if (process.env.NEXT_RUNTIME === "edge") {
+    await import("./sentry.edge.config");
+  }
 }
+
+export const onRequestError = Sentry.captureRequestError;
