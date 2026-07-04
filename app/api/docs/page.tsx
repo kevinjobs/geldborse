@@ -29,13 +29,13 @@ function MethodBadge({ method }: { method: Endpoint["method"] }) {
 
 function EndpointRow({ endpoint }: { endpoint: Endpoint }) {
   return (
-    <div className="border border-[#2C2C2E] rounded-[12px] p-4 bg-[#1A1A1A] space-y-3">
+    <div className="border border-border rounded-[12px] p-4 bg-card space-y-3">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2 min-w-0">
           <MethodBadge method={endpoint.method} />
           <code className="font-mono text-sm text-foreground break-all">{endpoint.path}</code>
         </div>
-        <Badge variant="outline" className="shrink-0 text-[10px] px-2 py-0.5 text-muted-foreground border-[#2C2C2E]">
+        <Badge variant="outline" className="shrink-0 text-[10px] px-2 py-0.5 text-muted-foreground border-border">
           {endpoint.auth}
         </Badge>
       </div>
@@ -43,7 +43,7 @@ function EndpointRow({ endpoint }: { endpoint: Endpoint }) {
       {endpoint.body && (
         <div>
           <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">请求体</span>
-          <pre className="mt-1 bg-[#121212] border border-[#2C2C2E] rounded-[8px] p-3 overflow-x-auto">
+          <pre className="mt-1 bg-muted border border-border rounded-[8px] p-3 overflow-x-auto">
             <code className="text-xs text-foreground font-mono leading-relaxed">{endpoint.body}</code>
           </pre>
         </div>
@@ -134,15 +134,15 @@ export default function ApiDocsPage() {
           </CardHeader>
           <CardContent className="space-y-4 text-sm text-muted-foreground">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="border border-[#2C2C2E] rounded-[12px] p-4 bg-[#1A1A1A]">
+              <div className="border border-border rounded-[12px] p-4 bg-card">
                 <div className="font-medium text-foreground mb-1">Session</div>
                 <p className="text-xs">登录后自动设置 httpOnly cookie <code className="font-mono">auth_token</code>，浏览器端自动携带。</p>
               </div>
-              <div className="border border-[#2C2C2E] rounded-[12px] p-4 bg-[#1A1A1A]">
+              <div className="border border-border rounded-[12px] p-4 bg-card">
                 <div className="font-medium text-foreground mb-1">API Key</div>
                 <p className="text-xs"><code className="font-mono">Authorization: Bearer gb_xxxxx</code> 头传递。在设置页面创建，支持 scope 权限控制。</p>
               </div>
-              <div className="border border-[#2C2C2E] rounded-[12px] p-4 bg-[#1A1A1A]">
+              <div className="border border-border rounded-[12px] p-4 bg-card">
                 <div className="font-medium text-foreground mb-1">公共接口</div>
                 <p className="text-xs"><code className="font-mono">/api/auth/login</code>、<code className="font-mono">/api/auth/register</code>、<code className="font-mono">/api/auth/logout</code> 无需认证。</p>
               </div>
@@ -163,7 +163,7 @@ export default function ApiDocsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-[#2C2C2E]">
+                  <tr className="border-b border-border">
                     <th className="text-left py-2 text-muted-foreground font-normal text-xs uppercase tracking-wider">Scope</th>
                     <th className="text-left py-2 text-muted-foreground font-normal text-xs uppercase tracking-wider">说明</th>
                     <th className="text-left py-2 text-muted-foreground font-normal text-xs uppercase tracking-wider">分组</th>
@@ -186,7 +186,7 @@ export default function ApiDocsPage() {
                     ["read:*", "所有只读权限（匹配所有 :read scope）", "通配"],
                     ["write:*", "所有写入权限（匹配所有 :write scope）", "通配"],
                   ].map(([scope, label, group]) => (
-                    <tr key={scope} className="border-b border-[#2C2C2E] hover:bg-[#252525] transition-colors">
+                    <tr key={scope} className="border-b border-border hover:bg-muted transition-colors">
                       <td className="py-2.5"><code className="font-mono text-xs text-primary">{scope}</code></td>
                       <td className="py-2.5 text-muted-foreground">{label}</td>
                       <td className="py-2.5 text-muted-foreground">{group}</td>
@@ -663,6 +663,14 @@ export default function ApiDocsPage() {
                   errors: "400 — 不能删除自己, 404 — 用户不存在, 500",
                   description: "管理员：删除用户。不能删除自己。",
                 },
+                {
+                  method: "GET", path: "/api/avatars/presets",
+                  auth: "无需认证",
+                  body: undefined,
+                  response: "200 — { presets: [{ seed, style, dataUrl }] }（16 种 DiceBear 风格）",
+                  errors: "500",
+                  description: "获取 DiceBear 头像预设列表。返回 16 种风格的随机种子 SVG 头像（avataaars、micah、openPeeps、lorelei、adventurer、notionists、miniavs、funEmoji、personas、dylan、bigEars、croodles、toonHead、bottts、pixelArt、bigSmile）。",
+                },
               ]}
             />
           </div>
@@ -677,7 +685,7 @@ export default function ApiDocsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-[#2C2C2E]">
+                  <tr className="border-b border-border">
                     <th className="text-left py-2 text-muted-foreground font-normal text-xs uppercase tracking-wider">状态码</th>
                     <th className="text-left py-2 text-muted-foreground font-normal text-xs uppercase tracking-wider">含义</th>
                   </tr>
@@ -691,7 +699,7 @@ export default function ApiDocsPage() {
                     ["429", "频率限制：登录接口短时间内重复请求"],
                     ["500", "服务端内部错误：数据库异常等"],
                   ].map(([code, desc]) => (
-                    <tr key={code} className="border-b border-[#2C2C2E] hover:bg-[#252525] transition-colors">
+                    <tr key={code} className="border-b border-border hover:bg-muted transition-colors">
                       <td className="py-2.5"><code className="font-mono text-xs text-destructive">{code}</code></td>
                       <td className="py-2.5 text-muted-foreground">{desc}</td>
                     </tr>
@@ -714,7 +722,7 @@ export default function ApiDocsPage() {
           <CardContent className="space-y-4">
             <div>
               <span className="text-sm font-medium text-foreground">注册新用户</span>
-              <pre className="mt-1 bg-[#121212] border border-[#2C2C2E] rounded-[8px] p-3 overflow-x-auto">
+              <pre className="mt-1 bg-muted border border-border rounded-[8px] p-3 overflow-x-auto">
                 <code className="text-xs text-foreground font-mono leading-relaxed">{`curl -X POST https://example.com/api/auth/register \\
   -H "Content-Type: application/json" \\
   -d '{"email":"user@example.com","password":"123456","name":"用户名"}'`}</code>
@@ -722,14 +730,14 @@ export default function ApiDocsPage() {
             </div>
             <div>
               <span className="text-sm font-medium text-foreground">使用 API Key 获取账户列表</span>
-              <pre className="mt-1 bg-[#121212] border border-[#2C2C2E] rounded-[8px] p-3 overflow-x-auto">
+              <pre className="mt-1 bg-muted border border-border rounded-[8px] p-3 overflow-x-auto">
                 <code className="text-xs text-foreground font-mono leading-relaxed">{`curl https://example.com/api/accounts \\
   -H "Authorization: Bearer gb_your_api_key_here"`}</code>
               </pre>
             </div>
             <div>
               <span className="text-sm font-medium text-foreground">创建一条收入记录</span>
-              <pre className="mt-1 bg-[#121212] border border-[#2C2C2E] rounded-[8px] p-3 overflow-x-auto">
+              <pre className="mt-1 bg-muted border border-border rounded-[8px] p-3 overflow-x-auto">
                 <code className="text-xs text-foreground font-mono leading-relaxed">{`curl -X POST https://example.com/api/records \\
   -H "Authorization: Bearer gb_your_api_key_here" \\
   -H "Content-Type: application/json" \\
@@ -738,7 +746,7 @@ export default function ApiDocsPage() {
             </div>
             <div>
               <span className="text-sm font-medium text-foreground">生成指定时间点的资产快照</span>
-              <pre className="mt-1 bg-[#121212] border border-[#2C2C2E] rounded-[8px] p-3 overflow-x-auto">
+              <pre className="mt-1 bg-muted border border-border rounded-[8px] p-3 overflow-x-auto">
                 <code className="text-xs text-foreground font-mono leading-relaxed">{`curl -X POST https://example.com/api/daily-snapshots \\
   -H "Authorization: Bearer gb_your_api_key_here" \\
   -H "Content-Type: application/json" \\
@@ -747,7 +755,7 @@ export default function ApiDocsPage() {
             </div>
             <div>
               <span className="text-sm font-medium text-foreground">批量导入数据</span>
-              <pre className="mt-1 bg-[#121212] border border-[#2C2C2E] rounded-[8px] p-3 overflow-x-auto">
+              <pre className="mt-1 bg-muted border border-border rounded-[8px] p-3 overflow-x-auto">
                 <code className="text-xs text-foreground font-mono leading-relaxed">{`curl -X POST https://example.com/api/import \\
   -H "Authorization: Bearer gb_your_api_key_here" \\
   -H "Content-Type: application/json" \\
@@ -764,7 +772,7 @@ export default function ApiDocsPage() {
             <CardDescription>常见集成场景的操作顺序</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6 text-sm">
-            <div className="border border-[#2C2C2E] rounded-[12px] p-4 bg-[#1A1A1A]">
+            <div className="border border-border rounded-[12px] p-4 bg-card">
               <div className="font-medium text-foreground mb-2">场景 A：自动化数据采集</div>
               <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
                 <li>创建 API Key（设置页面勾选 <code className="font-mono text-xs">records:write</code> 和 <code className="font-mono text-xs">snapshots:write</code>）</li>
@@ -773,7 +781,7 @@ export default function ApiDocsPage() {
                 <li>使用 <code className="font-mono text-xs">GET /api/daily-snapshots</code> 获取趋势数据</li>
               </ol>
             </div>
-            <div className="border border-[#2C2C2E] rounded-[12px] p-4 bg-[#1A1A1A]">
+            <div className="border border-border rounded-[12px] p-4 bg-card">
               <div className="font-medium text-foreground mb-2">场景 B：数据迁移/备份</div>
               <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
                 <li><code className="font-mono text-xs">GET /api/accounts/full</code> 导出完整数据</li>
@@ -781,7 +789,7 @@ export default function ApiDocsPage() {
                 <li>验证导入结果（对比 account 数量和 snapshot 数量）</li>
               </ol>
             </div>
-            <div className="border border-[#2C2C2E] rounded-[12px] p-4 bg-[#1A1A1A]">
+            <div className="border border-border rounded-[12px] p-4 bg-card">
               <div className="font-medium text-foreground mb-2">场景 C：AI 助手查询资产状况</div>
               <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
                 <li><code className="font-mono text-xs">GET /api/auth/me</code> 验证身份</li>

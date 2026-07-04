@@ -21,22 +21,26 @@ English | [简体中文](./README.md)
 
 ## ✨ Features
 
-- 📊 **Financial Overview** - Intuitive dashboard displaying assets, liabilities, and net worth
-- 💳 **Multi-Account Management** - Support for cash, bank cards, credit cards, investment accounts, and more
+- 📊 **Financial Overview** - Intuitive dashboard displaying assets, liabilities, and net worth with consistent display across account management
+- 💳 **Multi-Account Management** - Support for cash, bank cards, credit cards, investment accounts, and more, with real-time snapshot and transaction totals
 - 📝 **Income & Expense Tracking** - Quickly record daily income and expenses with category management
-- 📸 **Asset Snapshots** - Periodically record asset status to track financial trends
+- 📸 **Asset Snapshots** - Periodically record asset status to track financial trends with timezone auto-detection
 - 📈 **Data Visualization** - Use charts to display income/expense trends and asset distribution
 - 📤 **Data Export** - Export financial reports in Excel and PDF formats
-- 🔐 **User Authentication** - Secure email registration and login system
+- 📥 **Data Import** - Import historical data
+- 🔐 **User Authentication** - Secure email registration and login system with login history tracking
+- 🔑 **API Key** - API key authentication with configurable scopes and expiration
+- 👥 **Multi-user Collaboration** - Account sharing with role-based permissions (Owner/Editor/Viewer)
 - 🌙 **Dark Mode** - Support for light/dark theme switching
 - 📱 **Responsive Design** - Adapted for desktop and mobile devices
+- 🛡️ **Admin Panel** - User management dashboard
 
 ## 🚀 Quick Start
 
 ### Requirements
 
+- Bun (recommended) or npm
 - Node.js 18.0 or higher
-- Bun or npm/yarn/pnpm
 
 ### Installation
 
@@ -51,11 +55,27 @@ cd geldborse
 
 ```bash
 bun install
-# or
-npm install
 ```
 
-3. **Configure database**
+3. **Configure environment variables**
+
+Copy `.env.example` to `.env` and configure:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` file:
+
+```env
+# Database (PostgreSQL)
+DATABASE_URL="postgresql://user:password@localhost:5432/geldborse"
+
+# App configuration
+NEXT_PUBLIC_APP_URL=http://localhost:8888
+```
+
+4. **Configure database**
 
 ```bash
 # Generate Prisma client
@@ -68,15 +88,13 @@ bunx prisma migrate dev
 bunx prisma db seed
 ```
 
-4. **Start development server**
+5. **Start development server**
 
 ```bash
 bun dev
-# or
-npm run dev
 ```
 
-5. **Access the application**
+6. **Access the application**
 
 Open your browser and visit [http://localhost:8888](http://localhost:8888)
 
@@ -84,28 +102,63 @@ Open your browser and visit [http://localhost:8888](http://localhost:8888)
 
 ```
 geldborse/
-├── app/                    # Next.js App Router
-│   ├── api/               # API routes
-│   ├── auth/              # Authentication pages (login/register)
-│   ├── accounts/          # Account management
-│   ├── overview/          # Overview dashboard
-│   ├── record/            # Income & expense records
-│   ├── snapshots/         # Asset snapshots
-│   ├── export/            # Data export
-│   ├── settings/          # User settings
-│   └── page.tsx           # Home page
-├── components/            # React components
-│   ├── ui/               # UI components (Shadcn UI)
-│   ├── app-sidebar.tsx   # Sidebar
-│   ├── nav-user.tsx      # User navigation
-│   └── ...
-├── lib/                   # Utilities and configurations
-│   ├── auth-context.tsx  # Authentication context
-│   └── utils.ts          # Utility functions
-├── prisma/               # Prisma database configuration
-│   └── schema.prisma     # Database models
-├── public/               # Static assets
-└── types/                # TypeScript type definitions
+├── app/                        # Next.js App Router (page routes)
+│   ├── api/                    # API routes (28 endpoints)
+│   │   ├── auth/               # Auth (login, register, logout, me, login-history)
+│   │   ├── accounts/           # Account CRUD + /full, /[id]/assets
+│   │   ├── assets/             # Asset CRUD
+│   │   ├── balances/           # Balance CRUD
+│   │   ├── records/            # Transaction CRUD
+│   │   ├── daily-snapshots/    # Daily snapshot CRUD
+│   │   ├── api-keys/           # API key management
+│   │   ├── admin/users/        # Admin user management
+│   │   ├── import/             # Data import
+│   │   ├── clear-data/         # Data clearing
+│   │   └── docs/               # API documentation page
+│   ├── auth/                   # Authentication pages (login/register)
+│   ├── overview/               # Overview dashboard
+│   ├── accounts/               # Account management
+│   ├── record/                 # Income & expense records + add
+│   ├── snapshots/              # Asset snapshots
+│   ├── export/                 # Data export
+│   ├── settings/               # User settings
+│   ├── help/                   # Help page
+│   └── page.tsx                # Landing page (marketing)
+├── components/                 # React components
+│   ├── ui/                     # 29 Shadcn UI components
+│   ├── accounts/               # Account-related components
+│   ├── app-sidebar.tsx         # Sidebar navigation
+│   ├── chart-area-interactive.tsx # Interactive chart
+│   ├── data-table.tsx          # Data table (TanStack)
+│   ├── protected-route.tsx     # Protected route
+│   ├── responsive-table.tsx    # Responsive table
+│   ├── section-cards.tsx       # KPI cards section
+│   ├── site-header.tsx         # Site header
+│   ├── theme-provider.tsx      # Theme provider
+│   └── theme-toggle.tsx        # Theme toggle
+├── lib/                        # Utilities and configurations
+│   ├── prisma.ts               # Prisma client singleton
+│   ├── auth.ts                 # Server-side auth (Cookie + API Key)
+│   ├── auth-context.tsx        # Client auth context
+│   ├── jwt.ts                  # JWT token handling
+│   ├── api-key.ts              # API key management
+│   ├── permissions.ts          # Permission/scope system
+│   ├── rate-limit.ts           # Rate limiting
+│   ├── account-config.tsx      # Account config (Chinese bank colors)
+│   ├── account-logos.tsx       # Bank logo components
+│   ├── export-utils.ts         # Excel/PDF export logic
+│   ├── format.ts               # Number/date formatting
+│   └── utils.ts                # General utilities
+├── prisma/                     # Prisma database configuration
+│   ├── schema.prisma           # 8 data models
+│   └── seed.ts                 # Database seeder
+├── hooks/                      # Custom hooks
+│   └── use-mobile.ts           # Mobile detection
+├── types/                      # TypeScript type definitions
+├── test/                       # Test config and mocks
+├── scripts/                    # Utility scripts
+├── public/                     # Static assets
+└── docs/                       # Project documentation
 ```
 
 ## 🛠️ Tech Stack
@@ -113,11 +166,19 @@ geldborse/
 - **Framework**: [Next.js](https://nextjs.org/) 16.2.1 (App Router)
 - **Frontend**: [React](https://react.dev/) 19.2.4, [TypeScript](https://www.typescriptlang.org/)
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/) 4.0, [Shadcn UI](https://ui.shadcn.com/)
-- **Database**: [Prisma](https://www.prisma.io/) + SQLite
-- **Authentication**: bcrypt password encryption
-- **Charts**: [Chart.js](https://www.chartjs.org/), [Recharts](https://recharts.org/)
-- **Icons**: [Phosphor Icons](https://phosphoricons.com/)
+- **Database**: [Prisma](https://www.prisma.io/) 5 + PostgreSQL
+- **Authentication**: Custom JWT + bcrypt, API key authentication
+- **Charts**: [Recharts](https://recharts.org/) 2.15, [Chart.js](https://www.chartjs.org/)
+- **Icons**: [Phosphor Icons](https://phosphoricons.com/), [Lucide React](https://lucide.dev/)
 - **Export**: [SheetJS](https://sheetjs.com/) (Excel), [jsPDF](https://parall.ax/products/jspdf) (PDF)
+- **Testing**: [Vitest](https://vitest.dev/), [React Testing Library](https://testing-library.com/)
+- **Drag & Drop**: [DnD Kit](https://dndkit.com/)
+- **Form Validation**: [Zod](https://zod.dev/)
+- **Notifications**: [Sonner](https://sonner.emilkowal.ski/)
+- **Themes**: [next-themes](https://github.com/pacocoursey/next-themes)
+- **Monitoring**: [Sentry](https://sentry.io/)
+- **Date Handling**: [date-fns](https://date-fns.org/)
+- **Package Manager**: Bun (using `registry.npmmirror.com` mirror)
 
 ## 📖 User Guide
 
@@ -134,31 +195,38 @@ geldborse/
 | Feature | Path | Description |
 |---------|------|-------------|
 | Overview | `/overview` | View assets, liabilities, net worth, and income/expense trends |
-| Add Record | `/record/add` | Quickly record income or expenses |
+| Add Record | `/record/add` | Quickly record income or expenses with timezone auto-detection |
 | Records | `/record` | View and manage all income and expense records |
 | Accounts | `/accounts` | Manage bank accounts, cash, investments, etc. |
-| Snapshots | `/snapshots` | Periodically record asset status |
+| Snapshots | `/snapshots` | Periodically record asset status and track financial trends |
 | Export | `/export` | Export Excel or PDF reports |
+| Import | `/api/import` | Import historical data |
 | Settings | `/settings` | Modify personal profile |
+| Help | `/help` | View usage documentation |
 
 ## 🔧 Configuration
 
 ### Environment Variables
 
-Create a `.env.local` file:
+Configure in `.env` file:
 
 ```env
-# Database
-DATABASE_URL="file:./dev.db"
+# Database (PostgreSQL)
+DATABASE_URL="postgresql://user:password@localhost:5432/geldborse"
 
 # App configuration
 NEXT_PUBLIC_APP_URL=http://localhost:8888
+
+# Sentry (optional)
+SENTRY_DSN=""
+SENTRY_AUTH_TOKEN=""
 ```
 
 ### Custom Configuration
 
 - **Port**: Default is 8888, can be modified in `package.json`
-- **Database**: Default is SQLite, can be switched to PostgreSQL, MySQL, etc.
+- **Database**: PostgreSQL (via Prisma ORM)
+- **Theme**: Customize theme colors in `app/globals.css` CSS variables
 
 ## 🤝 Contributing
 
@@ -172,13 +240,14 @@ Issues and Pull Requests are welcome!
 
 ## 📝 Roadmap
 
+- [x] Data import functionality
+- [x] Multi-user collaboration (account sharing)
+- [x] API key authentication
 - [ ] Multi-currency support
 - [ ] Budget management
 - [ ] Recurring bill reminders
-- [ ] Data import functionality
 - [ ] Mobile App
 - [ ] Cloud synchronization
-- [ ] Multi-user collaboration
 
 ## 📄 License
 
@@ -190,6 +259,8 @@ This project is open-sourced under the [MIT](LICENSE) License.
 - [Shadcn UI](https://ui.shadcn.com/) - UI component library
 - [Radix UI](https://www.radix-ui.com/) - Low-level UI primitives
 - [Phosphor Icons](https://phosphoricons.com/) - Icon library
+- [Prisma](https://www.prisma.io/) - Database ORM
+- [Sentry](https://sentry.io/) - Error monitoring
 
 ---
 
