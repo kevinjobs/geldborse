@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     let duplicatesCount = 0
     let invalidCount = 0
 
-    // 导入账户和资产（逐条处理，避免 Neon 事务超时限制）
+    // ── 导入账户和资产 ──
     for (const accountData of importData.data.accounts) {
       try {
         if (!accountData.name || typeof accountData.name !== 'string') {
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
 
         let accountId
         if (existingAccount) {
-          const updatedAccount = await prisma.account.update({
+          await prisma.account.update({
             where: { id: existingAccount.id },
             data: {
               type: accountData.type,
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
               initialBalance: accountData.initialBalance || 0
             }
           })
-          accountId = updatedAccount.id
+          accountId = existingAccount.id
           duplicatesCount++
         } else {
           const newAccount = await prisma.account.create({
@@ -72,91 +72,28 @@ export async function POST(request: NextRequest) {
                 where: { accountId, name: assetData.name }
               })
 
-              if (existingAsset) {
-                await prisma.asset.update({
-                  where: { id: existingAsset.id },
-                  data: { type: assetData.type, amount: assetData.amount }
-                })
-                duplicatesCount++
+if (existingAsset) {
+                  await prisma.asset.update({
+                    where: { id: existingAsset.id },
+                    data: { type: assetData.type, amount: assetData.amount }
+                  })
+                  duplicatesCount++
 
-                if (assetData.balances && Array.isArray(assetData.balances)) {
-                  for (const balanceData of assetData.balances) {
-                    try {
-                      if (balanceData.amount === undefined || !balanceData.recordedAt) {
-                        invalidCount++
-                        continue
-                      }
+                  const result = await importBalances(prisma, existingAsset.id, assetData.balances)
+                  balancesCount += result.created
+                  duplicatesCount += result.duplicates
+                  invalidCount += result.invalid
+                } else {
+                  const newAsset = await prisma.asset.create({
+                    data: { name: assetData.name, type: assetData.type, amount: assetData.amount, accountId }
+                  })
+                  assetsCount++
 
-                      const existingBalance = await prisma.balance.findFirst({
-                        where: {
-                          assetId: existingAsset.id,
-                          recordedAt: new Date(balanceData.recordedAt)
-                        }
-                      })
-
-                      if (existingBalance) {
-                        duplicatesCount++
-                      } else {
-                        await prisma.balance.create({
-                          data: {
-                            amount: balanceData.amount,
-                            recordedAt: new Date(balanceData.recordedAt),
-                            assetId: existingAsset.id
-                          }
-                        })
-                        balancesCount++
-                      }
-                    } catch (error) {
-                      console.error('处理余额失败:', error)
-                      invalidCount++
-                    }
-                  }
+                  const result = await importBalances(prisma, newAsset.id, assetData.balances)
+                  balancesCount += result.created
+                  duplicatesCount += result.duplicates
+                  invalidCount += result.invalid
                 }
-              } else {
-                const newAsset = await prisma.asset.create({
-                  data: {
-                    name: assetData.name,
-                    type: assetData.type,
-                    amount: assetData.amount,
-                    accountId
-                  }
-                })
-                assetsCount++
-
-                if (assetData.balances && Array.isArray(assetData.balances)) {
-                  for (const balanceData of assetData.balances) {
-                    try {
-                      if (balanceData.amount === undefined || !balanceData.recordedAt) {
-                        invalidCount++
-                        continue
-                      }
-
-                      const existingBalance = await prisma.balance.findFirst({
-                        where: {
-                          assetId: newAsset.id,
-                          recordedAt: new Date(balanceData.recordedAt)
-                        }
-                      })
-
-                      if (existingBalance) {
-                        duplicatesCount++
-                      } else {
-                        await prisma.balance.create({
-                          data: {
-                            amount: balanceData.amount,
-                            recordedAt: new Date(balanceData.recordedAt),
-                            assetId: newAsset.id
-                          }
-                        })
-                        balancesCount++
-                      }
-                    } catch (error) {
-                      console.error('处理余额失败:', error)
-                      invalidCount++
-                    }
-                  }
-                }
-              }
             } catch (error) {
               console.error('处理资产失败:', error)
               invalidCount++
@@ -169,23 +106,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 导入收支记录
+    // ── 导入收支记录 ──
     if (importData.data.records && Array.isArray(importData.data.records)) {
       for (const recordData of importData.data.records) {
         try {
           const account = await prisma.account.findFirst({
             where: { userId, name: recordData.account?.name }
           })
-
-          if (!account) {
-            invalidCount++
-            continue
-          }
-
-          if (!recordData.date || !recordData.amount || !recordData.type) {
-            invalidCount++
-            continue
-          }
+          if (!account) { invalidCount++; continue }
+          if (!recordData.date || !recordData.amount || !recordData.type) { invalidCount++; continue }
 
           const existingRecord = await prisma.record.findFirst({
             where: {
@@ -206,7 +135,6 @@ export async function POST(request: NextRequest) {
               })
               if (asset) assetId = asset.id
             }
-
             await prisma.record.create({
               data: {
                 date: new Date(recordData.date),
@@ -226,46 +154,57 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 导入快照
+    // ── 导入快照（批量） ──
     if (importData.data.snapshots && Array.isArray(importData.data.snapshots)) {
+      const existingSnapshots = await prisma.dailySnapshot.findMany({
+        where: { account: { userId } },
+        select: { accountId: true, assetId: true, snapshotAt: true }
+      })
+      const existingSnapshotKeys = new Set(
+        existingSnapshots.map(s => `${s.accountId}|${s.assetId || ''}|${s.snapshotAt.toISOString()}`)
+      )
+
+      const newSnapshotRecords: { accountId: string; assetId: string | null; amount: number; snapshotAt: Date }[] = []
+      let snapInvalid = 0
+
       for (const snapshotData of importData.data.snapshots) {
         try {
           const account = await prisma.account.findFirst({
             where: { userId, name: snapshotData.account?.name }
           })
+          if (!account) continue
 
-          if (account) {
-            let assetId = null
-            if (snapshotData.asset?.name) {
-              const asset = await prisma.asset.findFirst({
-                where: { accountId: account.id, name: snapshotData.asset.name }
-              })
-              if (asset) assetId = asset.id
-            }
-
-            const existingSnapshot = await prisma.dailySnapshot.findFirst({
-              where: {
-                accountId: account.id,
-                assetId,
-                snapshotAt: new Date(snapshotData.snapshotAt)
-              }
+          let assetId: string | null = null
+          if (snapshotData.asset?.name) {
+            const asset = await prisma.asset.findFirst({
+              where: { accountId: account.id, name: snapshotData.asset.name }
             })
+            if (asset) assetId = asset.id
+          }
 
-            if (!existingSnapshot) {
-              await prisma.dailySnapshot.create({
-                data: {
-                  accountId: account.id,
-                  assetId,
-                  amount: snapshotData.amount,
-                  snapshotAt: new Date(snapshotData.snapshotAt)
-                }
-              })
-              snapshotsCount++
-            }
+          const key = `${account.id}|${assetId || ''}|${new Date(snapshotData.snapshotAt).toISOString()}`
+          if (existingSnapshotKeys.has(key)) {
+            duplicatesCount++
+          } else {
+            newSnapshotRecords.push({
+              accountId: account.id,
+              assetId,
+              amount: snapshotData.amount,
+              snapshotAt: new Date(snapshotData.snapshotAt)
+            })
+            existingSnapshotKeys.add(key)
           }
         } catch (error) {
           console.error('处理快照失败:', error)
+          snapInvalid++
         }
+      }
+
+      invalidCount += snapInvalid
+
+      if (newSnapshotRecords.length > 0) {
+        await prisma.dailySnapshot.createMany({ data: newSnapshotRecords })
+        snapshotsCount += newSnapshotRecords.length
       }
     }
 
@@ -282,4 +221,41 @@ export async function POST(request: NextRequest) {
     console.error('导入数据失败:', error)
     return NextResponse.json({ error: "导入数据失败" }, { status: 500 })
   }
+}
+
+// 辅助函数：批量导入余额（1次查重查询 + 1次批量写入）
+async function importBalances(
+  client: typeof prisma,
+  assetId: string,
+  balanceDataList: { amount: number; recordedAt: string }[] | undefined
+): Promise<{ created: number; duplicates: number; invalid: number }> {
+  if (!balanceDataList || !Array.isArray(balanceDataList) || balanceDataList.length === 0) {
+    return { created: 0, duplicates: 0, invalid: 0 }
+  }
+
+  const valid = balanceDataList.filter(b => b.amount !== undefined && b.recordedAt)
+  const invalid = balanceDataList.length - valid.length
+
+  if (valid.length === 0) return { created: 0, duplicates: 0, invalid }
+
+  const existing = await client.balance.findMany({
+    where: { assetId },
+    select: { recordedAt: true }
+  })
+  const existingKeys = new Set(existing.map(b => b.recordedAt.toISOString()))
+
+  const newBalances = valid.filter(b => !existingKeys.has(new Date(b.recordedAt).toISOString()))
+  const duplicates = valid.length - newBalances.length
+
+  if (newBalances.length > 0) {
+    await client.balance.createMany({
+      data: newBalances.map(b => ({
+        amount: b.amount,
+        recordedAt: new Date(b.recordedAt),
+        assetId
+      }))
+    })
+  }
+
+  return { created: newBalances.length, duplicates, invalid }
 }
