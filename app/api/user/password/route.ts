@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { authenticateRequest } from '@/lib/auth';
 import bcrypt from 'bcrypt';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 export async function PUT(request: NextRequest) {
   try {
@@ -16,6 +17,10 @@ export async function PUT(request: NextRequest) {
     const auth = await authenticateRequest(request, { rejectApiKey: true });
     if (auth instanceof NextResponse) return auth;
     const { userId } = auth;
+
+    if (!checkRateLimit(`pwd:${userId}`)) {
+      return NextResponse.json({ error: '密码修改尝试过于频繁，请稍后再试' }, { status: 429 });
+    }
 
     // 查找用户
     const user = await prisma.user.findUnique({ where: { id: userId } });

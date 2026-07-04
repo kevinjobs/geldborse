@@ -73,12 +73,16 @@ export async function PUT(
     }
   }
   
-  let finalAmount = parseFloat(amount)
-  if (type === "EXPENSE") {
-    finalAmount = -Math.abs(finalAmount)
-  } else {
-    finalAmount = Math.abs(finalAmount)
-  }
+    const parsedAmount = parseFloat(amount)
+    if (isNaN(parsedAmount) || !isFinite(parsedAmount)) {
+      return NextResponse.json({ error: "金额无效" }, { status: 400 })
+    }
+    let finalAmount = parsedAmount
+    if (type === "EXPENSE") {
+      finalAmount = -Math.abs(finalAmount)
+    } else {
+      finalAmount = Math.abs(finalAmount)
+    }
   
   const record = await prisma.record.update({
     where: { id },

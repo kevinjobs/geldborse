@@ -97,9 +97,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "资产不存在或不属于当前用户" }, { status: 400 })
   }
 
+  const parsedAmount = parseFloat(amount)
+  if (isNaN(parsedAmount) || !isFinite(parsedAmount)) {
+    return NextResponse.json({ error: "金额无效" }, { status: 400 })
+  }
+
   const balance = await prisma.balance.create({
     data: {
-      amount: parseFloat(amount),
+      amount: parsedAmount,
       recordedAt: new Date(recordedAt),
       assetId,
     },

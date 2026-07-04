@@ -65,27 +65,34 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "账户不存在或不属于当前用户" }, { status: 400 })
   }
 
-  const asset = await prisma.asset.create({
-    data: {
-      name,
-      type: type || "DEPOSIT",
-      amount: parseFloat(amount) || 0,
-      accountId,
-    },
-    include: { account: true },
-  })
+  const parsedAmount = parseFloat(amount)
+  if (isNaN(parsedAmount) || !isFinite(parsedAmount)) {
+    return NextResponse.json({ error: "金额无效" }, { status: 400 })
+  }
 
-  // Auto-create first balance snapshot from the initial amount
-  await prisma.balance.create({
-    data: {
-      amount: parseFloat(amount) || 0,
-      recordedAt: new Date(),
-      assetId: asset.id,
-    },
+  const { id: assetId } = await prisma.$transaction(async (tx) => {
+    const newAsset = await tx.asset.create({
+      data: {
+        name,
+        type: type || "DEPOSIT",
+        amount: parsedAmount,
+        accountId,
+      },
+    })
+
+    await tx.balance.create({
+      data: {
+        amount: parsedAmount,
+        recordedAt: new Date(),
+        assetId: newAsset.id,
+      },
+    })
+
+    return newAsset
   })
 
   const assetWithBalances = await prisma.asset.findUnique({
-    where: { id: asset.id },
+    where: { id: assetId },
     include: { account: true, balances: { orderBy: { recordedAt: "desc" } } },
   })
 

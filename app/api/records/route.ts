@@ -58,7 +58,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    let finalAmount = parseFloat(amount)
+    const parsedAmount = parseFloat(amount)
+    if (isNaN(parsedAmount) || !isFinite(parsedAmount)) {
+      return NextResponse.json({ error: "金额无效" }, { status: 400 })
+    }
+    let finalAmount = parsedAmount
     if (type === "EXPENSE") {
       finalAmount = -Math.abs(finalAmount)
     } else {

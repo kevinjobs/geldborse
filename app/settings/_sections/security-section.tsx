@@ -20,9 +20,8 @@ export default function SecuritySection() {
   const [loadingPassword, setLoadingPassword] = useState(false)
   const [showPasswordDialog, setShowPasswordDialog] = useState(false)
 
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false)
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true)
-  const [loadingSecurity, setLoadingSecurity] = useState(false)
+  const [twoFactorEnabled] = useState(false)
+  const [notificationsEnabled] = useState(true)
 
   const [loginHistories, setLoginHistories] = useState<any[]>([])
   const [loadingHistories, setLoadingHistories] = useState(true)
@@ -35,7 +34,8 @@ export default function SecuritySection() {
       if (!user) return
       const response = await fetch("/api/user/password", {
         method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${user.id}` },
+        headers: { "Content-Type": "application/json" },
+        credentials: 'include',
         body: JSON.stringify({ currentPassword, newPassword }),
       })
       if (!response.ok) { const error = await response.json(); throw new Error(error.error || "密码修改失败") }
@@ -46,25 +46,11 @@ export default function SecuritySection() {
     finally { setLoadingPassword(false) }
   }
 
-  const handleTwoFactorToggle = async () => {
-    setLoadingSecurity(true)
-    try { setTwoFactorEnabled(!twoFactorEnabled); toast.success(twoFactorEnabled ? "两步验证已禁用" : "两步验证已启用") }
-    catch { toast.error("操作失败，请重试") }
-    finally { setLoadingSecurity(false) }
-  }
-
-  const handleNotificationsToggle = async () => {
-    setLoadingSecurity(true)
-    try { setNotificationsEnabled(!notificationsEnabled); toast.success(notificationsEnabled ? "通知已禁用" : "通知已启用") }
-    catch { toast.error("操作失败，请重试") }
-    finally { setLoadingSecurity(false) }
-  }
-
   const fetchLoginHistories = async () => {
     if (!user) return
     setLoadingHistories(true)
     try {
-      const res = await fetch("/api/auth/login-history", { headers: { Authorization: `Bearer ${user.id}` } })
+      const res = await fetch("/api/auth/login-history", { credentials: 'include' })
       if (!res.ok) { setLoginHistories([]); return }
       const data = await res.json()
       setLoginHistories(Array.isArray(data) ? data : [])
@@ -77,7 +63,8 @@ export default function SecuritySection() {
     try {
       const res = await fetch("/api/auth/login-history", {
         method: "DELETE",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${user.id}` },
+        headers: { "Content-Type": "application/json" },
+        credentials: 'include',
         body: JSON.stringify({ id }),
       })
       if (res.ok) { toast.success("登出成功"); fetchLoginHistories() }
@@ -135,12 +122,12 @@ export default function SecuritySection() {
         <CardContent>
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <div><h3 className="font-medium">两步验证</h3><p className="text-sm text-muted-foreground">启用后，登录时需要输入验证码</p></div>
-              <Toggle pressed={twoFactorEnabled} onPressedChange={handleTwoFactorToggle} disabled={loadingSecurity} />
+              <div><h3 className="font-medium">两步验证 <span className="text-xs text-muted-foreground">（即将推出）</span></h3><p className="text-sm text-muted-foreground">启用后，登录时需要输入验证码</p></div>
+              <Toggle pressed={twoFactorEnabled} disabled />
             </div>
             <div className="flex items-center justify-between">
-              <div><h3 className="font-medium">安全通知</h3><p className="text-sm text-muted-foreground">接收账户安全相关的通知</p></div>
-              <Toggle pressed={notificationsEnabled} onPressedChange={handleNotificationsToggle} disabled={loadingSecurity} />
+              <div><h3 className="font-medium">安全通知 <span className="text-xs text-muted-foreground">（即将推出）</span></h3><p className="text-sm text-muted-foreground">接收账户安全相关的通知</p></div>
+              <Toggle pressed={notificationsEnabled} disabled />
             </div>
           </div>
         </CardContent>

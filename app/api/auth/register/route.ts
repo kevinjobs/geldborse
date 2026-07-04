@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcrypt';
-
-const prisma = new PrismaClient();
+import { checkRateLimit } from '@/lib/rate-limit';
 
 // Test mode - for testing only
 let testMode = false;
@@ -28,6 +27,11 @@ export function setTestError(error: any) {
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    if (!checkRateLimit(`register:${ip}`)) {
+      return NextResponse.json({ error: '注册尝试过于频繁，请稍后再试' }, { status: 429 })
+    }
+
     const { email, password, name } = await request.json();
 
     // 验证输入

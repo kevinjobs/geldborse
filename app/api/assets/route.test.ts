@@ -6,21 +6,32 @@ vi.mock('@/lib/auth', () => ({
   authenticateRequest: vi.fn(),
 }))
 
-vi.mock('@/lib/prisma', () => ({
-  prisma: {
-    asset: {
-      findMany: vi.fn(),
-      findUnique: vi.fn(),
-      create: vi.fn(),
+vi.mock('@/lib/prisma', () => {
+  const assetCreate = vi.fn()
+  const balanceCreate = vi.fn()
+  return {
+    prisma: {
+      asset: {
+        findMany: vi.fn(),
+        findUnique: vi.fn(),
+        create: assetCreate,
+      },
+      balance: {
+        create: balanceCreate,
+      },
+      account: {
+        findFirst: vi.fn(),
+      },
+      $transaction: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) => {
+        const tx = {
+          asset: { create: assetCreate },
+          balance: { create: balanceCreate },
+        }
+        return fn(tx)
+      }),
     },
-    balance: {
-      create: vi.fn(),
-    },
-    account: {
-      findFirst: vi.fn(),
-    },
-  },
-}))
+  }
+})
 
 import { authenticateRequest } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
@@ -249,7 +260,6 @@ describe('POST /api/assets', () => {
         amount: 100,
         accountId: 'acct-1',
       },
-      include: { account: true },
     })
     expect(mockPrismaBalanceCreate).toHaveBeenCalledWith({
       data: {

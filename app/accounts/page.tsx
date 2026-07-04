@@ -27,6 +27,7 @@ import { AccountCard } from "@/components/accounts/account-card"
 import { AccountDetailModal } from "@/components/accounts/account-detail-modal"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
+import { ProtectedRoute } from "@/components/protected-route"
 
 interface Account {
   id: string
@@ -115,16 +116,8 @@ export default function AccountsPage() {
 
   const fetchAccounts = async () => {
     try {
-      // 获取用户认证信息
-      const storedUser = typeof window !== 'undefined' ? localStorage.getItem('geldborse_user') : null
-      const userData = storedUser ? JSON.parse(storedUser) : null
-      const authToken = userData?.id // 使用用户ID作为临时token
-
-      // 构建请求头
-      const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : undefined
-
       // 使用新的API端点一次性获取所有数据
-      const res = await fetch("/api/accounts/full", headers ? { headers } : {})
+      const res = await fetch("/api/accounts/full", { credentials: 'include' })
       const data = await res.json()
       // 确保data是一个数组
       if (Array.isArray(data)) {
@@ -163,15 +156,7 @@ export default function AccountsPage() {
 
   const fetchAssets = async (accountId: string) => {
     try {
-      // 获取用户认证信息
-      const storedUser = typeof window !== 'undefined' ? localStorage.getItem('geldborse_user') : null
-      const userData = storedUser ? JSON.parse(storedUser) : null
-      const authToken = userData?.id // 使用用户ID作为临时token
-
-      // 构建请求头
-      const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : undefined
-
-      const res = await fetch(`/api/assets?accountId=${accountId}`, headers ? { headers } : {})
+      const res = await fetch(`/api/assets?accountId=${accountId}`, { credentials: 'include' })
       const data = await res.json()
       // 确保data是一个数组
       if (Array.isArray(data)) {
@@ -188,15 +173,7 @@ export default function AccountsPage() {
 
   const fetchBalances = async (assetId: string) => {
     try {
-      // 获取用户认证信息
-      const storedUser = typeof window !== 'undefined' ? localStorage.getItem('geldborse_user') : null
-      const userData = storedUser ? JSON.parse(storedUser) : null
-      const authToken = userData?.id // 使用用户ID作为临时token
-
-      // 构建请求头
-      const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : undefined
-
-      const res = await fetch(`/api/balances?assetId=${assetId}`, headers ? { headers } : {})
+      const res = await fetch(`/api/balances?assetId=${assetId}`, { credentials: 'include' })
       const data = await res.json()
       // 确保data是一个数组
       if (Array.isArray(data)) {
@@ -238,25 +215,13 @@ export default function AccountsPage() {
       return
     }
 
-    // 获取用户认证信息
-    const storedUser = typeof window !== 'undefined' ? localStorage.getItem('geldborse_user') : null
-    const userData = storedUser ? JSON.parse(storedUser) : null
-    const authToken = userData?.id // 使用用户ID作为临时token
-
-    // 构建请求头
-    const headers: HeadersInit = authToken ? {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${authToken}`
-    } : {
-      'Content-Type': 'application/json'
-    }
-
     setSaving(true)
     try {
       if (editingAccount) {
         const res = await fetch(`/api/accounts/${editingAccount.id}`, {
           method: "PUT",
-          headers,
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ name: accountName, type: accountType, accountNumber }),
         })
         if (res.ok) {
@@ -268,7 +233,8 @@ export default function AccountsPage() {
       } else {
         const res = await fetch("/api/accounts", {
           method: "POST",
-          headers,
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({
             name: accountName,
             type: accountType,
@@ -294,19 +260,11 @@ export default function AccountsPage() {
   const handleConfirmDelete = async () => {
     if (!deletingAccount) return
 
-    // 获取用户认证信息
-    const storedUser = typeof window !== 'undefined' ? localStorage.getItem('geldborse_user') : null
-    const userData = storedUser ? JSON.parse(storedUser) : null
-    const authToken = userData?.id // 使用用户ID作为临时token
-
-    // 构建请求头
-    const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : undefined
-
     setSaving(true)
     try {
       const res = await fetch(`/api/accounts/${deletingAccount.id}`, {
         method: "DELETE",
-        headers
+        credentials: 'include',
       })
       if (res.ok) {
         fetchAccounts()
@@ -347,18 +305,10 @@ export default function AccountsPage() {
   const handleDeleteAsset = async (asset: Asset) => {
     if (!confirm(`确定要删除资产 "${asset.name}" 吗？`)) return
 
-    // 获取用户认证信息
-    const storedUser = typeof window !== 'undefined' ? localStorage.getItem('geldborse_user') : null
-    const userData = storedUser ? JSON.parse(storedUser) : null
-    const authToken = userData?.id // 使用用户ID作为临时token
-
-    // 构建请求头
-    const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : undefined
-
     try {
       const res = await fetch(`/api/assets/${asset.id}`, {
         method: "DELETE",
-        headers
+        credentials: 'include',
       })
       if (res.ok) {
         // 更新本地状态，避免重新获取数据
@@ -400,25 +350,13 @@ export default function AccountsPage() {
       return
     }
 
-    // 获取用户认证信息
-    const storedUser = typeof window !== 'undefined' ? localStorage.getItem('geldborse_user') : null
-    const userData = storedUser ? JSON.parse(storedUser) : null
-    const authToken = userData?.id // 使用用户ID作为临时token
-
-    // 构建请求头
-    const headers: HeadersInit = authToken ? {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${authToken}`
-    } : {
-      'Content-Type': 'application/json'
-    }
-
     setSaving(true)
     try {
       if (editingAsset) {
         const res = await fetch(`/api/assets/${editingAsset.id}`, {
           method: "PUT",
-          headers,
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ name: assetName, type: assetType }),
         })
         if (res.ok) {
@@ -442,7 +380,8 @@ export default function AccountsPage() {
       } else {
         const res = await fetch("/api/assets", {
           method: "POST",
-          headers,
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ name: assetName, type: assetType, amount: assetAmount, accountId: selectedAccount!.id }),
         })
         if (res.ok) {
@@ -504,24 +443,16 @@ export default function AccountsPage() {
   const handleDeleteBalance = async (balance: Balance) => {
     if (!confirm("确定要删除此余额快照吗？")) return
 
-    // 获取用户认证信息
-    const storedUser = typeof window !== 'undefined' ? localStorage.getItem('geldborse_user') : null
-    const userData = storedUser ? JSON.parse(storedUser) : null
-    const authToken = userData?.id // 使用用户ID作为临时token
-
-    // 构建请求头
-    const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : undefined
-
     try {
       const res = await fetch(`/api/balances/${balance.id}`, {
         method: "DELETE",
-        headers
+        credentials: 'include',
       })
       if (res.ok) {
         if (selectedAsset) {
           fetchBalances(selectedAsset.id)
         }
-        const balancesRes = await fetch(`/api/balances?assetId=${balance.assetId}`, headers ? { headers } : {})
+        const balancesRes = await fetch(`/api/balances?assetId=${balance.assetId}`, { credentials: 'include' })
         const balancesData = await balancesRes.json()
         setAssetBalances((prev) => ({ ...prev, [balance.assetId]: balancesData }))
       } else {
@@ -539,25 +470,13 @@ export default function AccountsPage() {
       return
     }
 
-    // 获取用户认证信息
-    const storedUser = typeof window !== 'undefined' ? localStorage.getItem('geldborse_user') : null
-    const userData = storedUser ? JSON.parse(storedUser) : null
-    const authToken = userData?.id // 使用用户ID作为临时token
-
-    // 构建请求头
-    const headers: HeadersInit = authToken ? {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${authToken}`
-    } : {
-      'Content-Type': 'application/json'
-    }
-
     setSaving(true)
     try {
       if (editingBalance) {
         const res = await fetch(`/api/balances/${editingBalance.id}`, {
           method: "PUT",
-          headers,
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ amount: balanceAmount, recordedAt: new Date(balanceDate).toISOString() }),
         })
         if (res.ok) {
@@ -581,7 +500,8 @@ export default function AccountsPage() {
       } else {
         const res = await fetch("/api/balances", {
           method: "POST",
-          headers,
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ amount: balanceAmount, recordedAt: new Date(balanceDate).toISOString(), assetId: selectedAsset!.id }),
         })
         if (res.ok) {
@@ -854,11 +774,12 @@ export default function AccountsPage() {
   }, [accounts, activeTypeFilter, sortBy, sortDir, getAccountTotalAtDate, accountLastUpdated])
 
   return (
-    <SidebarProvider>
-      <AppSidebar variant="sidebar" />
-      <SidebarInset className="flex flex-col h-svh">
-        <SiteHeader />
-        {loading ? (
+    <ProtectedRoute>
+      <SidebarProvider>
+        <AppSidebar variant="sidebar" />
+        <SidebarInset className="flex flex-col h-svh">
+          <SiteHeader />
+          {loading ? (
           <div className="flex flex-1 items-center justify-center">
             <p>加载中...</p>
           </div>
@@ -1410,5 +1331,6 @@ export default function AccountsPage() {
         getAccountTotal={(acct) => getAccountTotalAtDate(acct)}
       />
     </SidebarProvider>
+    </ProtectedRoute>
   )
 }

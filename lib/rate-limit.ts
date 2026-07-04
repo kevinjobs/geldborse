@@ -29,3 +29,7 @@ export function cleanupExpiredRecords(): void {
     }
   }
 }
+
+export function _resetForTesting(): void {
+  store.clear()
+}

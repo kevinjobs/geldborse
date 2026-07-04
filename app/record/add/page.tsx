@@ -16,6 +16,7 @@ import {
   AccountDisplay
 } from "@/lib/account-config"
 import { useAuth } from "@/lib/auth-context"
+import { ProtectedRoute } from "@/components/protected-route"
 import Link from "next/link"
 
 interface Account {
@@ -62,10 +63,7 @@ export default function AddRecordPage() {
 
   const fetchAccounts = async () => {
     try {
-      // 构建请求头
-      const headers = user?.id ? { 'Authorization': `Bearer ${user.id}` } : undefined
-
-      const res = await fetch("/api/accounts", headers ? { headers } : {})
+      const res = await fetch("/api/accounts", { credentials: 'include' })
       const data = await res.json()
       // 确保data是一个数组
       if (Array.isArray(data)) {
@@ -82,9 +80,7 @@ export default function AddRecordPage() {
 
   const fetchAssets = async (accountId: string) => {
     try {
-      const headers = user?.id ? { 'Authorization': `Bearer ${user.id}` } : undefined
-
-      const res = await fetch(`/api/accounts/${accountId}/assets`, headers ? { headers } : {})
+      const res = await fetch(`/api/accounts/${accountId}/assets`, { credentials: 'include' })
       const data = await res.json()
       if (Array.isArray(data)) {
         setAssets(data)
@@ -119,10 +115,8 @@ export default function AddRecordPage() {
     try {
       const res = await fetch("/api/records", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(user?.id ? { 'Authorization': `Bearer ${user.id}` } : {})
-        },
+        headers: { "Content-Type": "application/json" },
+        credentials: 'include',
         body: JSON.stringify({ date: new Date(date + "T00:00:00").toISOString(), accountId: account, assetId: asset || null, amount, type, note: note || null }),
       })
       if (res.ok) {
@@ -145,10 +139,11 @@ export default function AddRecordPage() {
   const selectedAccount = accounts.find((a) => a.id === account)
 
   return (
-    <SidebarProvider>
-      <AppSidebar variant="sidebar" />
-      <SidebarInset>
-        <SiteHeader />
+    <ProtectedRoute>
+      <SidebarProvider>
+        <AppSidebar variant="sidebar" />
+        <SidebarInset>
+          <SiteHeader />
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
@@ -273,5 +268,6 @@ export default function AddRecordPage() {
         </div>
       </SidebarInset>
     </SidebarProvider>
+    </ProtectedRoute>
   )
 }

@@ -9,14 +9,22 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user } = useAuth()
+  const { user, isLoading, authError } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    if (user === null) {
+    if (!isLoading && user === null && !authError) {
       router.push('/auth/login')
     }
-  }, [user, router])
+  }, [user, isLoading, authError, router])
+
+  if (isLoading || (user === null && authError)) {
+    return (
+      <div className="flex h-svh items-center justify-center">
+        <p className="text-muted-foreground">加载中...</p>
+      </div>
+    )
+  }
 
   if (user === null) {
     return null

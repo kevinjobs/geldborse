@@ -68,6 +68,16 @@ export async function POST(request: NextRequest) {
         }
       })
 
+      // 清空账户成员（共享账户）
+      await tx.accountMember.deleteMany({
+        where: {
+          OR: [
+            { userId },
+            { account: { userId } },
+          ]
+        }
+      })
+
       // 清空账户
       await tx.account.deleteMany({
         where: {

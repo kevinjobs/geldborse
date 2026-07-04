@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
@@ -24,6 +24,7 @@ import {
   getAccountTypeConfig,
   AccountDisplay
 } from "@/lib/account-config"
+import { ProtectedRoute } from "@/components/protected-route"
 
 interface Account {
   id: string
@@ -64,6 +65,7 @@ export default function RecordsPage() {
   const [editType, setEditType] = useState("EXPENSE")
   const [editAssets, setEditAssets] = useState<{ id: string; name: string; type: string; amount: number }[]>([])
   const [saving, setSaving] = useState(false)
+  const isEditingRef = useRef(false)
 
   useEffect(() => {
     fetchData()
@@ -71,13 +73,7 @@ export default function RecordsPage() {
 
   const fetchAssets = async (accountId: string) => {
     try {
-      const storedUser = typeof window !== 'undefined' ? localStorage.getItem('geldborse_user') : null
-      const userData = storedUser ? JSON.parse(storedUser) : null
-      const authToken = userData?.id
-
-      const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : undefined
-
-      const res = await fetch(`/api/accounts/${accountId}/assets`, headers ? { headers } : {})
+      const res = await fetch(`/api/accounts/${accountId}/assets`, { credentials: 'include' })
       const data = await res.json()
       if (Array.isArray(data)) {
         setEditAssets(data)
@@ -94,7 +90,10 @@ export default function RecordsPage() {
   useEffect(() => {
     if (editAccount) {
       fetchAssets(editAccount)
-      setEditAsset("")
+      if (!isEditingRef.current) {
+        setEditAsset("")
+      }
+      isEditingRef.current = false
     } else {
       setEditAssets([])
       setEditAsset("")
@@ -103,17 +102,9 @@ export default function RecordsPage() {
 
   const fetchData = async () => {
     try {
-      // 获取用户认证信息
-      const storedUser = typeof window !== 'undefined' ? localStorage.getItem('geldborse_user') : null
-      const userData = storedUser ? JSON.parse(storedUser) : null
-      const authToken = userData?.id
-
-      // 构建请求头
-      const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : undefined
-
       const [recordsRes, accountsRes] = await Promise.all([
-        fetch("/api/records", headers ? { headers } : {}),
-        fetch("/api/accounts", headers ? { headers } : {}),
+        fetch("/api/records", { credentials: 'include' }),
+        fetch("/api/accounts", { credentials: 'include' }),
       ])
       const recordsData = await recordsRes.json()
       const accountsData = await accountsRes.json()
@@ -154,6 +145,7 @@ export default function RecordsPage() {
   const handleEdit = (record: Record) => {
     setSelectedRecord(record)
     setEditDate(record.date.split("T")[0])
+    isEditingRef.current = true
     setEditAccount(record.accountId)
     setEditAsset(record.assetId || "")
     setEditNote(record.note || "")
@@ -175,17 +167,10 @@ export default function RecordsPage() {
 
     setSaving(true)
     try {
-      // 获取用户认证信息
-      const storedUser = typeof window !== 'undefined' ? localStorage.getItem('geldborse_user') : null
-      const userData = storedUser ? JSON.parse(storedUser) : null
-      const authToken = userData?.id
-
       const res = await fetch(`/api/records/${selectedRecord.id}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
-        },
+        headers: { "Content-Type": "application/json" },
+        credentials: 'include',
         body: JSON.stringify({
           date: new Date(editDate + "T00:00:00").toISOString(),
           accountId: editAccount,
@@ -214,14 +199,9 @@ export default function RecordsPage() {
 
     setSaving(true)
     try {
-      // 获取用户认证信息
-      const storedUser = typeof window !== 'undefined' ? localStorage.getItem('geldborse_user') : null
-      const userData = storedUser ? JSON.parse(storedUser) : null
-      const authToken = userData?.id
-
       const res = await fetch(`/api/records/${selectedRecord.id}`, {
         method: "DELETE",
-        headers: authToken ? { 'Authorization': `Bearer ${authToken}` } : {},
+        credentials: 'include',
       })
       if (res.ok) {
         setDeleteDialogOpen(false)
@@ -242,11 +222,12 @@ export default function RecordsPage() {
   )
 
   return (
-    <SidebarProvider>
-      <AppSidebar variant="sidebar" />
-      <SidebarInset className="flex flex-col h-svh">
-        <SiteHeader />
-        {loading ? (
+    <ProtectedRoute>
+      <SidebarProvider>
+        <AppSidebar variant="sidebar" />
+        <SidebarInset className="flex flex-col h-svh">
+          <SiteHeader />
+          {loading ? (
           <div className="flex flex-1 items-center justify-center">
             <p>加载中...</p>
           </div>
@@ -528,5 +509,6 @@ export default function RecordsPage() {
         </DialogContent>
       </Dialog>
     </SidebarProvider>
+    </ProtectedRoute>
   )
 }

@@ -17,7 +17,7 @@ import { toast } from "sonner"
 import { UserIcon } from "@phosphor-icons/react"
 
 export default function ProfileSection() {
-  const { user } = useAuth()
+  const { user, refreshUser } = useAuth()
   const [name, setName] = useState(user?.name || "")
   const [avatarPreview, setAvatarPreview] = useState<string | null>(user?.avatar || null)
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
@@ -65,19 +65,17 @@ export default function ProfileSection() {
       }
       const response = await fetch("/api/user/profile", {
         method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${user.id}` },
+        headers: { "Content-Type": "application/json" },
+        credentials: 'include',
         body: JSON.stringify(body),
       })
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}))
         throw new Error(errData.error || `更新失败 (${response.status})`)
       }
-      const updatedData = await response.json()
-      if (updatedData.user) {
-        localStorage.setItem("geldborse_user", JSON.stringify(updatedData.user))
-        window.location.reload()
-      }
-      toast.success("个人资料已更新")
+      // Refresh auth context to pick up updated user data
+      await refreshUser()
+      toast.success("个人资料保存成功")
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "更新失败，请重试")
     } finally {

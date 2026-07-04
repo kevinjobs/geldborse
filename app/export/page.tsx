@@ -19,6 +19,7 @@ import { DownloadSimpleIcon, UploadIcon, FilePdfIcon, FileXlsIcon, ImageIcon, Ca
 import * as XLSX from "xlsx"
 import jsPDF from "jspdf"
 import { domToPng, domToJpeg } from "modern-screenshot"
+import { ProtectedRoute } from "@/components/protected-route"
 
 interface Account {
   id: string
@@ -550,12 +551,13 @@ export default function ExportPage() {
   }
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <SiteHeader />
-        <div className="flex flex-1 flex-col gap-6 p-6">
-          <MobileExportMenu activeTab={activeTab} onTabChange={setActiveTab} />
+    <ProtectedRoute>
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset>
+          <SiteHeader />
+          <div className="flex flex-1 flex-col gap-6 p-6">
+            <MobileExportMenu activeTab={activeTab} onTabChange={setActiveTab} />
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className="hidden sm:block">
               <TabsList className="grid w-full grid-cols-3 lg:grid-cols-5">
@@ -1183,5 +1185,6 @@ export default function ExportPage() {
         </div>
       </SidebarInset>
     </SidebarProvider>
+    </ProtectedRoute>
   )
 }

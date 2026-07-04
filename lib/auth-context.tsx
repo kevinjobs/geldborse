@@ -12,8 +12,11 @@ type User = {
 
 type AuthContextType = {
   user: User | null
+  isLoading: boolean
+  authError: boolean
   login: (credentials: { email: string; password: string }) => Promise<void>
   logout: () => Promise<void>
+  refreshUser: () => Promise<void>
 }
 
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined)
@@ -29,8 +32,11 @@ export function useAuth() {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = React.useState<User | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)
+  const [authError, setAuthError] = React.useState(false)
 
-  React.useEffect(() => {
+  const checkAuth = React.useCallback(() => {
+    setIsLoading(true)
+    setAuthError(false)
     fetch('/api/auth/me', { credentials: 'include' })
       .then((res) => {
         if (res.ok) return res.json()
@@ -39,13 +45,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .then((data) => {
         if (data?.user) {
           setUser(data.user)
+        } else {
+          setUser(null)
         }
         setIsLoading(false)
       })
       .catch(() => {
         setIsLoading(false)
+        setAuthError(true)
       })
   }, [])
+
+  React.useEffect(() => {
+    checkAuth()
+  }, [checkAuth])
 
   const login = async (credentials: { email: string; password: string }) => {
     const response = await fetch('/api/auth/login', {
@@ -75,10 +88,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const refreshUser = async () => {
+    await checkAuth()
+  }
+
   const value = {
     user,
+    isLoading,
+    authError,
     login,
     logout,
+    refreshUser,
   }
 
   return (

@@ -27,6 +27,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { ProtectedRoute } from "@/components/protected-route"
 
 interface Account {
   id: string
@@ -334,11 +335,12 @@ export default function SnapshotsPage() {
   const groupedSnapshots = getGroupedSnapshots()
 
   return (
-    <SidebarProvider>
-      <AppSidebar variant="sidebar" />
-      <SidebarInset className="flex flex-col h-svh">
-        <SiteHeader />
-        <div className="flex flex-1 flex-col overflow-y-auto" style={{ scrollbarGutter: "stable" }}>
+    <ProtectedRoute>
+      <SidebarProvider>
+        <AppSidebar variant="sidebar" />
+        <SidebarInset className="flex flex-col h-svh">
+          <SiteHeader />
+          <div className="flex flex-1 flex-col overflow-y-auto" style={{ scrollbarGutter: "stable" }}>
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
               <div className="px-4 lg:px-6">
@@ -803,5 +805,6 @@ export default function SnapshotsPage() {
         </AlertDialogContent>
       </AlertDialog>
     </SidebarProvider>
+    </ProtectedRoute>
   )
 }

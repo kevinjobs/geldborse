@@ -51,10 +51,15 @@ export async function PUT(
       return NextResponse.json({ error: "余额快照不存在或无权操作" }, { status: 404 })
     }
 
+    const parsedAmount = parseFloat(amount)
+    if (isNaN(parsedAmount) || !isFinite(parsedAmount)) {
+      return NextResponse.json({ error: "金额无效" }, { status: 400 })
+    }
+
     const balance = await prisma.balance.update({
       where: { id },
       data: {
-        amount: parseFloat(amount),
+        amount: parsedAmount,
         recordedAt: new Date(recordedAt),
       },
       include: { asset: true },
