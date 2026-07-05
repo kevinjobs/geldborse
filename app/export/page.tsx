@@ -85,7 +85,7 @@ export default function ExportPage() {
               </TabsContent>
 
               <TabsContent value="all" className="space-y-6">
-                <AllDataTab accounts={accounts} snapshots={snapshots} records={records} balances={balances} loading={loading} />
+                <AllDataTab />
               </TabsContent>
 
               <TabsContent value="import" className="space-y-6">

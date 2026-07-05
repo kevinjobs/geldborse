@@ -26,7 +26,7 @@ English | [简体中文](./README.md)
 - 📝 **Income & Expense Tracking** - Quickly record daily income and expenses with category management
 - 📸 **Asset Snapshots** - Periodically record asset status to track financial trends with timezone auto-detection
 - 📈 **Data Visualization** - Use charts to display income/expense trends and asset distribution
-- 📤 **Data Export** - Export financial reports in Excel and PDF formats
+- 📤 **Data Export** - Export financial reports in Excel, PDF, and JSON full data formats
 - 📥 **Data Import** - Import historical data
 - 🔐 **User Authentication** - Secure email registration and login system with login history tracking
 - 🔑 **API Key** - API key authentication with configurable scopes and expiration
@@ -103,7 +103,7 @@ Open your browser and visit [http://localhost:8888](http://localhost:8888)
 ```
 geldborse/
 ├── app/                        # Next.js App Router (page routes)
-│   ├── api/                    # API routes (28 endpoints)
+│   ├── api/                    # API routes (29 endpoints)
 │   │   ├── auth/               # Auth (login, register, logout, me, login-history)
 │   │   ├── accounts/           # Account CRUD + /full, /[id]/assets
 │   │   ├── assets/             # Asset CRUD
@@ -113,6 +113,7 @@ geldborse/
 │   │   ├── api-keys/           # API key management
 │   │   ├── admin/users/        # Admin user management
 │   │   ├── import/             # Data import
+│   │   ├── export/             # Full data export
 │   │   ├── clear-data/         # Data clearing
 │   │   └── docs/               # API documentation page
 │   ├── auth/                   # Authentication pages (login/register)
@@ -199,7 +200,7 @@ geldborse/
 | Records | `/record` | View and manage all income and expense records |
 | Accounts | `/accounts` | Manage bank accounts, cash, investments, etc. |
 | Snapshots | `/snapshots` | Periodically record asset status and track financial trends |
-| Export | `/export` | Export Excel or PDF reports |
+| Export | `/export` | Export Excel, PDF reports or JSON full data |
 | Import | `/api/import` | Import historical data |
 | Settings | `/settings` | Modify personal profile |
 | Help | `/help` | View usage documentation |

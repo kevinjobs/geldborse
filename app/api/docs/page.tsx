@@ -120,7 +120,8 @@ export default function ApiDocsPage() {
             <p className="pl-4"><Link href="#snapshots" className="text-primary hover:underline">3.6 快照 Snapshots</Link></p>
             <p className="pl-4"><Link href="#api-keys" className="text-primary hover:underline">3.7 API 密钥</Link></p>
             <p className="pl-4"><Link href="#import" className="text-primary hover:underline">3.8 导入</Link></p>
-            <p className="pl-4"><Link href="#system" className="text-primary hover:underline">3.9 系统 System</Link></p>
+            <p className="pl-4"><Link href="#export" className="text-primary hover:underline">3.9 导出</Link></p>
+            <p className="pl-4"><Link href="#system" className="text-primary hover:underline">3.10 系统 System</Link></p>
             <p><Link href="#errors" className="text-primary hover:underline">4. 错误码</Link></p>
             <p><Link href="#examples" className="text-primary hover:underline">5. 调用示例 (curl)</Link></p>
             <p><Link href="#workflows" className="text-primary hover:underline">6. 典型工作流</Link></p>
@@ -585,10 +586,28 @@ export default function ApiDocsPage() {
             />
           </div>
 
-          {/* 3.9 System */}
+          {/* 3.9 Export */}
+          <div id="export">
+            <EndpointGroup
+              title="3.9 导出"
+              description="全量数据导出"
+              endpoints={[
+                {
+                  method: "GET", path: "/api/export",
+                  auth: "import",
+                  body: undefined,
+                  response: "200 — { exportDate, version: '1.1', data: { accounts, snapshots, records } }",
+                  errors: "401 — 未授权, 500",
+                  description: "导出当前用户全部数据为 JSON 格式，包含账户、资产、余额历史、收支记录和每日快照。返回格式与 /api/import 兼容，可直接用于导入。",
+                },
+              ]}
+            />
+          </div>
+
+          {/* 3.10 System */}
           <div id="system">
             <EndpointGroup
-              title="3.9 系统 System"
+              title="3.10 系统 System"
               description="用户设置、清空数据、管理员功能"
               endpoints={[
                 {
@@ -754,6 +773,13 @@ export default function ApiDocsPage() {
               </pre>
             </div>
             <div>
+              <span className="text-sm font-medium text-foreground">导出全量数据</span>
+              <pre className="mt-1 bg-muted border border-border rounded-[8px] p-3 overflow-x-auto">
+                <code className="text-xs text-foreground font-mono leading-relaxed">{`curl https://example.com/api/export \\
+  -H "Authorization: Bearer gb_your_api_key_here"`}</code>
+              </pre>
+            </div>
+            <div>
               <span className="text-sm font-medium text-foreground">批量导入数据</span>
               <pre className="mt-1 bg-muted border border-border rounded-[8px] p-3 overflow-x-auto">
                 <code className="text-xs text-foreground font-mono leading-relaxed">{`curl -X POST https://example.com/api/import \\
@@ -784,7 +810,7 @@ export default function ApiDocsPage() {
             <div className="border border-border rounded-[12px] p-4 bg-card">
               <div className="font-medium text-foreground mb-2">场景 B：数据迁移/备份</div>
               <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
-                <li><code className="font-mono text-xs">GET /api/accounts/full</code> 导出完整数据</li>
+                <li><code className="font-mono text-xs">GET /api/export</code> 导出全量数据（兼容导入格式）</li>
                 <li>在新实例上 <code className="font-mono text-xs">POST /api/import</code> 批量导入</li>
                 <li>验证导入结果（对比 account 数量和 snapshot 数量）</li>
               </ol>

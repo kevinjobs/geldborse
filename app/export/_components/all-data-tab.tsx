@@ -1,69 +1,36 @@
 "use client"
 
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { DownloadSimpleIcon } from "@phosphor-icons/react"
-import type { Account, Asset, DailySnapshot, Record, Balance } from "@/types"
 
-interface AllDataTabProps {
-  accounts: (Account & { assets: Asset[]; totalAmount: number })[]
-  snapshots: DailySnapshot[]
-  records: Record[]
-  balances: Balance[]
-  loading: boolean
-}
+export function AllDataTab() {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-export function AllDataTab({ accounts, snapshots, records, balances, loading }: AllDataTabProps) {
-  const exportAllData = () => {
-    // 构建 assetId → 全部余额记录的映射
-    const balancesByAssetId = new Map<string, { amount: number; recordedAt: string }[]>()
-    balances.forEach(b => {
-      const list = balancesByAssetId.get(b.assetId) || []
-      list.push({ amount: b.amount, recordedAt: b.recordedAt })
-      balancesByAssetId.set(b.assetId, list)
-    })
-
-    const allData = {
-      exportDate: new Date().toISOString(),
-      version: "1.1",
-      data: {
-        accounts: accounts.map(account => ({
-          id: account.id,
-          name: account.name,
-          type: account.type,
-          accountNumber: account.accountNumber,
-          initialBalance: account.initialBalance || 0,
-          assets: account.assets.map(asset => ({
-            id: asset.id,
-            name: asset.name,
-            type: asset.type,
-            amount: asset.amount || 0,
-            accountId: asset.accountId,
-            balances: balancesByAssetId.get(asset.id) || [],
-          }))
-        })),
-        snapshots: snapshots,
-        records: records.map(r => ({
-          id: r.id,
-          date: r.date,
-          type: r.type,
-          amount: r.amount,
-          note: r.note || null,
-          accountId: r.accountId,
-          assetId: r.assetId || null,
-          account: r.account ? { name: r.account.name } : null,
-          asset: r.asset ? { name: r.asset.name } : null,
-        })),
+  const exportAllData = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const response = await fetch('/api/export', { credentials: 'include' })
+      if (!response.ok) {
+        throw new Error(`导出失败: ${response.status} ${response.statusText}`)
       }
+      const data = await response.json()
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `geldborse-all-data-${new Date().toISOString().split('T')[0]}.json`
+      link.click()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error('导出全部数据失败:', err)
+      setError(err instanceof Error ? err.message : '导出失败，请重试')
+    } finally {
+      setLoading(false)
     }
-
-    const blob = new Blob([JSON.stringify(allData, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `geldborse-all-data-${new Date().toISOString().split('T')[0]}.json`
-    link.click()
-    URL.revokeObjectURL(url)
   }
 
   return (
@@ -86,13 +53,19 @@ export function AllDataTab({ accounts, snapshots, records, balances, loading }: 
             </ul>
           </div>
 
+          {error && (
+            <div className="p-4 rounded-[16px] border border-destructive/30 bg-destructive/10 text-sm text-destructive">
+              {error}
+            </div>
+          )}
+
           <Button
             className="w-full"
             onClick={exportAllData}
             disabled={loading}
           >
             <DownloadSimpleIcon className="mr-2 h-4 w-4" />
-            导出全部数据
+            {loading ? '导出中...' : '导出全部数据'}
           </Button>
         </div>
       </CardContent>

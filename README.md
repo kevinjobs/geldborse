@@ -26,7 +26,7 @@
 - 📝 **收支记录** - 快速记录日常收入和支出，支持分类管理
 - 📸 **资产快照** - 定期记录资产状况，追踪财务变化趋势，支持时区自动识别
 - 📈 **数据可视化** - 使用图表展示收支趋势和资产分布
-- 📤 **数据导出** - 支持导出 Excel 和 PDF 格式的财务报表
+- 📤 **数据导出** - 支持导出 Excel、PDF 格式的财务报表，以及 JSON 全量数据导出
 - 📥 **数据导入** - 支持导入历史数据
 - 🔐 **用户认证** - 安全的邮箱注册和登录系统，支持登录历史记录
 - 🔑 **API Key** - 支持 API Key 认证，可配置作用域和过期时间
@@ -103,7 +103,7 @@ bun dev
 ```
 geldborse/
 ├── app/                        # Next.js App Router（页面路由）
-│   ├── api/                    # API 路由（28个端点）
+│   ├── api/                    # API 路由（29个端点）
 │   │   ├── auth/               # 认证（login, register, logout, me, login-history）
 │   │   ├── accounts/           # 账户 CRUD + /full, /[id]/assets
 │   │   ├── assets/             # 资产 CRUD
@@ -113,6 +113,7 @@ geldborse/
 │   │   ├── api-keys/           # API Key 管理
 │   │   ├── admin/users/        # 管理员用户管理
 │   │   ├── import/             # 数据导入
+│   │   ├── export/             # 数据全量导出
 │   │   ├── clear-data/         # 数据清除
 │   │   └── docs/               # API 文档页面
 │   ├── auth/                   # 认证页面（登录/注册）
@@ -199,7 +200,7 @@ geldborse/
 | 收支记录 | `/record` | 查看和管理所有收支记录 |
 | 账户管理 | `/accounts` | 管理银行账户、现金、投资等 |
 | 资产快照 | `/snapshots` | 定期记录资产状况，追踪财务变化趋势 |
-| 数据导出 | `/export` | 导出 Excel 或 PDF 报表 |
+| 数据导出 | `/export` | 导出 Excel、PDF 报表或 JSON 全量数据 |
 | 数据导入 | `/api/import` | 导入历史数据 |
 | 用户设置 | `/settings` | 修改个人资料 |
 | 帮助 | `/help` | 查看使用帮助 |
