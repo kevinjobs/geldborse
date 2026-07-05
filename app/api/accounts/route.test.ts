@@ -232,6 +232,7 @@ describe('POST /api/accounts', () => {
         name: 'New Account',
         type: 'CASH',
         accountNumber: '5678',
+        excludeFromTotal: false,
         userId: 'user-1',
       },
     })
@@ -270,6 +271,7 @@ describe('POST /api/accounts', () => {
         name: 'Wallet',
         type: 'CASH',
         accountNumber: null,
+        excludeFromTotal: false,
         userId: 'user-1',
       },
     })

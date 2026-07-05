@@ -23,7 +23,7 @@ export function AccountExportTab({ accounts }: AccountExportTabProps) {
 
   const accountPreviewRef = useRef<HTMLDivElement>(null)
 
-  const totalAssets = accounts.reduce((sum, a) => sum + (a.totalAmount || 0), 0)
+  const totalAssets = accounts.filter(a => !a.excludeFromTotal).reduce((sum, a) => sum + (a.totalAmount || 0), 0)
 
   const buildAccountData = (): (string | number)[][] => {
     const data: (string | number)[][] = [["账户名称", "账户类型", "账户号码", "资产名称", "资产类型", "金额", "账户总计"]]
@@ -57,7 +57,7 @@ export function AccountExportTab({ accounts }: AccountExportTabProps) {
       }
     })
 
-    const totalAmount = accounts.reduce((sum, a) => sum + (a.totalAmount || 0), 0)
+    const totalAmount = accounts.filter(a => !a.excludeFromTotal).reduce((sum, a) => sum + (a.totalAmount || 0), 0)
     data.push([])
     data.push(["总资产", "", "", "", "", "", totalAmount])
 

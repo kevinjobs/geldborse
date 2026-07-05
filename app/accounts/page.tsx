@@ -35,6 +35,7 @@ export default function AccountsPage() {
   const [accountType, setAccountType] = useState("CASH")
   const [accountNumber, setAccountNumber] = useState("")
   const [accountArchived, setAccountArchived] = useState(false)
+  const [accountExcludeFromTotal, setAccountExcludeFromTotal] = useState(false)
   const [saving, setSaving] = useState(false)
 
   const [accountAssets, setAccountAssets] = useState<Record<string, Asset[]>>({})
@@ -118,6 +119,7 @@ export default function AccountsPage() {
     setAccountType("CASH")
     setAccountNumber("")
     setAccountArchived(false)
+    setAccountExcludeFromTotal(false)
     setDialogOpen(true)
   }
 
@@ -127,6 +129,7 @@ export default function AccountsPage() {
     setAccountType(account.type)
     setAccountNumber(account.accountNumber || "")
     setAccountArchived(!!account.archived)
+    setAccountExcludeFromTotal(!!account.excludeFromTotal)
     setDialogOpen(true)
   }
 
@@ -163,11 +166,11 @@ export default function AccountsPage() {
     setSaving(true)
     try {
       if (editingAccount) {
-        await api.put(`/api/accounts/${editingAccount.id}`, { name: accountName, type: accountType, accountNumber: accountNumber || undefined, archived: accountArchived })
+        await api.put(`/api/accounts/${editingAccount.id}`, { name: accountName, type: accountType, accountNumber: accountNumber || undefined, archived: accountArchived, excludeFromTotal: accountExcludeFromTotal })
         fetchAccounts()
         setDialogOpen(false)
       } else {
-        await api.post("/api/accounts", { name: accountName, type: accountType, accountNumber: accountNumber || undefined })
+        await api.post("/api/accounts", { name: accountName, type: accountType, accountNumber: accountNumber || undefined, excludeFromTotal: accountExcludeFromTotal })
         fetchAccounts()
         setDialogOpen(false)
         toast.success("账户创建成功，请前往添加子资产")
@@ -502,8 +505,9 @@ export default function AccountsPage() {
     let negCount = 0
     let earliestDate: string | null = null
     let latestDate: string | null = null
+    const includedAccounts = accounts.filter(a => !a.excludeFromTotal)
 
-    accounts.forEach((acct) => {
+    includedAccounts.forEach((acct) => {
       const balance = getAccountTotalAtDate(acct)
       totalNet += balance
       if (balance >= 0) { totalPos += balance; posCount++ }
@@ -539,12 +543,13 @@ export default function AccountsPage() {
     const assetTrend: Array<{ date: string; total: number }> = []
     const liabilityTrend: Array<{ date: string; total: number }> = []
     const lastValues: Record<string, number | null> = {}
+    const includedAccounts = accounts.filter(a => !a.excludeFromTotal)
 
     allBalanceDates.forEach((date) => {
       let netSum = 0
       let posSum = 0
       let negSum = 0
-      accounts.forEach((acct) => {
+      includedAccounts.forEach((acct) => {
         const trend = accountTrends[acct.id]
         if (trend && trend.length > 0) {
           const point = trend.find((p) => p.date === date)
@@ -691,6 +696,8 @@ export default function AccountsPage() {
         onAccountNumberChange={setAccountNumber}
         accountArchived={accountArchived}
         onAccountArchivedChange={setAccountArchived}
+        accountExcludeFromTotal={accountExcludeFromTotal}
+        onAccountExcludeFromTotalChange={setAccountExcludeFromTotal}
         saving={saving}
         onSave={handleSave}
       />

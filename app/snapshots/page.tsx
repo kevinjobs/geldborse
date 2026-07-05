@@ -10,6 +10,7 @@ import { ResponsiveTable, ResponsiveTableBody, ResponsiveTableCell, ResponsiveTa
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CalendarIcon, ChevronDown, ChevronRight, Plus, Trash2, Zap, TrendingUp, TrendingDown, BarChart3 } from "lucide-react"
+import { EyeSlash } from "@phosphor-icons/react"
 import { getAccountNameColor, getAccountTypeConfig, getAssetTypeConfig } from "@/lib/account-config"
 import { getAccountLogo } from "@/lib/account-logos"
 import { Area, AreaChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
@@ -34,6 +35,7 @@ interface Account {
   name: string
   type: string
   accountNumber: string | null
+  excludeFromTotal?: boolean
 }
 
 interface Asset {
@@ -187,7 +189,7 @@ export default function SnapshotsPage() {
   }
 
   const getTotalByTime = (snapshotAt: string) => {
-    return getSnapshotsByTime(snapshotAt).reduce((sum, s) => sum + s.amount, 0)
+    return getSnapshotsByTime(snapshotAt).filter((s) => !s.account.excludeFromTotal).reduce((sum, s) => sum + s.amount, 0)
   }
 
   const getAssetChanges = useMemo(() => {
@@ -245,7 +247,7 @@ export default function SnapshotsPage() {
 
   const sparklineData = useMemo(() => {
     const dateTotals = new Map<string, number>()
-    snapshots.forEach((s) => {
+    snapshots.filter((s) => !s.account.excludeFromTotal).forEach((s) => {
       const dateStr = s.snapshotAt
       dateTotals.set(dateStr, (dateTotals.get(dateStr) || 0) + s.amount)
     })
@@ -257,7 +259,7 @@ export default function SnapshotsPage() {
   const multiChartData = useMemo(() => {
     const startDate = getChartDateRange()
     const dateMap = new Map<string, { net: number; pos: number; neg: number }>()
-    snapshots.forEach((s) => {
+    snapshots.filter((s) => !s.account.excludeFromTotal).forEach((s) => {
       const date = new Date(s.snapshotAt)
       if (!startDate || date >= startDate) {
         const dateStr = date.toISOString().slice(0, 10)
@@ -642,6 +644,9 @@ export default function SnapshotsPage() {
                                                       {!hasMultipleAssets && <span className="w-4" />}
                                                       {LogoComponent ? <LogoComponent size={16} className={nameColor.color} /> : <div className="w-3 h-3 rounded-full bg-muted" />}
                                                       <span className="font-medium">{accountData.account.name}</span>
+                                                      {accountData.account.excludeFromTotal && (
+                                                        <span title="不计入总额"><EyeSlash className="h-3 w-3 text-muted-foreground shrink-0" /></span>
+                                                      )}
                                                       {accountData.account.accountNumber && <span className="text-xs text-muted-foreground">({accountData.account.accountNumber})</span>}
                                                     </div>
                                                   </ResponsiveTableCell>
@@ -728,6 +733,9 @@ export default function SnapshotsPage() {
                                               {!hasMultipleAssets && <span className="w-3.5 shrink-0" />}
                                               {LogoComponent ? <LogoComponent size={16} className={`${nameColor.color} shrink-0`} /> : <div className="w-3 h-3 rounded-full bg-muted shrink-0" />}
                                               <span className="text-xs font-medium truncate min-w-0">{accountData.account.name}</span>
+                                              {accountData.account.excludeFromTotal && (
+                                                <span title="不计入总额"><EyeSlash className="h-3 w-3 text-muted-foreground shrink-0" /></span>
+                                              )}
                                               <Badge variant="outline" className="gap-1 text-[10px] px-1.5 py-0 h-5 shrink-0">
                                                 <TypeIcon className="h-2.5 w-2.5" />
                                                 {typeConfig.label}

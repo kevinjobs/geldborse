@@ -3,8 +3,9 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
+import { EyeSlash } from "@phosphor-icons/react"
 import {
   Dialog,
   DialogContent,
@@ -28,6 +29,8 @@ interface AccountFormDialogProps {
   onAccountNumberChange: (num: string) => void
   accountArchived: boolean
   onAccountArchivedChange: (archived: boolean) => void
+  accountExcludeFromTotal: boolean
+  onAccountExcludeFromTotalChange: (exclude: boolean) => void
   saving: boolean
   onSave: () => void
 }
@@ -44,6 +47,8 @@ export function AccountFormDialog({
   onAccountNumberChange,
   accountArchived,
   onAccountArchivedChange,
+  accountExcludeFromTotal,
+  onAccountExcludeFromTotalChange,
   saving,
   onSave,
 }: AccountFormDialogProps) {
@@ -97,14 +102,10 @@ export function AccountFormDialog({
             />
           </div>
           {editingAccount && (
-            <label
-              htmlFor="accountArchived"
-              className="flex items-start gap-3 rounded-md border border-border p-3 cursor-pointer hover:bg-muted/50 transition-colors"
-            >
-              <Checkbox
-                id="accountArchived"
+            <label className="flex items-start gap-3 rounded-md border border-border p-3 cursor-pointer hover:bg-muted/50 transition-colors">
+              <Switch
                 checked={accountArchived}
-                onCheckedChange={(v) => onAccountArchivedChange(v === true)}
+                onCheckedChange={onAccountArchivedChange}
                 className="mt-0.5"
               />
               <div className="space-y-0.5">
@@ -115,6 +116,24 @@ export function AccountFormDialog({
               </div>
             </label>
           )}
+          <label
+            className="flex items-start gap-3 rounded-md border border-border p-3 cursor-pointer hover:bg-muted/50 transition-colors"
+          >
+            <Switch
+              checked={accountExcludeFromTotal}
+              onCheckedChange={onAccountExcludeFromTotalChange}
+              className="mt-0.5"
+            />
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2 text-sm font-medium leading-none">
+                <EyeSlash className="h-4 w-4 text-muted-foreground" />
+                不计入总额
+              </div>
+              <p className="text-xs text-muted-foreground">
+                此账户将不参与总览、快照和导出中的汇总计算，但仍会正常显示账户明细。
+              </p>
+            </div>
+          </label>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>

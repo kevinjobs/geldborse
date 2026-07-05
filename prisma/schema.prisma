@@ -36,6 +36,7 @@ model Account {
   initialBalance Float           @default(0)
   archived       Boolean         @default(false)
   archivedAt     DateTime?
+  excludeFromTotal Boolean        @default(false)
   userId         String
   user           User            @relation(fields: [userId], references: [id])
   createdAt      DateTime        @default(now())

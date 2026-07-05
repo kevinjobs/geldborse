@@ -34,6 +34,7 @@ interface Account {
   createdAt: string
   updatedAt: string
   userId: string
+  excludeFromTotal?: boolean
 }
 
 interface Asset {
@@ -278,9 +279,10 @@ function OverviewPageContent() {
     }
   }
 
-  const totalAssets = accounts.reduce((sum, account) => sum + getAccountTotal(account.id).total, 0)
+  const activeAccounts = useMemo(() => accounts.filter(a => !a.excludeFromTotal), [accounts])
+  const totalAssets = activeAccounts.reduce((sum, account) => sum + getAccountTotal(account.id).total, 0)
   const totalRecords = records.length
-  const totalAccounts = accounts.length
+  const totalAccounts = activeAccounts.length
 
   const snapshotChartData = React.useMemo(() => {
     const oneYearAgo = new Date()
@@ -288,7 +290,7 @@ function OverviewPageContent() {
 
     const timeMap = new Map<string, number>()
     snapshots
-      .filter((s) => new Date(s.snapshotAt) >= oneYearAgo)
+      .filter((s) => new Date(s.snapshotAt) >= oneYearAgo && !s.account.excludeFromTotal)
       .forEach((s) => {
         timeMap.set(s.snapshotAt, (timeMap.get(s.snapshotAt) || 0) + s.amount)
       })
@@ -344,11 +346,13 @@ function OverviewPageContent() {
 
   // ── Global trend data (full account total per date, forward-filled) ──
   const globalTrend = useMemo(() => {
-    // Collect all unique dates from all balance snapshots
+    const includedAccounts = accounts.filter(a => !a.excludeFromTotal)
     const allDates = new Set<string>()
-    assets.forEach((asset) => {
-      balances.filter((b) => b.assetId === asset.id).forEach((b) => {
-        allDates.add(b.recordedAt.slice(0, 10))
+    includedAccounts.forEach((acct) => {
+      getAssetsByAccount(acct.id).forEach((asset) => {
+        balances.filter((b) => b.assetId === asset.id).forEach((b) => {
+          allDates.add(b.recordedAt.slice(0, 10))
+        })
       })
     })
     const sortedDates = Array.from(allDates).sort()
@@ -364,7 +368,7 @@ function OverviewPageContent() {
       let posSum = 0
       let negSum = 0
 
-      accounts.forEach((acct) => {
+      includedAccounts.forEach((acct) => {
         const accountAssetsList = getAssetsByAccount(acct.id)
         if (accountAssetsList.length === 0) return
         const val = getAccountTotalAtDate(acct.id, upToDate)
@@ -413,9 +417,9 @@ function OverviewPageContent() {
   const monthlyChange = getMonthlyChange()
 
   // ── Total assets / liabilities for KPI ──
-  const totalNet = accounts.reduce((sum, acct) => sum + getAccountTotal(acct.id).total, 0)
-  const posAccounts = accounts.filter(a => getAccountTotal(a.id).total >= 0)
-  const negAccounts = accounts.filter(a => getAccountTotal(a.id).total < 0)
+  const totalNet = activeAccounts.reduce((sum, acct) => sum + getAccountTotal(acct.id).total, 0)
+  const posAccounts = activeAccounts.filter(a => getAccountTotal(a.id).total >= 0)
+  const negAccounts = activeAccounts.filter(a => getAccountTotal(a.id).total < 0)
   const posAccountCount = posAccounts.length
   const negAccountCount = negAccounts.length
   const totalPos = posAccounts.reduce((sum, acct) => sum + getAccountTotal(acct.id).total, 0)
@@ -424,7 +428,7 @@ function OverviewPageContent() {
   // ── Year-to-date change (vs Jan 1 net worth) ──
   const currentYear = new Date().getFullYear().toString()
   const jan1Date = new Date(currentYear + "-01-01T23:59:59.999")
-  const ytdStartNet = accounts.reduce((sum, acct) => sum + getAccountTotalAtDate(acct.id, jan1Date), 0)
+  const ytdStartNet = activeAccounts.reduce((sum, acct) => sum + getAccountTotalAtDate(acct.id, jan1Date), 0)
   const ytdNetChange = totalNet - ytdStartNet
   const ytdNetPercent = ytdStartNet !== 0 ? (ytdNetChange / ytdStartNet) * 100 : 0
   const ytdTrend = globalTrend.net.filter(d => d.date >= currentYear + "-01-01")

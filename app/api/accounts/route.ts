@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
     if (auth instanceof NextResponse) return auth
     const { userId } = auth
 
-    const { name, type, accountNumber } = await request.json()
+    const { name, type, accountNumber, excludeFromTotal } = await request.json()
 
     if (!name || !name.trim()) {
       return NextResponse.json({ error: "账户名称不能为空" }, { status: 400 })
@@ -99,6 +99,7 @@ export async function POST(request: NextRequest) {
         name: name.trim(),
         type: type || "CASH",
         accountNumber: accountNumber?.trim() || null,
+        excludeFromTotal: excludeFromTotal || false,
         userId,
       },
     })

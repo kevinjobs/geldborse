@@ -6,6 +6,7 @@ export interface Account {
   initialBalance: number
   archived?: boolean
   archivedAt?: string | null
+  excludeFromTotal?: boolean
   createdAt?: string
   updatedAt?: string
   _count?: {

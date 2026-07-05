@@ -15,6 +15,7 @@ import { getAccountNameColor, getAccountTypeConfig, getAssetTypeConfig } from "@
 import { formatAmount } from "@/lib/format"
 import { getAccountLogo } from "@/lib/account-logos"
 import { ChevronDown, ChevronRight, Plus, Pencil, Trash2, XCircle, Archive, ArchiveX, X } from "lucide-react"
+import { EyeSlash } from "@phosphor-icons/react"
 import { AreaChart, Area, ResponsiveContainer, ReferenceLine } from "recharts"
 
 interface Account {
@@ -24,6 +25,7 @@ interface Account {
   accountNumber: string | null
   initialBalance: number
   archived?: boolean
+  excludeFromTotal?: boolean
 }
 
 interface Asset {
@@ -132,10 +134,11 @@ export function AccountDetailModal({
               <div className="flex items-center gap-2 min-w-0">
                 {LogoComponent && <LogoComponent size={22} className={nameColor.darkColor} />}
                 <DialogTitle className="text-xl">{account.name}</DialogTitle>
+                {account.excludeFromTotal && (
+                  <span title="不计入总额"><EyeSlash className="h-4 w-4 text-muted-foreground shrink-0" /></span>
+                )}
                 {account.archived && (
-                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-medium h-5 text-white">
-                    已归档
-                  </Badge>
+                  <span title="已归档"><ArchiveX className="h-4 w-4 text-muted-foreground shrink-0" /></span>
                 )}
                 <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal gap-0.5 h-5">
                   <TypeIcon className="h-2.5 w-2.5" />

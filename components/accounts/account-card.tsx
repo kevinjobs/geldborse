@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { getAccountNameColor, getAccountTypeConfig } from "@/lib/account-config"
 import { getAccountLogo } from "@/lib/account-logos"
 import { Plus, Pencil, Trash2, Archive, ArchiveX } from "lucide-react"
+import { EyeSlash } from "@phosphor-icons/react"
 import { AreaChart, Area, ResponsiveContainer } from "recharts"
 
 interface AccountCardAccount {
@@ -14,6 +15,7 @@ interface AccountCardAccount {
   type: string
   accountNumber: string | null
   archived?: boolean
+  excludeFromTotal?: boolean
   _count?: { assets: number }
 }
 
@@ -79,10 +81,15 @@ export function AccountCard({
           <div className="flex items-center gap-2 min-w-0">
             {LogoComponent && <LogoComponent size={16} className={nameColor.darkColor} />}
             <span className="font-semibold text-foreground truncate">{account.name}</span>
+            {account.excludeFromTotal && (
+              <span title="不计入总额">
+                <EyeSlash className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              </span>
+            )}
             {isArchived && (
-              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-medium shrink-0 h-5 text-white">
-                已归档
-              </Badge>
+              <span title="已归档">
+                <ArchiveX className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              </span>
             )}
             <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal shrink-0 gap-0.5 h-5">
               <TypeIcon className="h-2.5 w-2.5" />
