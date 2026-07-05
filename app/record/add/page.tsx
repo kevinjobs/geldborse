@@ -23,6 +23,7 @@ interface Account {
   id: string
   name: string
   type: string
+  archived?: boolean
 }
 
 interface Asset {
@@ -137,6 +138,8 @@ export default function AddRecordPage() {
   }
 
   const selectedAccount = accounts.find((a) => a.id === account)
+  // 过滤掉已归档账户（归档账户不可用于新增收支）
+  const availableAccounts = accounts.filter((a) => !a.archived)
 
   return (
     <ProtectedRoute>
@@ -158,11 +161,11 @@ export default function AddRecordPage() {
                       <div className="text-center py-8">
                         <p className="text-muted-foreground">加载中...</p>
                       </div>
-                    ) : accounts.length === 0 ? (
+                    ) : availableAccounts.length === 0 ? (
                       <div className="text-center py-8">
-                        <p className="text-muted-foreground mb-4">您还没有创建任何账户</p>
+                        <p className="text-muted-foreground mb-4">您还没有可用的账户（所有账户可能已归档）</p>
                         <Link href="/accounts">
-                          <Button>前往创建账户</Button>
+                          <Button>前往管理账户</Button>
                         </Link>
                       </div>
                     ) : (
@@ -189,7 +192,7 @@ export default function AddRecordPage() {
                               </SelectValue>
                             </SelectTrigger>
                             <SelectContent>
-                              {accounts.map((acc) => (
+                              {availableAccounts.map((acc) => (
                                 <SelectItem key={acc.id} value={acc.id}>
                                   <AccountDisplay name={acc.name} type={acc.type} variant="compact" />
                                 </SelectItem>

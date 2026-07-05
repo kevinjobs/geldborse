@@ -4,6 +4,8 @@ export interface Account {
   type: string
   accountNumber: string | null
   initialBalance: number
+  archived?: boolean
+  archivedAt?: string | null
   assets?: Asset[]
   totalAmount?: number
 }

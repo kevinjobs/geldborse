@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { getAccountNameColor, getAccountTypeConfig } from "@/lib/account-config"
 import { getAccountLogo } from "@/lib/account-logos"
-import { Plus, Pencil, Trash2 } from "lucide-react"
+import { Plus, Pencil, Trash2, Archive, ArchiveX } from "lucide-react"
 import { AreaChart, Area, ResponsiveContainer } from "recharts"
 
 interface AccountCardAccount {
@@ -13,6 +13,7 @@ interface AccountCardAccount {
   name: string
   type: string
   accountNumber: string | null
+  archived?: boolean
   _count?: { assets: number }
 }
 
@@ -26,6 +27,7 @@ interface AccountCardProps {
   onAddAsset: () => void
   onEdit: () => void
   onDelete: () => void
+  onArchive: () => void
 }
 
 export function AccountCard({
@@ -38,12 +40,14 @@ export function AccountCard({
   onAddAsset,
   onEdit,
   onDelete,
+  onArchive,
 }: AccountCardProps) {
   const nameColor = getAccountNameColor(account.name)
   const isNegative = currentBalance < 0
   const LogoComponent = getAccountLogo(account.name)
   const typeConfig = getAccountTypeConfig(account.type)
   const TypeIcon = typeConfig.icon
+  const isArchived = !!account.archived
 
   // ── Trend indicator ──────────────────────────────────────────
   const trendPercent =
@@ -64,7 +68,9 @@ export function AccountCard({
 
   return (
     <Card
-      className={`rounded-[16px] overflow-hidden cursor-pointer hover:-translate-y-0.5 hover:shadow-lg hover:brightness-110 transition-all duration-200 dark:bg-[#252525]`}
+      className={`rounded-[16px] overflow-hidden cursor-pointer hover:-translate-y-0.5 hover:shadow-lg hover:brightness-110 transition-all duration-200 dark:bg-[#252525] ${
+        isArchived ? "opacity-60 border-dashed border-muted-foreground/40" : ""
+      }`}
       onClick={onOpenDetail}
     >
       <CardContent className="px-4 py-0">
@@ -73,6 +79,11 @@ export function AccountCard({
           <div className="flex items-center gap-2 min-w-0">
             {LogoComponent && <LogoComponent size={16} className={nameColor.darkColor} />}
             <span className="font-semibold text-foreground truncate">{account.name}</span>
+            {isArchived && (
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-medium shrink-0 h-5 text-white">
+                已归档
+              </Badge>
+            )}
             <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal shrink-0 gap-0.5 h-5">
               <TypeIcon className="h-2.5 w-2.5" />
               {typeConfig.label}
@@ -167,6 +178,20 @@ export function AccountCard({
           <Button variant="outline" size="sm" onClick={onEdit}>
             <Pencil className="h-3.5 w-3.5 mr-1" />
             编辑
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className={isArchived ? "text-primary border-primary/30 hover:bg-primary/10" : "text-muted-foreground border-border hover:text-foreground"}
+            onClick={onArchive}
+            title={isArchived ? "取消归档" : "归档账户"}
+          >
+            {isArchived ? (
+              <ArchiveX className="h-3.5 w-3.5 mr-1" />
+            ) : (
+              <Archive className="h-3.5 w-3.5 mr-1" />
+            )}
+            {isArchived ? "取消归档" : "归档"}
           </Button>
           <Button variant="destructive" size="sm" onClick={onDelete}>
             <Trash2 className="h-3.5 w-3.5 mr-1" />

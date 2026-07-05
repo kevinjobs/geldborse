@@ -30,6 +30,7 @@ interface Account {
   id: string
   name: string
   type: string
+  archived?: boolean
 }
 
 interface Record {
@@ -219,6 +220,11 @@ export default function RecordsPage() {
 
   const sortedRecords = [...records].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+  )
+
+  // 编辑对话框可选账户：过滤掉归档账户，但保留当前编辑记录所属账户（即使已归档）
+  const availableAccounts = accounts.filter(
+    (a) => !a.archived || a.id === editAccount
   )
 
   return (
@@ -419,7 +425,7 @@ export default function RecordsPage() {
                   <SelectValue placeholder="选择账户" />
                 </SelectTrigger>
                 <SelectContent>
-                  {accounts.map((acc) => (
+                  {availableAccounts.map((acc) => (
                     <SelectItem key={acc.id} value={acc.id}>
                       <AccountDisplay name={acc.name} type={acc.type} variant="compact" />
                     </SelectItem>

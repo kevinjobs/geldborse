@@ -3,6 +3,7 @@
 import { Fragment, useMemo } from "react"
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogHeader,
   DialogTitle,
@@ -12,7 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { getAccountNameColor, getAccountTypeConfig, getAssetTypeConfig } from "@/lib/account-config"
 import { getAccountLogo } from "@/lib/account-logos"
-import { ChevronDown, ChevronRight, Plus, Pencil, Trash2, XCircle } from "lucide-react"
+import { ChevronDown, ChevronRight, Plus, Pencil, Trash2, XCircle, Archive, ArchiveX, X } from "lucide-react"
 import { AreaChart, Area, ResponsiveContainer, ReferenceLine } from "recharts"
 
 interface Account {
@@ -21,6 +22,7 @@ interface Account {
   type: string
   accountNumber: string | null
   initialBalance: number
+  archived?: boolean
 }
 
 interface Asset {
@@ -54,6 +56,7 @@ interface AccountDetailModalProps {
   onDeleteAsset: (asset: Asset) => void
   onEditBalance: (balance: Balance) => void
   onDeleteBalance: (balance: Balance) => void
+  onArchive: () => void
   getBalanceAtDate: (assetId: string, defaultAmount: number) => number
   getAccountTotal: (account: Account) => number
 }
@@ -87,6 +90,7 @@ export function AccountDetailModal({
   onDeleteAsset,
   onEditBalance,
   onDeleteBalance,
+  onArchive,
   getBalanceAtDate,
 }: AccountDetailModalProps) {
   if (!account) return null
@@ -123,18 +127,44 @@ export function AccountDetailModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl h-[80vh] flex flex-col">
+      <DialogContent className="max-w-3xl h-[80vh] flex flex-col" showCloseButton={false}>
         {/* Fixed header section */}
         <div className="shrink-0">
           <DialogHeader>
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 min-w-0">
                 {LogoComponent && <LogoComponent size={22} className={nameColor.darkColor} />}
                 <DialogTitle className="text-xl">{account.name}</DialogTitle>
+                {account.archived && (
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-medium h-5 text-white">
+                    已归档
+                  </Badge>
+                )}
                 <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal gap-0.5 h-5">
                   <TypeIcon className="h-2.5 w-2.5" />
                   {typeConfig.label}
                 </Badge>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={account.archived ? "text-primary border-primary/30" : "text-muted-foreground border-border"}
+                  onClick={onArchive}
+                  title={account.archived ? "取消归档" : "归档账户"}
+                >
+                  {account.archived ? (
+                    <ArchiveX className="h-3.5 w-3.5 mr-1" />
+                  ) : (
+                    <Archive className="h-3.5 w-3.5 mr-1" />
+                  )}
+                  {account.archived ? "取消归档" : "归档"}
+                </Button>
+                <DialogClose asChild>
+                  <Button variant="ghost" size="icon-sm" className="text-muted-foreground hover:text-foreground">
+                    <X className="h-4 w-4" />
+                  </Button>
+                </DialogClose>
               </div>
             </div>
             <DialogDescription className="flex items-center gap-2 mt-1">
@@ -236,7 +266,7 @@ export function AccountDetailModal({
                     className="p-3 rounded-[8px] bg-muted/30 hover:bg-muted/50 cursor-pointer transition-colors"
                     onClick={() => onToggleAssetExpand(asset.id)}
                   >
-                    <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between pr-12">
                       <div className="flex items-center gap-2 min-w-0 flex-1">
                         <span className="w-4 h-4 flex items-center justify-center shrink-0">
                           {isExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}

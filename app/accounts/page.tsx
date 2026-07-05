@@ -11,6 +11,7 @@ import { Plus, Pencil, Trash2, XCircle, Zap, Banknote, Gauge, CalendarDays, Arro
 import { AreaChart, Area, ResponsiveContainer } from "recharts"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Dialog,
   DialogContent,
@@ -28,6 +29,7 @@ import { AccountDetailModal } from "@/components/accounts/account-detail-modal"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
 import { ProtectedRoute } from "@/components/protected-route"
+import { toast } from "sonner"
 
 interface Account {
   id: string
@@ -35,6 +37,8 @@ interface Account {
   type: string
   accountNumber: string | null
   initialBalance: number
+  archived?: boolean
+  archivedAt?: string | null
   createdAt?: string
   updatedAt?: string
   _count?: {
@@ -76,6 +80,7 @@ export default function AccountsPage() {
   const [accountName, setAccountName] = useState("")
   const [accountType, setAccountType] = useState("CASH")
   const [accountNumber, setAccountNumber] = useState("")
+  const [accountArchived, setAccountArchived] = useState(false)
   const [saving, setSaving] = useState(false)
 
   const [accountAssets, setAccountAssets] = useState<Record<string, Asset[]>>({})
@@ -100,6 +105,7 @@ export default function AccountsPage() {
   const [activeTypeFilter, setActiveTypeFilter] = useState("all")
   const [sortBy, setSortBy] = useState<"balanceAbs" | "lastUpdated">("balanceAbs")
   const [sortDir, setSortDir] = useState<"desc" | "asc">("desc")
+  const [showArchived, setShowArchived] = useState(false)
 
   const toggleModalAssetExpand = (assetId: string) => {
     setModalExpandedAssets((prev) => {
@@ -193,6 +199,7 @@ export default function AccountsPage() {
     setAccountName("")
     setAccountType("CASH")
     setAccountNumber("")
+    setAccountArchived(false)
     setDialogOpen(true)
   }
 
@@ -201,12 +208,41 @@ export default function AccountsPage() {
     setAccountName(account.name)
     setAccountType(account.type)
     setAccountNumber(account.accountNumber || "")
+    setAccountArchived(!!account.archived)
     setDialogOpen(true)
   }
 
   const handleDelete = (account: Account) => {
     setDeletingAccount(account)
     setDeleteDialogOpen(true)
+  }
+
+  const handleArchive = async (account: Account) => {
+    const newArchived = !account.archived
+    try {
+      const res = await fetch(`/api/accounts/${account.id}`, {
+        method: "PUT",
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name: account.name, type: account.type, accountNumber: account.accountNumber, archived: newArchived }),
+      })
+      if (res.ok) {
+        // 乐观更新：即时切换 accounts 列表中的状态
+        setAccounts(prev =>
+          prev.map(a => a.id === account.id ? { ...a, archived: newArchived } : a)
+        )
+        // 乐观更新：即时切换 modal 中的账户状态
+        setModalAccount(prev =>
+          prev && prev.id === account.id ? { ...prev, archived: newArchived } : prev
+        )
+        toast.success(newArchived ? "已归档" : "已取消归档")
+      } else {
+        toast.error("操作失败")
+      }
+    } catch (error) {
+      console.error("归档操作失败:", error)
+      toast.error("操作失败")
+    }
   }
 
   const handleSave = async () => {
@@ -222,7 +258,7 @@ export default function AccountsPage() {
           method: "PUT",
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ name: accountName, type: accountType, accountNumber }),
+          body: JSON.stringify({ name: accountName, type: accountType, accountNumber, archived: accountArchived }),
         })
         if (res.ok) {
           fetchAccounts()
@@ -676,6 +712,11 @@ export default function AccountsPage() {
     posCount: number; negCount: number
     earliestDate: string | null; latestDate: string | null
   }
+  // ── Accounts visible under current archive filter ──
+  const visibleAccounts = useMemo(() => {
+    return showArchived ? accounts : accounts.filter(a => !a.archived)
+  }, [accounts, showArchived])
+
   const kpiData = useMemo((): KpiData => {
     let totalNet = 0
     let totalPos = 0
@@ -749,13 +790,18 @@ export default function AccountsPage() {
   // ── Type counts for filter tabs ──
   const typeCounts = useMemo(() => {
     const counts: Record<string, number> = {}
-    accounts.forEach(a => { counts[a.type] = (counts[a.type] || 0) + 1 })
+    visibleAccounts.forEach(a => { counts[a.type] = (counts[a.type] || 0) + 1 })
     return counts
+  }, [visibleAccounts])
+
+  // ── Archived account count ──
+  const archivedCount = useMemo(() => {
+    return accounts.filter(a => a.archived).length
   }, [accounts])
 
   // ── Filtered and sorted accounts ──
   const filteredAndSortedAccounts = useMemo(() => {
-    let result = [...accounts]
+    let result = [...visibleAccounts]
     if (activeTypeFilter !== "all") {
       result = result.filter(a => a.type === activeTypeFilter)
     }
@@ -771,7 +817,7 @@ export default function AccountsPage() {
       }
     })
     return result
-  }, [accounts, activeTypeFilter, sortBy, sortDir, getAccountTotalAtDate, accountLastUpdated])
+  }, [visibleAccounts, activeTypeFilter, sortBy, sortDir, getAccountTotalAtDate, accountLastUpdated])
 
   return (
     <ProtectedRoute>
@@ -1024,6 +1070,19 @@ export default function AccountsPage() {
                             </button>
                           )
                         })}
+                        {archivedCount > 0 && (
+                          <button
+                            onClick={() => setShowArchived(!showArchived)}
+                            className={`text-xs px-2.5 py-1 rounded-full transition-colors inline-flex items-center gap-1 ${
+                              showArchived
+                                ? "bg-muted-foreground text-background font-medium"
+                                : "bg-muted text-muted-foreground hover:bg-muted/80"
+                            }`}
+                          >
+                            {showArchived ? "隐藏" : "显示"}归档
+                            <span className="opacity-60">({archivedCount})</span>
+                          </button>
+                        )}
                       </div>
                     </CardHeader>
                     <CardContent className="min-h-[300px]">
@@ -1045,6 +1104,7 @@ export default function AccountsPage() {
                               onAddAsset={() => { setSelectedAccount(account); handleAddAsset() }}
                               onEdit={() => handleEdit(account)}
                               onDelete={() => handleDelete(account)}
+                              onArchive={() => handleArchive(account)}
                             />
                           ))}
                         </div>
@@ -1113,6 +1173,25 @@ export default function AccountsPage() {
                 onChange={(e) => setAccountNumber(e.target.value)}
               />
             </div>
+            {editingAccount && (
+              <label
+                htmlFor="accountArchived"
+                className="flex items-start gap-3 rounded-md border border-border p-3 cursor-pointer hover:bg-muted/50 transition-colors"
+              >
+                <Checkbox
+                  id="accountArchived"
+                  checked={accountArchived}
+                  onCheckedChange={(v) => setAccountArchived(v === true)}
+                  className="mt-0.5"
+                />
+                <div className="space-y-0.5">
+                  <div className="text-sm font-medium leading-none">归档此账户</div>
+                  <p className="text-xs text-muted-foreground">
+                    归档后账户将在账户管理与添加收支页面默认隐藏，但不影响总览、快照和导出中的数据计算。
+                  </p>
+                </div>
+              </label>
+            )}
 
           </div>
           <DialogFooter>
@@ -1327,6 +1406,7 @@ export default function AccountsPage() {
         onDeleteAsset={(asset) => handleDeleteAsset(asset)}
         onEditBalance={(balance) => handleEditBalance(balance)}
         onDeleteBalance={(balance) => handleDeleteBalance(balance)}
+        onArchive={() => modalAccount && handleArchive(modalAccount)}
         getBalanceAtDate={(assetId, defaultAmount) => getBalanceAtDate(assetId, defaultAmount)}
         getAccountTotal={(acct) => getAccountTotalAtDate(acct)}
       />

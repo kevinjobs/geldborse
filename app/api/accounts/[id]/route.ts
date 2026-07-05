@@ -33,7 +33,7 @@ export async function PUT(
   const { userId } = auth
 
   const { id } = await params
-  const { name, type, accountNumber } = await request.json()
+  const { name, type, accountNumber, archived } = await request.json()
 
   if (!name || !name.trim()) {
     return NextResponse.json({ error: "账户名称不能为空" }, { status: 400 })
@@ -48,12 +48,25 @@ export async function PUT(
       return NextResponse.json({ error: "账户不存在或无权操作" }, { status: 404 })
     }
 
+    // 当归档状态发生变化时，自动设置或清除 archivedAt
+    const archivedData = typeof archived === 'boolean'
+      ? {
+          archived,
+          archivedAt: archived === true && !existing.archived
+            ? new Date()
+            : archived === false
+              ? null
+              : existing.archivedAt,
+        }
+      : {}
+
     const account = await prisma.account.update({
       where: { id },
       data: {
         name: name.trim(),
         type,
         accountNumber: accountNumber?.trim() || null,
+        ...archivedData,
       },
     })
     return NextResponse.json(account)

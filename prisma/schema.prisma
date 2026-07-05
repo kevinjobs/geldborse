@@ -34,6 +34,8 @@ model Account {
   type           String          @default("CASH")
   accountNumber  String?
   initialBalance Float           @default(0)
+  archived       Boolean         @default(false)
+  archivedAt     DateTime?
   userId         String
   user           User            @relation(fields: [userId], references: [id])
   createdAt      DateTime        @default(now())
@@ -45,6 +47,7 @@ model Account {
 
   @@index([type])
   @@index([userId])
+  @@index([userId, archived])
 }
 
 model AccountMember {
