@@ -15,6 +15,15 @@ export async function GET(request: NextRequest) {
     const ninetyDaysAgo = new Date()
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
 
+    // 惰性清理：删除 90 天前的非当前登录记录
+    await prisma.loginHistory.deleteMany({
+      where: {
+        userId,
+        loginAt: { lt: ninetyDaysAgo },
+        isCurrent: false
+      }
+    })
+
     const records = await prisma.loginHistory.findMany({
       where: {
         userId,

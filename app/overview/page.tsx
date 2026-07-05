@@ -14,6 +14,8 @@ import {
   AccountDisplay
 } from "@/lib/account-config"
 import { useAuth } from "@/lib/auth-context"
+import { formatAmount, formatAmountShort } from "@/lib/format"
+import { api } from "@/lib/api-client"
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
 import {
   Select,
@@ -94,25 +96,13 @@ function OverviewPageContent() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [accountsRes, assetsRes, recordsRes, balancesRes, snapshotsRes] = await Promise.all([
-        fetch("/api/accounts"),
-        fetch("/api/assets"),
-        fetch("/api/records"),
-        fetch("/api/balances"),
-        fetch("/api/daily-snapshots"),
+      const [accountsData, assetsData, recordsData, balancesData, snapshotsData] = await Promise.all([
+        api.get<Account[]>("/api/accounts"),
+        api.get<Asset[]>("/api/assets"),
+        api.get<Record[]>("/api/records"),
+        api.get<Balance[]>("/api/balances"),
+        api.get<DailySnapshot[]>("/api/daily-snapshots"),
       ])
-
-      if (!accountsRes.ok) throw new Error(`Accounts API error: ${accountsRes.status}`)
-      if (!assetsRes.ok) throw new Error(`Assets API error: ${assetsRes.status}`)
-      if (!recordsRes.ok) throw new Error(`Records API error: ${recordsRes.status}`)
-      if (!balancesRes.ok) throw new Error(`Balances API error: ${balancesRes.status}`)
-      if (!snapshotsRes.ok) throw new Error(`Snapshots API error: ${snapshotsRes.status}`)
-
-      const accountsData = await accountsRes.json()
-      const assetsData = await assetsRes.json()
-      const recordsData = await recordsRes.json()
-      const balancesData = await balancesRes.json()
-      const snapshotsData = await snapshotsRes.json()
 
       const userAccounts = accountsData.filter((account: Account) => account.userId === user?.id)
       const userAccountIds = new Set(userAccounts.map((account: Account) => account.id))
@@ -151,20 +141,6 @@ function OverviewPageContent() {
       }
       return newSet
     })
-  }
-
-  const formatAmount = (amount: number) => {
-    return amount.toLocaleString("zh-CN", {
-      style: "currency",
-      currency: "CNY",
-    })
-  }
-
-  const formatAmountShort = (amount: number) => {
-    if (Math.abs(amount) >= 10000) {
-      return `${(amount / 10000).toFixed(1)}万`
-    }
-    return amount.toFixed(0)
   }
 
   const getAssetsByAccount = (accountId: string): Asset[] => {

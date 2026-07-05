@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { useState, useEffect } from "react"
 import {
   SidebarGroup,
@@ -45,6 +46,7 @@ function NavIcon({ iconKey, mounted }: { iconKey: keyof typeof navIcons; mounted
 
 export function NavMain() {
   const [mounted, setMounted] = useState(false)
+  const pathname = usePathname()
 
   useEffect(() => {
     setMounted(true)
@@ -68,6 +70,7 @@ export function NavMain() {
               <SidebarMenuButton
                 asChild
                 tooltip={item.title}
+                isActive={pathname === item.url}
                 className={`${buttonClass} animate-transition-all`}
               >
                 <Link href={item.url} className="w-full h-full flex items-center gap-3 px-4">

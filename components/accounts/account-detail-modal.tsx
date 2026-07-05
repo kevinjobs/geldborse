@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { getAccountNameColor, getAccountTypeConfig, getAssetTypeConfig } from "@/lib/account-config"
+import { formatAmount } from "@/lib/format"
 import { getAccountLogo } from "@/lib/account-logos"
 import { ChevronDown, ChevronRight, Plus, Pencil, Trash2, XCircle, Archive, ArchiveX, X } from "lucide-react"
 import { AreaChart, Area, ResponsiveContainer, ReferenceLine } from "recharts"
@@ -69,10 +70,6 @@ function formatDateTime(dateStr: string) {
   const hours = String(d.getHours()).padStart(2, "0")
   const minutes = String(d.getMinutes()).padStart(2, "0")
   return `${year}/${month}/${day} ${hours}:${minutes}`
-}
-
-function formatAmount(amount: number) {
-  return amount.toLocaleString("zh-CN", { style: "currency", currency: "CNY" })
 }
 
 export function AccountDetailModal({

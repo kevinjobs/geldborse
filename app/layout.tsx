@@ -40,7 +40,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="zh-CN"
       className={cn("h-full", "antialiased", inter.variable, firaCode.variable, interHeading.variable)}
       suppressHydrationWarning
     >

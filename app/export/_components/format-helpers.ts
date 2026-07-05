@@ -1,9 +1,4 @@
-export const formatAmount = (amount: number) => {
-  return new Intl.NumberFormat("zh-CN", {
-    style: "currency",
-    currency: "CNY",
-  }).format(amount)
-}
+export { formatAmount } from "@/lib/format"
 
 export const formatDateTime = (dateStr: string) => {
   return new Date(dateStr).toLocaleString("zh-CN", {

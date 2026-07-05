@@ -25,12 +25,22 @@ import {
   AccountDisplay
 } from "@/lib/account-config"
 import { ProtectedRoute } from "@/components/protected-route"
+import { formatAmount, formatDate } from "@/lib/format"
+import { api } from "@/lib/api-client"
+import { toast } from "sonner"
 
 interface Account {
   id: string
   name: string
   type: string
   archived?: boolean
+}
+
+interface Asset {
+  id: string
+  name: string
+  type: string
+  amount: number
 }
 
 interface Record {
@@ -74,8 +84,7 @@ export default function RecordsPage() {
 
   const fetchAssets = async (accountId: string) => {
     try {
-      const res = await fetch(`/api/accounts/${accountId}/assets`, { credentials: 'include' })
-      const data = await res.json()
+      const data = await api.get<Asset[]>(`/api/accounts/${accountId}/assets`)
       if (Array.isArray(data)) {
         setEditAssets(data)
       } else {
@@ -103,26 +112,12 @@ export default function RecordsPage() {
 
   const fetchData = async () => {
     try {
-      const [recordsRes, accountsRes] = await Promise.all([
-        fetch("/api/records", { credentials: 'include' }),
-        fetch("/api/accounts", { credentials: 'include' }),
+      const [recordsData, accountsData] = await Promise.all([
+        api.get<Record[]>("/api/records"),
+        api.get<Account[]>("/api/accounts"),
       ])
-      const recordsData = await recordsRes.json()
-      const accountsData = await accountsRes.json()
-      // 确保recordsData是一个数组
-      if (Array.isArray(recordsData)) {
-        setRecords(recordsData)
-      } else {
-        console.error("获取记录列表失败: 响应数据不是数组")
-        setRecords([])
-      }
-      // 确保accountsData是一个数组
-      if (Array.isArray(accountsData)) {
-        setAccounts(accountsData)
-      } else {
-        console.error("获取账户列表失败: 响应数据不是数组")
-        setAccounts([])
-      }
+      setRecords(Array.isArray(recordsData) ? recordsData : [])
+      setAccounts(Array.isArray(accountsData) ? accountsData : [])
     } catch (error) {
       console.error("获取数据失败:", error)
       setRecords([])
@@ -130,17 +125,6 @@ export default function RecordsPage() {
     } finally {
       setLoading(false)
     }
-  }
-
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString("zh-CN")
-  }
-
-  const formatAmount = (amount: number) => {
-    return amount.toLocaleString("zh-CN", {
-      style: "currency",
-      currency: "CNY",
-    })
   }
 
   const handleEdit = (record: Record) => {
@@ -162,34 +146,25 @@ export default function RecordsPage() {
 
   const handleSaveEdit = async () => {
     if (!selectedRecord || !editDate || !editAccount || !editAmount) {
-      alert("请填写所有字段")
+      toast.error("请填写所有字段")
       return
     }
 
     setSaving(true)
     try {
-      const res = await fetch(`/api/records/${selectedRecord.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        credentials: 'include',
-        body: JSON.stringify({
-          date: new Date(editDate + "T00:00:00").toISOString(),
-          accountId: editAccount,
-          assetId: editAsset || null,
-          amount: editAmount,
-          type: editType,
-          note: editNote || null,
-        }),
+      await api.put(`/api/records/${selectedRecord.id}`, {
+        date: new Date(editDate + "T00:00:00").toISOString(),
+        accountId: editAccount,
+        assetId: editAsset || undefined,
+        amount: parseFloat(editAmount),
+        type: editType,
+        note: editNote || undefined,
       })
-      if (res.ok) {
-        setEditDialogOpen(false)
-        fetchData()
-      } else {
-        alert("保存失败")
-      }
+      setEditDialogOpen(false)
+      fetchData()
     } catch (error) {
       console.error("保存失败:", error)
-      alert("保存失败")
+      toast.error("保存失败")
     } finally {
       setSaving(false)
     }
@@ -200,19 +175,12 @@ export default function RecordsPage() {
 
     setSaving(true)
     try {
-      const res = await fetch(`/api/records/${selectedRecord.id}`, {
-        method: "DELETE",
-        credentials: 'include',
-      })
-      if (res.ok) {
-        setDeleteDialogOpen(false)
-        fetchData()
-      } else {
-        alert("删除失败")
-      }
+      await api.delete(`/api/records/${selectedRecord.id}`)
+      setDeleteDialogOpen(false)
+      fetchData()
     } catch (error) {
       console.error("删除失败:", error)
-      alert("删除失败")
+      toast.error("删除失败")
     } finally {
       setSaving(false)
     }

@@ -17,12 +17,14 @@ import {
   SidebarGroupContent,
   SidebarGroupLabel,
 } from "@/components/ui/sidebar"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
-import { PlusIcon } from "@phosphor-icons/react"
-import { Settings, HelpCircle } from "lucide-react"
+import { GearSix, Question } from "@phosphor-icons/react"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useAuth()
+  const pathname = usePathname()
 
   const userData = user ? {
     name: user.name || user.email.split('@')[0],
@@ -38,12 +40,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader className="border-b border-sidebar-border pb-4">
         <div className="px-4 py-3">
-          <a href="/overview" className="flex items-center gap-2">
+          <Link href="/overview" className="flex items-center gap-2">
             <Logo className="size-6!" />
             <span className="text-base font-bold text-primary group-data-[collapsible=icon]:hidden">
               Geldborse
             </span>
-          </a>
+          </Link>
         </div>
 
 
@@ -60,19 +62,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="设置">
-                  <a href="/settings" className="w-full h-full flex items-center gap-3 px-4">
-                    <Settings className="h-4 w-4" />
+                <SidebarMenuButton asChild tooltip="设置" isActive={pathname === "/settings"}>
+                  <Link href="/settings" className="w-full h-full flex items-center gap-3 px-4">
+                    <GearSix className="h-4 w-4" />
                     <span>设置</span>
-                  </a>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="帮助中心">
-                  <a href="/help" className="w-full h-full flex items-center gap-3 px-4">
-                    <HelpCircle className="h-4 w-4" />
+                <SidebarMenuButton asChild tooltip="帮助中心" isActive={pathname === "/help"}>
+                  <Link href="/help" className="w-full h-full flex items-center gap-3 px-4">
+                    <Question className="h-4 w-4" />
                     <span>帮助中心</span>
-                  </a>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>

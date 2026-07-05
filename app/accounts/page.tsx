@@ -4,69 +4,23 @@ import { useState, useEffect, useMemo, useCallback } from "react"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Plus, Pencil, Trash2, XCircle, Zap, Banknote, Gauge, CalendarDays, ArrowLeftToLine, ArrowRightToLine, CalendarIcon } from "lucide-react"
-import { AreaChart, Area, ResponsiveContainer } from "recharts"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import {
-  ACCOUNT_TYPE_CONFIG,
-  ASSET_TYPE_CONFIG,
-} from "@/lib/account-config"
+import { Plus } from "lucide-react"
+import { ACCOUNT_TYPE_CONFIG } from "@/lib/account-config"
 import { AccountCard } from "@/components/accounts/account-card"
 import { AccountDetailModal } from "@/components/accounts/account-detail-modal"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar } from "@/components/ui/calendar"
 import { ProtectedRoute } from "@/components/protected-route"
 import { toast } from "sonner"
+import { formatAmount, formatDateTime } from "@/lib/format"
+import { api } from "@/lib/api-client"
 
-interface Account {
-  id: string
-  name: string
-  type: string
-  accountNumber: string | null
-  initialBalance: number
-  archived?: boolean
-  archivedAt?: string | null
-  createdAt?: string
-  updatedAt?: string
-  _count?: {
-    records: number
-    assets: number
-  }
-}
-
-interface Asset {
-  id: string
-  name: string
-  type: string
-  amount: number
-  accountId: string
-  createdAt?: string
-  updatedAt?: string
-  balances?: Balance[]
-}
-
-interface Balance {
-  id: string
-  amount: number
-  recordedAt: string
-  assetId: string
-  asset?: Asset
-  createdAt?: string
-  updatedAt?: string
-}
+import { KpiSummaryRow } from "@/components/accounts/kpi-summary-row"
+import { AccountToolbar } from "@/components/accounts/account-toolbar"
+import { AccountFormDialog, AccountDeleteDialog } from "@/components/accounts/account-form-dialog"
+import { AssetFormDialog } from "@/components/accounts/asset-form-dialog"
+import { BalanceFormDialog } from "@/components/accounts/balance-form-dialog"
+import type { Account, Asset, Balance } from "@/components/accounts/types"
 
 export default function AccountsPage() {
   const [accounts, setAccounts] = useState<Account[]>([])
@@ -87,14 +41,12 @@ export default function AccountsPage() {
   const [assetBalances, setAssetBalances] = useState<Record<string, Balance[]>>({})
 
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null)
-  const [assets, setAssets] = useState<Asset[]>([])
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null)
   const [assetName, setAssetName] = useState("")
   const [assetType, setAssetType] = useState("DEPOSIT")
   const [assetAmount, setAssetAmount] = useState("")
 
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null)
-  const [balances, setBalances] = useState<Balance[]>([])
   const [editingBalance, setEditingBalance] = useState<Balance | null>(null)
   const [balanceAmount, setBalanceAmount] = useState("")
   const [balanceDate, setBalanceDate] = useState("")
@@ -123,8 +75,7 @@ export default function AccountsPage() {
   const fetchAccounts = async () => {
     try {
       // 使用新的API端点一次性获取所有数据
-      const res = await fetch("/api/accounts/full", { credentials: 'include' })
-      const data = await res.json()
+      const data = await api.get<Account[]>("/api/accounts/full")
       // 确保data是一个数组
       if (Array.isArray(data)) {
         setAccounts(data)
@@ -134,10 +85,11 @@ export default function AccountsPage() {
         const newAssetBalances: { [key: string]: Balance[] } = {}
 
         data.forEach((account) => {
-          if (account.assets && Array.isArray(account.assets)) {
-            newAccountAssets[account.id] = account.assets
+          if ((account as Account & { assets?: Asset[] }).assets && Array.isArray((account as Account & { assets?: Asset[] }).assets)) {
+            const accountWithAssets = account as Account & { assets: Asset[] }
+            newAccountAssets[account.id] = accountWithAssets.assets
 
-            account.assets.forEach((asset: Asset) => {
+            accountWithAssets.assets.forEach((asset: Asset) => {
               if (asset.balances && Array.isArray(asset.balances)) {
                 newAssetBalances[asset.id] = asset.balances
               }
@@ -157,40 +109,6 @@ export default function AccountsPage() {
       setAccounts([])
     } finally {
       setLoading(false)
-    }
-  }
-
-  const fetchAssets = async (accountId: string) => {
-    try {
-      const res = await fetch(`/api/assets?accountId=${accountId}`, { credentials: 'include' })
-      const data = await res.json()
-      // 确保data是一个数组
-      if (Array.isArray(data)) {
-        setAssets(data)
-      } else {
-        console.error("获取资产列表失败: 响应数据不是数组")
-        setAssets([])
-      }
-    } catch (error) {
-      console.error("获取资产列表失败:", error)
-      setAssets([])
-    }
-  }
-
-  const fetchBalances = async (assetId: string) => {
-    try {
-      const res = await fetch(`/api/balances?assetId=${assetId}`, { credentials: 'include' })
-      const data = await res.json()
-      // 确保data是一个数组
-      if (Array.isArray(data)) {
-        setBalances(data)
-      } else {
-        console.error("获取余额快照列表失败: 响应数据不是数组")
-        setBalances([])
-      }
-    } catch (error) {
-      console.error("获取余额快照列表失败:", error)
-      setBalances([])
     }
   }
 
@@ -220,25 +138,16 @@ export default function AccountsPage() {
   const handleArchive = async (account: Account) => {
     const newArchived = !account.archived
     try {
-      const res = await fetch(`/api/accounts/${account.id}`, {
-        method: "PUT",
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ name: account.name, type: account.type, accountNumber: account.accountNumber, archived: newArchived }),
-      })
-      if (res.ok) {
-        // 乐观更新：即时切换 accounts 列表中的状态
-        setAccounts(prev =>
-          prev.map(a => a.id === account.id ? { ...a, archived: newArchived } : a)
-        )
-        // 乐观更新：即时切换 modal 中的账户状态
-        setModalAccount(prev =>
-          prev && prev.id === account.id ? { ...prev, archived: newArchived } : prev
-        )
-        toast.success(newArchived ? "已归档" : "已取消归档")
-      } else {
-        toast.error("操作失败")
-      }
+      await api.put(`/api/accounts/${account.id}`, { name: account.name, type: account.type, accountNumber: account.accountNumber, archived: newArchived })
+      // 乐观更新：即时切换 accounts 列表中的状态
+      setAccounts(prev =>
+        prev.map(a => a.id === account.id ? { ...a, archived: newArchived } : a)
+      )
+      // 乐观更新：即时切换 modal 中的账户状态
+      setModalAccount(prev =>
+        prev && prev.id === account.id ? { ...prev, archived: newArchived } : prev
+      )
+      toast.success(newArchived ? "已归档" : "已取消归档")
     } catch (error) {
       console.error("归档操作失败:", error)
       toast.error("操作失败")
@@ -247,47 +156,25 @@ export default function AccountsPage() {
 
   const handleSave = async () => {
     if (!accountName.trim()) {
-      alert("请输入账户名称")
+      toast.error("请输入账户名称")
       return
     }
 
     setSaving(true)
     try {
       if (editingAccount) {
-        const res = await fetch(`/api/accounts/${editingAccount.id}`, {
-          method: "PUT",
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ name: accountName, type: accountType, accountNumber, archived: accountArchived }),
-        })
-        if (res.ok) {
-          fetchAccounts()
-          setDialogOpen(false)
-        } else {
-          alert("更新失败")
-        }
+        await api.put(`/api/accounts/${editingAccount.id}`, { name: accountName, type: accountType, accountNumber: accountNumber || undefined, archived: accountArchived })
+        fetchAccounts()
+        setDialogOpen(false)
       } else {
-        const res = await fetch("/api/accounts", {
-          method: "POST",
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            name: accountName,
-            type: accountType,
-            accountNumber,
-          }),
-        })
-        if (res.ok) {
-          fetchAccounts()
-          setDialogOpen(false)
-          alert("账户创建成功，请前往添加子资产")
-        } else {
-          alert("创建失败")
-        }
+        await api.post("/api/accounts", { name: accountName, type: accountType, accountNumber: accountNumber || undefined })
+        fetchAccounts()
+        setDialogOpen(false)
+        toast.success("账户创建成功，请前往添加子资产")
       }
     } catch (error) {
       console.error("保存失败:", error)
-      alert("保存失败")
+      toast.error("保存失败")
     } finally {
       setSaving(false)
     }
@@ -298,29 +185,15 @@ export default function AccountsPage() {
 
     setSaving(true)
     try {
-      const res = await fetch(`/api/accounts/${deletingAccount.id}`, {
-        method: "DELETE",
-        credentials: 'include',
-      })
-      if (res.ok) {
-        fetchAccounts()
-        setDeleteDialogOpen(false)
-      } else {
-        const data = await res.json()
-        alert(data.error || "删除失败")
-      }
-    } catch (error) {
-      console.error("删除失败:", error)
-      alert("删除失败")
+      await api.delete(`/api/accounts/${deletingAccount.id}`)
+      fetchAccounts()
+      setDeleteDialogOpen(false)
+    } catch (e) {
+      console.error("删除失败:", e)
+      toast.error((e as Error).message || "删除失败")
     } finally {
       setSaving(false)
     }
-  }
-
-  const handleViewAssets = (account: Account) => {
-    setSelectedAccount(account)
-    setSelectedAsset(null)
-    fetchAssets(account.id)
   }
 
   const handleAddAsset = () => {
@@ -342,112 +215,68 @@ export default function AccountsPage() {
     if (!confirm(`确定要删除资产 "${asset.name}" 吗？`)) return
 
     try {
-      const res = await fetch(`/api/assets/${asset.id}`, {
-        method: "DELETE",
-        credentials: 'include',
+      await api.delete(`/api/assets/${asset.id}`)
+      // 更新accountAssets
+      setAccountAssets(prev => ({
+        ...prev,
+        [asset.accountId]: prev[asset.accountId]?.filter(a => a.id !== asset.id) || []
+      }))
+      // 更新assetBalances
+      setAssetBalances(prev => {
+        const newBalances = { ...prev }
+        delete newBalances[asset.id]
+        return newBalances
       })
-      if (res.ok) {
-        // 更新本地状态，避免重新获取数据
-        if (selectedAccount) {
-          setAssets(prev => prev.filter(a => a.id !== asset.id))
-        }
-        // 更新accountAssets
-        setAccountAssets(prev => ({
-          ...prev,
-          [asset.accountId]: prev[asset.accountId]?.filter(a => a.id !== asset.id) || []
-        }))
-        // 更新assetBalances
-        setAssetBalances(prev => {
-          const newBalances = { ...prev }
-          delete newBalances[asset.id]
-          return newBalances
-        })
-        // 重新获取账户列表，更新账户总额
-        fetchAccounts()
-        if (selectedAsset?.id === asset.id) {
-          setSelectedAsset(null)
-        }
-      } else {
-        alert("删除失败")
+      // 重新获取账户列表，更新账户总额
+      fetchAccounts()
+      if (selectedAsset?.id === asset.id) {
+        setSelectedAsset(null)
       }
     } catch (error) {
       console.error("删除失败:", error)
-      alert("删除失败")
+      toast.error("删除失败")
     }
   }
 
   const handleSaveAsset = async () => {
     if (!assetName.trim()) {
-      alert("请输入资产名称")
+      toast.error("请输入资产名称")
       return
     }
     if (!editingAsset && !assetAmount) {
-      alert("请输入金额")
+      toast.error("请输入金额")
       return
     }
 
     setSaving(true)
     try {
       if (editingAsset) {
-        const res = await fetch(`/api/assets/${editingAsset.id}`, {
-          method: "PUT",
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ name: assetName, type: assetType }),
-        })
-        if (res.ok) {
-          const updatedAsset = await res.json()
-          // 更新本地状态
-          if (selectedAccount) {
-            setAssets(prev => prev.map(a => a.id === editingAsset.id ? updatedAsset : a))
-          }
-          if (editingAsset.accountId) {
-            setAccountAssets(prev => ({
-              ...prev,
-              [editingAsset.accountId]: prev[editingAsset.accountId]?.map(a => a.id === editingAsset.id ? updatedAsset : a) || []
-            }))
-          }
-          // 重新获取账户列表，更新账户总额
-          fetchAccounts()
-          setAssetDialogOpen(false)
-        } else {
-          alert("更新失败")
-        }
-      } else {
-        const res = await fetch("/api/assets", {
-          method: "POST",
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ name: assetName, type: assetType, amount: assetAmount, accountId: selectedAccount!.id }),
-        })
-        if (res.ok) {
-          const newAsset = await res.json()
-          // 更新本地状态
-          if (selectedAccount) {
-            setAssets(prev => [...prev, newAsset])
-          }
+        const updatedAsset = await api.put<Asset>(`/api/assets/${editingAsset.id}`, { name: assetName, type: assetType })
+        if (editingAsset.accountId) {
           setAccountAssets(prev => ({
             ...prev,
-            [selectedAccount!.id]: [...(prev[selectedAccount!.id] || []), newAsset]
+            [editingAsset.accountId]: prev[editingAsset.accountId]?.map(a => a.id === editingAsset.id ? updatedAsset : a) || []
           }))
-          // 重新获取账户列表，更新账户总额
-          fetchAccounts()
-          setAssetDialogOpen(false)
-        } else {
-          alert("创建失败")
         }
+        // 重新获取账户列表，更新账户总额
+        fetchAccounts()
+        setAssetDialogOpen(false)
+      } else {
+        const newAsset = await api.post<Asset>("/api/assets", { name: assetName, type: assetType, amount: parseFloat(assetAmount) || 0, accountId: selectedAccount!.id })
+        setAccountAssets(prev => ({
+          ...prev,
+          [selectedAccount!.id]: [...(prev[selectedAccount!.id] || []), newAsset]
+        }))
+        // 重新获取账户列表，更新账户总额
+        fetchAccounts()
+        setAssetDialogOpen(false)
       }
     } catch (error) {
       console.error("保存失败:", error)
-      alert("保存失败")
+      toast.error("保存失败")
     } finally {
       setSaving(false)
     }
-  }
-
-  const handleViewBalances = (asset: Asset) => {
-    setSelectedAsset(asset)
-    fetchBalances(asset.id)
   }
 
   const handleAddBalance = () => {
@@ -480,104 +309,52 @@ export default function AccountsPage() {
     if (!confirm("确定要删除此余额快照吗？")) return
 
     try {
-      const res = await fetch(`/api/balances/${balance.id}`, {
-        method: "DELETE",
-        credentials: 'include',
-      })
-      if (res.ok) {
-        if (selectedAsset) {
-          fetchBalances(selectedAsset.id)
-        }
-        const balancesRes = await fetch(`/api/balances?assetId=${balance.assetId}`, { credentials: 'include' })
-        const balancesData = await balancesRes.json()
-        setAssetBalances((prev) => ({ ...prev, [balance.assetId]: balancesData }))
-      } else {
-        alert("删除失败")
-      }
+      await api.delete(`/api/balances/${balance.id}`)
+      const updatedBalances = await api.get<Balance[]>(`/api/balances?assetId=${balance.assetId}`)
+      setAssetBalances((prev) => ({ ...prev, [balance.assetId]: Array.isArray(updatedBalances) ? updatedBalances : [] }))
     } catch (error) {
       console.error("删除失败:", error)
-      alert("删除失败")
+      toast.error("删除失败")
     }
   }
 
   const handleSaveBalance = async () => {
     if (!balanceAmount || !balanceDate) {
-      alert("请填写金额和时间")
+      toast.error("请填写金额和时间")
       return
     }
 
     setSaving(true)
     try {
       if (editingBalance) {
-        const res = await fetch(`/api/balances/${editingBalance.id}`, {
-          method: "PUT",
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ amount: balanceAmount, recordedAt: new Date(balanceDate).toISOString() }),
-        })
-        if (res.ok) {
-          const updatedBalance = await res.json()
-          // 更新本地状态
-          if (selectedAsset) {
-            setBalances(prev => prev.map(b => b.id === editingBalance.id ? updatedBalance : b))
-          }
-          if (editingBalance.assetId) {
-            setAssetBalances(prev => ({
-              ...prev,
-              [editingBalance.assetId]: prev[editingBalance.assetId]?.map(b => b.id === editingBalance.id ? updatedBalance : b) || []
-            }))
-            // 重新获取账户列表，更新账户总额
-            fetchAccounts()
-          }
-          setBalanceDialogOpen(false)
-        } else {
-          alert("更新失败")
+        const updatedBalance = await api.put<Balance>(`/api/balances/${editingBalance.id}`, { amount: parseFloat(balanceAmount), recordedAt: new Date(balanceDate).toISOString() })
+        if (editingBalance.assetId) {
+          setAssetBalances(prev => ({
+            ...prev,
+            [editingBalance.assetId]: prev[editingBalance.assetId]?.map(b => b.id === editingBalance.id ? updatedBalance : b) || []
+          }))
+          // 重新获取账户列表，更新账户总额
+          fetchAccounts()
         }
+        setBalanceDialogOpen(false)
       } else {
-        const res = await fetch("/api/balances", {
-          method: "POST",
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ amount: balanceAmount, recordedAt: new Date(balanceDate).toISOString(), assetId: selectedAsset!.id }),
-        })
-        if (res.ok) {
-          const newBalance = await res.json()
-          // 更新本地状态
-          if (selectedAsset) {
-            setBalances(prev => [...prev, newBalance])
-            setAssetBalances(prev => ({
-              ...prev,
-              [selectedAsset.id]: [...(prev[selectedAsset.id] || []), newBalance]
-            }))
-            // 重新获取账户列表，更新账户总额
-            fetchAccounts()
-          }
-          setBalanceDialogOpen(false)
-        } else {
-          alert("创建失败")
+        const newBalance = await api.post<Balance>("/api/balances", { amount: parseFloat(balanceAmount), recordedAt: new Date(balanceDate).toISOString(), assetId: selectedAsset!.id })
+        if (selectedAsset) {
+          setAssetBalances(prev => ({
+            ...prev,
+            [selectedAsset.id]: [...(prev[selectedAsset.id] || []), newBalance]
+          }))
+          // 重新获取账户列表，更新账户总额
+          fetchAccounts()
         }
+        setBalanceDialogOpen(false)
       }
     } catch (error) {
       console.error("保存失败:", error)
-      alert("保存失败")
+      toast.error("保存失败")
     } finally {
       setSaving(false)
     }
-  }
-
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString("zh-CN")
-  }
-
-  const formatDateTime = (dateStr: string) => {
-    return new Date(dateStr).toLocaleString("zh-CN")
-  }
-
-  const formatAmount = (amount: number) => {
-    return amount.toLocaleString("zh-CN", {
-      style: "currency",
-      currency: "CNY",
-    })
   }
 
   const getLatestBalanceAmount = (assetId: string, defaultAmount: number): number => {
@@ -834,256 +611,33 @@ export default function AccountsPage() {
             <div className="@container/main flex flex-1 flex-col gap-2">
 <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
                   {/* ── KPI Summary Row ── */}
-                  <div className="px-4 lg:px-6">
-                    <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                      <Card className="border-l-[3px] border-l-primary">
-                        <CardHeader className="pb-1">
-                          <CardDescription className="flex items-center gap-2 text-xs uppercase tracking-wider">
-                            <Banknote className="h-3.5 w-3.5 text-primary" />
-                            净资产
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className={`font-mono text-lg md:text-2xl font-bold tracking-tight truncate max-w-full ${kpiData.totalNet < 0 ? "text-destructive" : "text-success"}`}>
-                            {formatAmount(kpiData.totalNet)}
-                          </div>
-                          <div className="h-7 w-full mt-1 mb-1">
-                            <ResponsiveContainer width="100%" height={28}>
-                              <AreaChart data={kpiTrends.netTrend} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-                                <defs>
-                                  <linearGradient id="kpiNetGrad" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.3} />
-                                    <stop offset="100%" stopColor="var(--primary)" stopOpacity={0.02} />
-                                  </linearGradient>
-                                </defs>
-                                <Area type="monotone" dataKey="total" stroke="var(--primary)" strokeWidth={1.5} fill="url(#kpiNetGrad)" isAnimationActive={false} />
-                              </AreaChart>
-                            </ResponsiveContainer>
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            {kpiData.posCount + kpiData.negCount} 个账户
-                          </p>
-                        </CardContent>
-                      </Card>
-                      <Card className="border-l-[3px] border-l-success">
-                        <CardHeader className="pb-1">
-                          <CardDescription className="flex items-center gap-2 text-xs uppercase tracking-wider">
-                            <Zap className="h-3.5 w-3.5 text-success" />
-                            总资产
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="font-mono text-lg md:text-2xl font-bold tracking-tight truncate max-w-full text-success">
-                            {formatAmount(kpiData.totalPos)}
-                          </div>
-                          <div className="h-7 w-full mt-1 mb-1">
-                            <ResponsiveContainer width="100%" height={28}>
-                              <AreaChart data={kpiTrends.assetTrend} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-                                <defs>
-                                  <linearGradient id="kpiAssetGrad" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="0%" stopColor="var(--color-success)" stopOpacity={0.3} />
-                                    <stop offset="100%" stopColor="var(--color-success)" stopOpacity={0.02} />
-                                  </linearGradient>
-                                </defs>
-                                <Area type="monotone" dataKey="total" stroke="var(--color-success)" strokeWidth={1.5} fill="url(#kpiAssetGrad)" isAnimationActive={false} />
-                              </AreaChart>
-                            </ResponsiveContainer>
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            {kpiData.posCount} 个盈馀账户
-                          </p>
-                        </CardContent>
-                      </Card>
-                      <Card className="border-l-[3px] border-l-destructive">
-                        <CardHeader className="pb-1">
-                          <CardDescription className="flex items-center gap-2 text-xs uppercase tracking-wider">
-                            <Gauge className="h-3.5 w-3.5 text-destructive" />
-                            总负债
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="font-mono text-lg md:text-2xl font-bold tracking-tight truncate max-w-full text-destructive">
-                            {formatAmount(Math.abs(kpiData.totalNeg))}
-                          </div>
-                          <div className="h-7 w-full mt-1 mb-1">
-                            <ResponsiveContainer width="100%" height={28}>
-                              <AreaChart data={kpiTrends.liabilityTrend} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-                                <defs>
-                                  <linearGradient id="kpiLiabilityGrad" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="0%" stopColor="var(--destructive)" stopOpacity={0.3} />
-                                    <stop offset="100%" stopColor="var(--destructive)" stopOpacity={0.02} />
-                                  </linearGradient>
-                                </defs>
-                                <Area type="monotone" dataKey="total" stroke="var(--destructive)" strokeWidth={1.5} fill="url(#kpiLiabilityGrad)" isAnimationActive={false} />
-                              </AreaChart>
-                            </ResponsiveContainer>
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            {kpiData.negCount} 个负债账户
-                          </p>
-                        </CardContent>
-                      </Card>
-                      <Card className="border-l-[3px] border-l-[#6366F1]">
-                        <CardHeader className="pb-1">
-                          <CardDescription className="flex items-center gap-2 text-xs uppercase tracking-wider">
-                            <CalendarDays className="h-3.5 w-3.5 text-[#6366F1]" />
-                            数据范围
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="font-mono text-xs md:text-sm font-bold tracking-tight text-foreground flex flex-col md:flex-row md:items-center md:gap-0.5 items-start">
-                            <span>{kpiData.earliestDate ?? "-"}</span>
-                            <span className="text-muted-foreground md:mx-1 text-[10px] leading-none my-0.5 md:my-0">↓</span>
-                            <span>{kpiData.latestDate ?? "-"}</span>
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {allBalanceDates.length} 个数据点
-                          </p>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </div>
+                  <KpiSummaryRow
+                    kpiData={kpiData}
+                    kpiTrends={kpiTrends}
+                    allBalanceDatesCount={allBalanceDates.length}
+                  />
                   <div className="px-4 lg:px-6">
                     <Card>
                     <CardHeader>
-                      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2">
-                        <div>
-                          <CardTitle>账户管理</CardTitle>
-                          <CardDescription className="hidden md:block">管理您的财务账户、资产和余额快照</CardDescription>
-                        </div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <Select value={`${sortBy}-${sortDir}`} onValueChange={(v) => {
-                            const [by, dir] = v.split("-") as ["balanceAbs" | "lastUpdated", "desc" | "asc"]
-                            setSortBy(by)
-                            setSortDir(dir)
-                          }}>
-                            <SelectTrigger className="w-[110px] md:w-[130px] h-7 md:h-8 text-xs">
-                              <SelectValue placeholder="排序方式" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="balanceAbs-desc">余额绝对值 ↓</SelectItem>
-                              <SelectItem value="balanceAbs-asc">余额绝对值 ↑</SelectItem>
-                              <SelectItem value="lastUpdated-desc">最近更新 ↓</SelectItem>
-                              <SelectItem value="lastUpdated-asc">最近更新 ↑</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <span className="hidden md:inline">查看日期:</span>
-                            <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="w-[120px] md:w-[150px] justify-start text-left font-normal h-7 md:h-8"
-                                >
-                                  <CalendarIcon className="h-4 w-4 shrink-0" />
-                                  <span className="truncate">{snapshotDate || "选择日期"}</span>
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                  mode="single"
-                                  captionLayout="dropdown"
-                                  defaultMonth={new Date(snapshotDate || "2026-06-30" + "T00:00:00")}
-                                  selected={snapshotDate ? new Date(snapshotDate + "T00:00:00") : undefined}
-                                  onSelect={(date) => {
-                                    if (date) {
-                                      const y = date.getFullYear()
-                                      const m = String(date.getMonth() + 1).padStart(2, "0")
-                                      const d = String(date.getDate()).padStart(2, "0")
-                                      setSnapshotDate(`${y}-${m}-${d}`)
-                                    }
-                                    setDatePickerOpen(false)
-                                  }}
-                                  modifiers={{ hasData: allBalanceDates.map((ds) => new Date(ds + "T00:00:00")) }}
-                                  modifiersStyles={{ hasData: { fontWeight: "bold", textDecoration: "underline", textUnderlineOffset: 2 } }}
-                                />
-                              </PopoverContent>
-                            </Popover>
-                            <div className="flex items-center gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7 md:h-8 md:w-8"
-                                onClick={() => setSnapshotDate(latestBalanceDate)}
-                                title="跳转至最新数据日期"
-                              >
-                                <ArrowRightToLine className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7 md:h-8 md:w-8"
-                                onClick={() => setSnapshotDate(earliestBalanceDate)}
-                                title="跳转至最早数据日期"
-                              >
-                                <ArrowLeftToLine className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                              </Button>
-                            </div>
-                            {snapshotDate && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7 md:h-8 md:w-8 text-muted-foreground"
-                                onClick={() => setSnapshotDate("")}
-                                title="清除日期筛选"
-                              >
-                                <XCircle className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                              </Button>
-                            )}
-                          </div>
-                          <Button onClick={handleAdd} size="sm" className="hidden md:inline-flex h-8">
-                            <Plus className="h-4 w-4 mr-1.5" />
-                            添加账户
-                          </Button>
-                        </div>
-                      </div>
-                      {/* ── Type filter tabs ── */}
-                      <div className="flex items-center gap-1.5 flex-wrap mt-1">
-                        <button
-                          onClick={() => setActiveTypeFilter("all")}
-                          className={`text-xs px-2.5 py-1 rounded-full transition-colors ${
-                            activeTypeFilter === "all"
-                              ? "bg-primary text-primary-foreground font-medium"
-                              : "bg-muted text-muted-foreground hover:bg-muted/80"
-                          }`}
-                        >
-                          全部
-                        </button>
-                        {Object.entries(ACCOUNT_TYPE_CONFIG).map(([value, config]) => {
-                          if (!typeCounts[value]) return null
-                          const Icon = config.icon
-                          const isActive = activeTypeFilter === value
-                          return (
-                            <button
-                              key={value}
-                              onClick={() => setActiveTypeFilter(value)}
-                              className={`text-xs px-2.5 py-1 rounded-full transition-colors inline-flex items-center gap-1 ${
-                                isActive
-                                  ? "bg-primary text-primary-foreground font-medium"
-                                  : "bg-muted text-muted-foreground hover:bg-muted/80"
-                              }`}
-                            >
-                              <Icon className="h-3 w-3" />
-                              {config.label}
-                              <span className="opacity-60">({typeCounts[value]})</span>
-                            </button>
-                          )
-                        })}
-                        {archivedCount > 0 && (
-                          <button
-                            onClick={() => setShowArchived(!showArchived)}
-                            className={`text-xs px-2.5 py-1 rounded-full transition-colors inline-flex items-center gap-1 ${
-                              showArchived
-                                ? "bg-muted-foreground text-background font-medium"
-                                : "bg-muted text-muted-foreground hover:bg-muted/80"
-                            }`}
-                          >
-                            {showArchived ? "隐藏" : "显示"}归档
-                            <span className="opacity-60">({archivedCount})</span>
-                          </button>
-                        )}
-                      </div>
+                      <AccountToolbar
+                        sortBy={sortBy}
+                        sortDir={sortDir}
+                        onSortChange={(by, dir) => { setSortBy(by); setSortDir(dir) }}
+                        snapshotDate={snapshotDate}
+                        datePickerOpen={datePickerOpen}
+                        onDatePickerOpenChange={setDatePickerOpen}
+                        onSnapshotDateChange={setSnapshotDate}
+                        allBalanceDates={allBalanceDates}
+                        earliestBalanceDate={earliestBalanceDate}
+                        latestBalanceDate={latestBalanceDate}
+                        onAdd={handleAdd}
+                        activeTypeFilter={activeTypeFilter}
+                        onActiveTypeFilterChange={setActiveTypeFilter}
+                        typeCounts={typeCounts}
+                        showArchived={showArchived}
+                        onShowArchivedChange={setShowArchived}
+                        archivedCount={archivedCount}
+                      />
                     </CardHeader>
                     <CardContent className="min-h-[300px]">
                       {filteredAndSortedAccounts.length === 0 ? (
@@ -1125,271 +679,69 @@ export default function AccountsPage() {
         </Button>
       </SidebarInset>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-xs max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{editingAccount ? "编辑账户" : "添加账户"}</DialogTitle>
-            <DialogDescription>
-              {editingAccount ? "修改账户信息" : "创建一个新的财务账户"}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="accountName">账户名称</Label>
-              <Input
-                id="accountName"
-                placeholder="如：支付宝、微信、中信银行"
-                value={accountName}
-                onChange={(e) => setAccountName(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="accountType">账户类型</Label>
-              <Select value={accountType} onValueChange={setAccountType}>
-                <SelectTrigger>
-                  <SelectValue placeholder="选择账户类型" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(ACCOUNT_TYPE_CONFIG).map(([value, config]) => {
-                    const Icon = config.icon
-                    return (
-                      <SelectItem key={value} value={value}>
-                        <span className="flex items-center gap-2">
-                          <Icon className="h-4 w-4" />
-                          {config.label}
-                        </span>
-                      </SelectItem>
-                    )
-                  })}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="accountNumber">账户号码</Label>
-              <Input
-                id="accountNumber"
-                placeholder="可选，如银行卡号"
-                value={accountNumber}
-                onChange={(e) => setAccountNumber(e.target.value)}
-              />
-            </div>
-            {editingAccount && (
-              <label
-                htmlFor="accountArchived"
-                className="flex items-start gap-3 rounded-md border border-border p-3 cursor-pointer hover:bg-muted/50 transition-colors"
-              >
-                <Checkbox
-                  id="accountArchived"
-                  checked={accountArchived}
-                  onCheckedChange={(v) => setAccountArchived(v === true)}
-                  className="mt-0.5"
-                />
-                <div className="space-y-0.5">
-                  <div className="text-sm font-medium leading-none">归档此账户</div>
-                  <p className="text-xs text-muted-foreground">
-                    归档后账户将在账户管理与添加收支页面默认隐藏，但不影响总览、快照和导出中的数据计算。
-                  </p>
-                </div>
-              </label>
-            )}
+      <AccountFormDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        editingAccount={editingAccount}
+        accountName={accountName}
+        onAccountNameChange={setAccountName}
+        accountType={accountType}
+        onAccountTypeChange={setAccountType}
+        accountNumber={accountNumber}
+        onAccountNumberChange={setAccountNumber}
+        accountArchived={accountArchived}
+        onAccountArchivedChange={setAccountArchived}
+        saving={saving}
+        onSave={handleSave}
+      />
 
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              取消
-            </Button>
-            <Button onClick={handleSave} disabled={saving}>
-              {saving ? "保存中..." : "保存"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <AccountDeleteDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        deletingAccount={deletingAccount}
+        saving={saving}
+        onConfirmDelete={handleConfirmDelete}
+      />
 
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>确认删除</DialogTitle>
-            <DialogDescription>
-              确定要删除账户 &quot;{deletingAccount?.name}&quot; 吗？如果该账户有关联收支记录，将无法删除。
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-              取消
-            </Button>
-            <Button variant="destructive" onClick={handleConfirmDelete} disabled={saving}>
-              {saving ? "删除中..." : "删除"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <AssetFormDialog
+        open={assetDialogOpen}
+        onOpenChange={setAssetDialogOpen}
+        editingAsset={editingAsset}
+        assetName={assetName}
+        onAssetNameChange={setAssetName}
+        assetType={assetType}
+        onAssetTypeChange={setAssetType}
+        assetAmount={assetAmount}
+        onAssetAmountChange={setAssetAmount}
+        assetBalances={assetBalances}
+        saving={saving}
+        onSave={handleSaveAsset}
+        onAddBalance={(asset) => {
+          setSelectedAsset(asset)
+          handleAddBalance()
+        }}
+        onEditBalance={(asset, balance) => {
+          setSelectedAsset(asset)
+          handleEditBalance(balance)
+        }}
+        onDeleteBalance={(balance) => {
+          handleDeleteBalance(balance)
+        }}
+        formatDateTime={formatDateTime}
+        formatAmount={formatAmount}
+      />
 
-      <Dialog open={assetDialogOpen} onOpenChange={setAssetDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{editingAsset ? "编辑资产" : "添加资产"}</DialogTitle>
-            <DialogDescription>
-              {editingAsset ? "修改资产信息" : "为账户添加新资产"}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="assetName">资产名称</Label>
-              <Input
-                id="assetName"
-                placeholder="如：活期存款、定期存款、基金"
-                value={assetName}
-                onChange={(e) => setAssetName(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="assetType">资产类型</Label>
-              <Select value={assetType} onValueChange={setAssetType}>
-                <SelectTrigger>
-                  <SelectValue placeholder="选择资产类型" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(ASSET_TYPE_CONFIG).map(([value, config]) => {
-                    const Icon = config.icon
-                    return (
-                      <SelectItem key={value} value={value}>
-                        <span className="flex items-center gap-2">
-                          <Icon className="h-4 w-4" />
-                          {config.label}
-                        </span>
-                      </SelectItem>
-                    )
-                  })}
-                </SelectContent>
-              </Select>
-            </div>
-            {!editingAsset && (
-              <div className="space-y-2">
-                <Label htmlFor="assetAmount">金额</Label>
-                <Input
-                  id="assetAmount"
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={assetAmount}
-                  onChange={(e) => setAssetAmount(e.target.value)}
-                />
-              </div>
-            )}
-            {editingAsset && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>余额快照</Label>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 text-primary hover:text-primary"
-                    onClick={() => {
-                      setSelectedAsset(editingAsset)
-                      handleAddBalance()
-                    }}
-                  >
-                    <Plus className="h-3 w-3 mr-1" />
-                    添加快照
-                  </Button>
-                </div>
-                <div className="border rounded-md max-h-40 overflow-y-auto">
-                  {assetBalances[editingAsset.id] && assetBalances[editingAsset.id].length > 0 ? (
-                    <div className="divide-y">
-                      {[...assetBalances[editingAsset.id]]
-                        .sort((a, b) => new Date(b.recordedAt).getTime() - new Date(a.recordedAt).getTime())
-                        .map((balance) => (
-                          <div key={balance.id} className="flex items-center justify-between p-2 hover:bg-muted">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm text-muted-foreground">
-                                {formatDateTime(balance.recordedAt)}
-                              </span>
-                              <span className="text-sm font-medium">{formatAmount(balance.amount)}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 w-6 p-0"
-                                onClick={() => {
-                                  setSelectedAsset(editingAsset)
-                                  handleEditBalance(balance)
-                                }}
-                              >
-                                <Pencil className="h-3 w-3" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 w-6 p-0 text-destructive hover:text-destructive"
-                                onClick={() => handleDeleteBalance(balance)}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                    </div>
-                  ) : (
-                    <div className="p-4 text-center text-sm text-muted-foreground">
-                      暂无快照
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAssetDialogOpen(false)}>
-              取消
-            </Button>
-            <Button onClick={handleSaveAsset} disabled={saving}>
-              {saving ? "保存中..." : "保存"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={balanceDialogOpen} onOpenChange={setBalanceDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editingBalance ? "编辑余额快照" : "添加余额快照"}</DialogTitle>
-            <DialogDescription>
-              {editingBalance ? "修改余额快照信息" : "记录当前资产余额"}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="balanceAmount">金额</Label>
-              <Input
-                id="balanceAmount"
-                type="number"
-                step="0.01"
-                placeholder="请输入当前资产余额"
-                value={balanceAmount}
-                onChange={(e) => setBalanceAmount(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="balanceDate">登记时间</Label>
-              <Input
-                id="balanceDate"
-                type="datetime-local"
-                value={balanceDate}
-                onChange={(e) => setBalanceDate(e.target.value)}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setBalanceDialogOpen(false)}>
-              取消
-            </Button>
-            <Button onClick={handleSaveBalance} disabled={saving}>
-              {saving ? "保存中..." : "保存"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <BalanceFormDialog
+        open={balanceDialogOpen}
+        onOpenChange={setBalanceDialogOpen}
+        editingBalance={editingBalance}
+        balanceAmount={balanceAmount}
+        onBalanceAmountChange={setBalanceAmount}
+        balanceDate={balanceDate}
+        onBalanceDateChange={setBalanceDate}
+        saving={saving}
+        onSave={handleSaveBalance}
+      />
 
       <AccountDetailModal
         account={modalAccount!}

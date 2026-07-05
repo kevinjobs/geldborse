@@ -18,6 +18,7 @@ import {
 import { useAuth } from "@/lib/auth-context"
 import { ProtectedRoute } from "@/components/protected-route"
 import Link from "next/link"
+import { toast } from "sonner"
 
 interface Account {
   id: string
@@ -108,7 +109,7 @@ export default function AddRecordPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!date || !account || !amount) {
-      alert("请填写所有字段")
+      toast.error("请填写所有字段")
       return
     }
 
@@ -121,17 +122,17 @@ export default function AddRecordPage() {
         body: JSON.stringify({ date: new Date(date + "T00:00:00").toISOString(), accountId: account, assetId: asset || null, amount, type, note: note || null }),
       })
       if (res.ok) {
-        alert("收支保存成功")
+        toast.success("收支保存成功")
         setAmount("")
         setNote("")
         setAsset("")
       } else {
         const errorData = await res.json().catch(() => ({ error: "保存失败" }))
-        alert(errorData.error || "保存失败")
+        toast.error(errorData.error || "保存失败")
       }
     } catch (error) {
       console.error("保存收支失败:", error)
-      alert("保存失败")
+      toast.error("保存失败")
     } finally {
       setLoading(false)
     }
