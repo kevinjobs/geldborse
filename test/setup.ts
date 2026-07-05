@@ -8,7 +8,7 @@ if (typeof window === 'undefined') {
     return typeof vi !== 'undefined' ? vi.fn(implementation) : function() {}
   }
 
-  global.window = {
+  globalThis.window = {
     localStorage: {
       getItem: mockFn(),
       setItem: mockFn(),
@@ -35,16 +35,33 @@ if (typeof window === 'undefined') {
   } as Window & typeof globalThis
 }
 
+if (typeof Image === 'undefined') {
+  class MockImage {
+    src = ''
+    width = 0
+    height = 0
+  }
+  // Define onload as an accessor (getter/setter) on the prototype
+  // so vi.spyOn(Image.prototype, 'onload', 'set') can find the descriptor
+  let _onload: (() => void) | null = null
+  Object.defineProperty(MockImage.prototype, 'onload', {
+    get() { return _onload },
+    set(fn: (() => void) | null) { _onload = fn },
+    configurable: true,
+  })
+  globalThis.Image = MockImage as any
+}
+
 if (typeof document === 'undefined') {
   // Create a symbol for isPrepared
   const isPrepared = Symbol('Node prepared with document state workarounds')
-  
+
   // Create a mock function that works in both test and build environments
   const mockFn = (implementation?: any) => {
     return typeof vi !== 'undefined' ? vi.fn(implementation) : function() {}
   }
 
-  global.document = {
+  globalThis.document = {
     // Add isPrepared symbol
     [isPrepared]: true,
     

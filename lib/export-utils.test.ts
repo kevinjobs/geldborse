@@ -1,5 +1,97 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 
+// Ensure `document` is available (bun test doesn't load vitest setup files / jsdom)
+if (typeof document === "undefined") {
+  const mockFn = (impl?: (...args: any[]) => any) => vi.fn(impl)
+  ;(globalThis as any).document = {
+    createElement: mockFn((tag: string) => {
+      const el: any = {
+        style: {},
+        classList: { add: mockFn(), remove: mockFn(), contains: mockFn(() => false) },
+        appendChild: mockFn(),
+        removeChild: mockFn(),
+        querySelector: mockFn(),
+        querySelectorAll: mockFn(() => []),
+        setAttribute: mockFn(),
+        getAttribute: mockFn(),
+        removeAttribute: mockFn(),
+        addEventListener: mockFn(),
+        removeEventListener: mockFn(),
+        click: mockFn(),
+        focus: mockFn(),
+        blur: mockFn(),
+        id: "",
+        className: "",
+        innerHTML: "",
+        textContent: "",
+        nodeName: tag.toUpperCase(),
+        nodeType: 1,
+        childNodes: [],
+        parentNode: null,
+      }
+      return el
+    }),
+    getElementById: mockFn(),
+    querySelector: mockFn(),
+    querySelectorAll: mockFn(() => []),
+    addEventListener: mockFn(),
+    removeEventListener: mockFn(),
+    head: { appendChild: mockFn(), removeChild: mockFn() },
+    body: { appendChild: mockFn(), removeChild: mockFn() },
+  } as unknown as Document
+}
+
+// Ensure `Image` is available (bun test doesn't provide browser globals)
+if (typeof Image === "undefined") {
+  class MockImage {
+    src = ""
+    width = 0
+    height = 0
+  }
+  Object.defineProperty(MockImage.prototype, "onload", {
+    value: null,
+    writable: true,
+    configurable: true,
+  })
+  ;(globalThis as any).Image = MockImage
+}
+
+// Ensure `FileReader` is available (bun test doesn't provide browser globals)
+if (typeof FileReader === "undefined") {
+  ;(globalThis as any).FileReader = class FileReader {
+    result: any = null
+    error: any = null
+    onload: (() => void) | null = null
+    onerror: (() => void) | null = null
+
+    readAsText(blob: Blob) {
+      blob
+        .text()
+        .then((text) => {
+          this.result = text
+          if (this.onload) this.onload()
+        })
+        .catch((err: any) => {
+          this.error = err
+          if (this.onerror) this.onerror()
+        })
+    }
+
+    readAsArrayBuffer(blob: Blob) {
+      blob
+        .arrayBuffer()
+        .then((buf) => {
+          this.result = buf
+          if (this.onload) this.onload()
+        })
+        .catch((err: any) => {
+          this.error = err
+          if (this.onerror) this.onerror()
+        })
+    }
+  }
+}
+
 // Mock xlsx
 vi.mock("xlsx", () => ({
   utils: {
@@ -145,7 +237,7 @@ describe("export-utils", () => {
     let createObjectURL: ReturnType<typeof vi.fn>
     let revokeObjectURL: ReturnType<typeof vi.fn>
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let createElementSpy: any
+    let originalCreateElement: any
     let fakeLink: { click: ReturnType<typeof vi.fn>; href: string; download: string }
 
     beforeEach(() => {
@@ -167,14 +259,13 @@ describe("export-utils", () => {
         href: "",
         download: "",
       }
-      createElementSpy = vi
-        .spyOn(document, "createElement")
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .mockImplementation((() => fakeLink) as any)
+      originalCreateElement = document.createElement.bind(document)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      document.createElement = (() => fakeLink) as any
     })
 
     afterEach(() => {
-      createElementSpy.mockRestore()
+      document.createElement = originalCreateElement
     })
 
     it("creates a blob URL via URL.createObjectURL and revokes it", () => {
@@ -370,7 +461,7 @@ describe("export-utils", () => {
 
   describe("exportToJPG", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let createElementSpy: any
+    let originalCreateElement: any
     let fakeLink: { click: ReturnType<typeof vi.fn>; href: string; download: string }
 
     beforeEach(() => {
@@ -379,14 +470,13 @@ describe("export-utils", () => {
         href: "",
         download: "",
       }
-      createElementSpy = vi
-        .spyOn(document, "createElement")
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .mockImplementation((() => fakeLink) as any)
+      originalCreateElement = document.createElement.bind(document)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      document.createElement = (() => fakeLink) as any
     })
 
     afterEach(() => {
-      createElementSpy.mockRestore()
+      document.createElement = originalCreateElement
     })
 
     it("calls domToJpeg with the element and quality options", async () => {

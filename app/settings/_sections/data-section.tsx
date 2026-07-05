@@ -19,7 +19,7 @@ export default function DataSection() {
     try {
       const response = await fetch("/api/clear-data", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${user.id}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password: clearPassword }),
       })
       if (!response.ok) { const errorData = await response.json().catch(() => ({})); throw new Error(errorData.error || "清空失败") }

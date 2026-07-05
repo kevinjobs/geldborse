@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { authenticateRequest } from '@/lib/auth'
+import { checkRateLimit } from '@/lib/rate-limit'
 import bcrypt from 'bcrypt'
 
 export async function POST(request: NextRequest) {
@@ -8,6 +9,10 @@ export async function POST(request: NextRequest) {
     const auth = await authenticateRequest(request, { rejectApiKey: true })
     if (auth instanceof NextResponse) return auth
     const { userId } = auth
+
+    if (!checkRateLimit(`clear-data:${userId}`)) {
+      return NextResponse.json({ error: '操作过于频繁，请稍后再试' }, { status: 429 })
+    }
 
     const { password } = await request.json()
     if (!password) {

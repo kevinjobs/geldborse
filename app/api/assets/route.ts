@@ -7,39 +7,43 @@ export async function GET(request: NextRequest) {
   if (auth instanceof NextResponse) return auth
   const { userId } = auth
 
-  const { searchParams } = new URL(request.url)
-  const accountId = searchParams.get("accountId")
+  try {
+    const { searchParams } = new URL(request.url)
+    const accountId = searchParams.get("accountId")
 
-  if (accountId) {
-    // 验证账户是否属于当前用户
-    const account = await prisma.account.findFirst({
-      where: {
-        id: accountId,
-        userId
+    if (accountId) {
+      // 验证账户是否属于当前用户
+      const account = await prisma.account.findFirst({
+        where: {
+          id: accountId,
+          userId
+        }
+      })
+
+      if (!account) {
+        return NextResponse.json({ error: "账户不存在或不属于当前用户" }, { status: 400 })
       }
-    })
 
-    if (!account) {
-      return NextResponse.json({ error: "账户不存在或不属于当前用户" }, { status: 400 })
+      const assets = await prisma.asset.findMany({
+        where: { accountId },
+        orderBy: { createdAt: "desc" },
+      })
+      return NextResponse.json(assets)
     }
 
     const assets = await prisma.asset.findMany({
-      where: { accountId },
+      where: {
+        account: {
+          userId
+        }
+      },
+      include: { account: true },
       orderBy: { createdAt: "desc" },
     })
     return NextResponse.json(assets)
+  } catch {
+    return NextResponse.json({ error: "获取资产失败" }, { status: 500 })
   }
-
-  const assets = await prisma.asset.findMany({
-    where: {
-      account: {
-        userId
-      }
-    },
-    include: { account: true },
-    orderBy: { createdAt: "desc" },
-  })
-  return NextResponse.json(assets)
 }
 
 export async function POST(request: NextRequest) {

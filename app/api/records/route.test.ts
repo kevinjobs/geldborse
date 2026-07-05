@@ -400,6 +400,6 @@ describe('POST /api/records', () => {
 
     expect(response.status).toBe(500)
     const data = await response.json()
-    expect(data.error).toBe('DB error')
+    expect(data.error).toBe('创建记录失败')
   })
 })

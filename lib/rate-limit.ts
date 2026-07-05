@@ -5,6 +5,7 @@ const WINDOW_MS = 15 * 60 * 1000
 const MAX_REQUESTS = 10
 
 export function checkRateLimit(ip: string): boolean {
+  cleanupExpiredRecords()
   const now = Date.now()
   const record = store.get(ip)
 

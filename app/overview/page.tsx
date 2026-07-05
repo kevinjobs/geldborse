@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useMemo, Fragment } from "react"
+import React, { useState, useEffect, useCallback, useMemo, Fragment } from "react"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
@@ -92,24 +92,14 @@ function OverviewPageContent() {
   const [chartPeriod, setChartPeriod] = useState<string>("3")
   const [visibleLines, setVisibleLines] = useState({ net: true, pos: true, neg: false })
 
-  useEffect(() => {
-    if (user) {
-      fetchData()
-    } else {
-      setLoading(false)
-    }
-  }, [user])
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
-      const headers = user?.id ? { 'Authorization': `Bearer ${user.id}` } : undefined
-
       const [accountsRes, assetsRes, recordsRes, balancesRes, snapshotsRes] = await Promise.all([
-        fetch("/api/accounts", headers ? { headers } : {}),
-        fetch("/api/assets", headers ? { headers } : {}),
-        fetch("/api/records", headers ? { headers } : {}),
-        fetch("/api/balances", headers ? { headers } : {}),
-        fetch("/api/daily-snapshots", headers ? { headers } : {}),
+        fetch("/api/accounts"),
+        fetch("/api/assets"),
+        fetch("/api/records"),
+        fetch("/api/balances"),
+        fetch("/api/daily-snapshots"),
       ])
 
       if (!accountsRes.ok) throw new Error(`Accounts API error: ${accountsRes.status}`)
@@ -141,7 +131,15 @@ function OverviewPageContent() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [user?.id])
+
+  useEffect(() => {
+    if (user) {
+      fetchData()
+    } else {
+      setLoading(false)
+    }
+  }, [user, fetchData])
 
   const toggleAccountExpand = (accountId: string) => {
     setExpandedAccounts((prev) => {

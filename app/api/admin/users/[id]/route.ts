@@ -131,7 +131,17 @@ export async function DELETE(
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    await prisma.user.delete({ where: { id } })
+    await prisma.$transaction(async (tx) => {
+      await tx.apiKey.deleteMany({ where: { userId: id } })
+      await tx.accountMember.deleteMany({ where: { userId: id } })
+      await tx.loginHistory.deleteMany({ where: { userId: id } })
+      await tx.record.deleteMany({ where: { account: { userId: id } } })
+      await tx.dailySnapshot.deleteMany({ where: { account: { userId: id } } })
+      await tx.balance.deleteMany({ where: { asset: { account: { userId: id } } } })
+      await tx.asset.deleteMany({ where: { account: { userId: id } } })
+      await tx.account.deleteMany({ where: { userId: id } })
+      await tx.user.delete({ where: { id } })
+    })
 
     return NextResponse.json({ success: true })
   } catch (error) {

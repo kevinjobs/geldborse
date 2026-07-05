@@ -82,7 +82,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(record)
   } catch (error) {
     console.error('创建记录失败:', error)
-    const errorMessage = error instanceof Error ? error.message : '创建记录失败'
-    return NextResponse.json({ error: errorMessage }, { status: 500 })
+    return NextResponse.json({ error: "创建记录失败" }, { status: 500 })
   }
 }
