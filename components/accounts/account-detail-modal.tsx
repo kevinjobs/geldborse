@@ -318,7 +318,7 @@ export function AccountDetailModal({
                         className="text-primary hover:text-primary h-7"
                         onClick={(e) => { e.stopPropagation(); onAddBalance(asset) }}
                       >
-                        <Plus className="h-3.5 w-3.5 mr-1" />添加快照
+                        <Plus className="h-3.5 w-3.5 shrink-0" /><span className="hidden md:inline ml-1.5">添加快照</span>
                       </Button>
                       <Button
                         variant="ghost"
@@ -326,7 +326,7 @@ export function AccountDetailModal({
                         className="h-7"
                         onClick={(e) => { e.stopPropagation(); onEditAsset(asset) }}
                       >
-                        <Pencil className="h-3.5 w-3.5 mr-1" />编辑
+                        <Pencil className="h-3.5 w-3.5 shrink-0" /><span className="hidden md:inline ml-1.5">编辑</span>
                       </Button>
                       <Button
                         variant="ghost"
@@ -334,7 +334,7 @@ export function AccountDetailModal({
                         className="h-7 text-destructive hover:text-destructive"
                         onClick={(e) => { e.stopPropagation(); onDeleteAsset(asset) }}
                       >
-                        <Trash2 className="h-3.5 w-3.5 mr-1" />删除
+                        <Trash2 className="h-3.5 w-3.5 shrink-0" /><span className="hidden md:inline ml-1.5">删除</span>
                       </Button>
                     </div>
                   </div>

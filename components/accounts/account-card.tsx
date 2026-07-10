@@ -70,9 +70,8 @@ export function AccountCard({
 
   return (
     <Card
-      className={`rounded-[16px] overflow-hidden cursor-pointer hover:-translate-y-0.5 hover:shadow-lg hover:brightness-110 transition-all duration-200 dark:bg-[#252525] ${
-        isArchived ? "opacity-60 border-dashed border-muted-foreground/40" : ""
-      }`}
+      className={`rounded-[16px] overflow-hidden cursor-pointer hover:-translate-y-0.5 hover:shadow-lg hover:brightness-110 transition-all duration-200 dark:bg-[#252525] ${isArchived ? "opacity-60 border-dashed border-muted-foreground/40" : ""
+        }`}
       onClick={onOpenDetail}
     >
       <CardContent className="px-4 py-0">
@@ -123,11 +122,10 @@ export function AccountCard({
             {trendPercent != null && (
               <span
                 title="较上次余额变化"
-                className={`inline-flex items-center gap-1 font-mono text-xs font-semibold px-1.5 py-0.5 rounded-[4px] flex-shrink-0 whitespace-nowrap ${
-                  isTrendUp
-                    ? "text-success bg-success/10"
-                    : "text-destructive bg-destructive/10"
-                }`}
+                className={`inline-flex items-center gap-1 font-mono text-xs font-semibold px-1.5 py-0.5 rounded-[4px] flex-shrink-0 whitespace-nowrap ${isTrendUp
+                  ? "text-success bg-success/10"
+                  : "text-destructive bg-destructive/10"
+                  }`}
               >
                 {isTrendUp ? "↑" : "↓"} {Math.abs(trendPercent).toFixed(1)}%
                 <span className="text-[10px] font-normal opacity-60">环比</span>
@@ -170,7 +168,7 @@ export function AccountCard({
 
         {/* Row 6: Action Buttons */}
         <div
-          className="flex gap-1.5"
+          className="flex flex-wrap gap-1.5 mt-2"
           onClick={(e) => e.stopPropagation()}
         >
           <Button
@@ -179,12 +177,10 @@ export function AccountCard({
             className="text-primary border-primary/30 hover:bg-primary/10 hover:text-primary"
             onClick={onAddAsset}
           >
-            <Plus className="h-3.5 w-3.5 mr-1" />
-            添加资产
+            <Plus className="h-3.5 w-3.5 shrink-0" /><span className="hidden md:inline ml-1.5">添加资产</span>
           </Button>
           <Button variant="outline" size="sm" onClick={onEdit}>
-            <Pencil className="h-3.5 w-3.5 mr-1" />
-            编辑
+            <Pencil className="h-3.5 w-3.5 shrink-0" /><span className="hidden md:inline ml-1.5">编辑</span>
           </Button>
           <Button
             variant="outline"
@@ -194,15 +190,14 @@ export function AccountCard({
             title={isArchived ? "取消归档" : "归档账户"}
           >
             {isArchived ? (
-              <ArchiveX className="h-3.5 w-3.5 mr-1" />
+              <ArchiveX className="h-3.5 w-3.5 shrink-0" />
             ) : (
-              <Archive className="h-3.5 w-3.5 mr-1" />
+              <Archive className="h-3.5 w-3.5 shrink-0" />
             )}
-            {isArchived ? "取消归档" : "归档"}
+            <span className="hidden md:inline ml-1.5">{isArchived ? "取消归档" : "归档"}</span>
           </Button>
           <Button variant="destructive" size="sm" onClick={onDelete}>
-            <Trash2 className="h-3.5 w-3.5 mr-1" />
-            删除
+            <Trash2 className="h-3.5 w-3.5 shrink-0" /><span className="hidden md:inline ml-1.5">删除</span>
           </Button>
         </div>
       </CardContent>
