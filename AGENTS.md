@@ -43,7 +43,7 @@ Singleton client at `@/lib/prisma.ts`. Schema at `prisma/schema.prisma` (models:
 - API auth:
   - `authenticateRequest(request, { requiredScope })` from `@/lib/auth` — 标准 API 路由鉴权，返回 `{ userId, scopes }` 或 `NextResponse` 错误，支持 scope 检查和 API Key
   - `getCurrentUserId(request)` — 轻量鉴权，仅验证 session token（优先 cookie，其次 Bearer），返回 `string | null`。用于无需 scope 检查的简单场景（如 auth 路由、工具函数）
-  - Token 值即用户 ID（简化设计，无 JWT）
+  - Token 值即用户 ID（简化 JWT，payload 仅含 userId）
 - Protected pages wrap content in `<ProtectedRoute>` component
 
 ## Project architecture

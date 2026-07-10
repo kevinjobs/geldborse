@@ -116,6 +116,13 @@ geldborse/
 │   │   ├── export/             # Full data export
 │   │   ├── clear-data/         # Data clearing
 │   │   └── docs/               # API documentation page
+│   │   ├── accounts/[id]/      # Account detail/delete, asset CRUD
+│   │   ├── assets/[id]/        # Asset detail/update/delete
+│   │   ├── balances/[id]/      # Balance snapshot detail/update/delete
+│   │   ├── records/[id]/       # Transaction detail/update/delete
+│   │   ├── daily-snapshots/[id]/ # Snapshot detail/delete
+│   │   ├── api-keys/[id]/      # API key detail/revoke/delete
+│   │   └── admin/users/[id]/   # Admin user update/delete
 │   ├── auth/                   # Authentication pages (login/register)
 │   ├── overview/               # Overview dashboard
 │   ├── accounts/               # Account management
@@ -151,7 +158,7 @@ geldborse/
 │   ├── format.ts               # Number/date formatting
 │   └── utils.ts                # General utilities
 ├── prisma/                     # Prisma database configuration
-│   ├── schema.prisma           # 8 data models
+│   ├── schema.prisma           # 9 data models
 │   └── seed.ts                 # Database seeder
 ├── hooks/                      # Custom hooks
 │   └── use-mobile.ts           # Mobile detection

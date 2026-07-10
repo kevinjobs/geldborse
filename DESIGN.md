@@ -204,7 +204,7 @@ box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.3);
 - **深色模式作为默认**：`:root` 即为深色主题，浅色模式通过 `.light` 类切换
 - **数字与金额使用等宽字体**：`font-mono`（Fira Code），确保金额列对齐
 - **使用面积图展示趋势**：资产变化、收支趋势优先使用 Recharts AreaChart
-- **金额使用 Decimal 类型**：数据库和计算全程使用精确数值，禁止 Float
+- **金额使用 Float 类型：数据库 schema 定义为 Float，前端计算使用 parseFloat
 - **使用 8px 倍数间距**：保持界面节奏一致
 - **银行品牌色**：参考 `lib/account-config.tsx` 中定义的各银行品牌色
 - **移动端适配**：断点 768px，使用 `use-mobile.ts` hook 判断

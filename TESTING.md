@@ -7,25 +7,55 @@
 - **Vitest** - 快速、轻量的测试框架
 - **React Testing Library** - React 组件测试工具
 - **JSDOM** - 浏览器环境模拟
-- **MSW** - API 模拟（Mock Service Worker）
+- **vitest mock** - 使用 vi.mock() 模拟 Prisma 和模块
 
 ## 目录结构
 
 ```
 ├── lib/
-│   ├── utils.test.ts           # 工具函数测试
-│   └── auth-context.test.tsx   # 认证上下文测试
+│   ├── utils.test.ts
+│   ├── auth.test.ts
+│   ├── auth-context.test.tsx
+│   ├── jwt.test.ts
+│   ├── export-utils.test.ts
+│   ├── rate-limit.test.ts
+│   ├── api-key.test.ts
+│   └── __tests__/
+│       └── account-total.test.ts
 ├── components/
-│   └── nav-user.test.tsx       # 组件测试
+│   └── nav-user.test.tsx
 ├── app/
+│   ├── accounts/
+│   │   └── accounts.test.tsx
+│   ├── overview/
+│   │   └── overview.test.tsx
+│   ├── record/
+│   │   ├── record.test.tsx
+│   │   └── add/
+│   │       └── record-add.test.tsx
+│   ├── snapshots/
+│   │   └── snapshots.test.tsx
+│   ├── export/
+│   │   └── export.test.tsx
+│   ├── settings/
+│   │   ├── settings.test.tsx
+│   │   └── security.test.tsx
 │   └── api/
-│       └── auth/
-│           ├── login/
-│           │   └── route.test.ts    # API 路由测试
-│           └── register/
-│               └── route.test.ts    # API 路由测试
-├── test/
-│   └── setup.ts                # 测试环境配置
+│       ├── accounts/
+│       │   └── route.test.ts
+│       ├── assets/
+│       │   └── route.test.ts
+│       ├── balances/
+│       │   └── route.test.ts
+│       ├── records/
+│       │   └── route.test.ts
+│       ├── auth/
+│       │   ├── login/
+│       │   │   └── route.test.ts
+│       │   └── register/
+│       │       └── route.test.ts
+└── test/
+    └── setup.ts                # 测试环境配置
 └── vitest.config.ts            # Vitest 配置
 ```
 

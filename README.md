@@ -116,6 +116,13 @@ geldborse/
 │   │   ├── export/             # 数据全量导出
 │   │   ├── clear-data/         # 数据清除
 │   │   └── docs/               # API 文档页面
+│   │   ├── accounts/[id]/      # 账户详情/删除、资产 CRUD
+│   │   ├── assets/[id]/        # 资产详情/更新/删除
+│   │   ├── balances/[id]/      # 余额快照详情/更新/删除
+│   │   ├── records/[id]/       # 收支记录详情/更新/删除
+│   │   ├── daily-snapshots/[id]/ # 快照详情/删除
+│   │   ├── api-keys/[id]/      # API Key 详情/撤销/删除
+│   │   └── admin/users/[id]/   # 管理员用户更新/删除
 │   ├── auth/                   # 认证页面（登录/注册）
 │   ├── overview/               # 总览仪表盘
 │   ├── accounts/               # 账户管理
@@ -151,7 +158,7 @@ geldborse/
 │   ├── format.ts               # 数字/日期格式化
 │   └── utils.ts                # 通用工具函数
 ├── prisma/                     # Prisma 数据库配置
-│   ├── schema.prisma           # 8个数据模型
+│   ├── schema.prisma           # 9个数据模型
 │   └── seed.ts                 # 数据库填充脚本
 ├── hooks/                      # 自定义 Hook
 │   └── use-mobile.ts           # 移动端检测
