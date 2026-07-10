@@ -35,7 +35,7 @@ export async function PUT(
   const { userId } = auth
 
   const { id } = await params
-  const { amount, recordedAt } = await request.json()
+  const { amount, recordedAt, note } = await request.json()
 
   try {
     const existing = await prisma.balance.findFirst({
@@ -61,6 +61,7 @@ export async function PUT(
       data: {
         amount: parsedAmount,
         recordedAt: new Date(recordedAt),
+        note: note || null,
       },
       include: { asset: true },
     })

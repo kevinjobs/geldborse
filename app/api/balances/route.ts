@@ -81,38 +81,44 @@ export async function POST(request: NextRequest) {
   if (auth instanceof NextResponse) return auth
   const { userId } = auth
 
-  const { amount, recordedAt, assetId } = await request.json()
+  try {
+    const { amount, recordedAt, assetId, note } = await request.json()
 
-  if (!assetId) {
-    return NextResponse.json({ error: "缺少资产ID" }, { status: 400 })
-  }
-
-  // 验证资产是否属于当前用户
-  const asset = await prisma.asset.findFirst({
-    where: {
-      id: assetId,
-      account: {
-        userId
-      }
+    if (!assetId) {
+      return NextResponse.json({ error: "缺少资产ID" }, { status: 400 })
     }
-  })
 
-  if (!asset) {
-    return NextResponse.json({ error: "资产不存在或不属于当前用户" }, { status: 400 })
+    // 验证资产是否属于当前用户
+    const asset = await prisma.asset.findFirst({
+      where: {
+        id: assetId,
+        account: {
+          userId
+        }
+      }
+    })
+
+    if (!asset) {
+      return NextResponse.json({ error: "资产不存在或不属于当前用户" }, { status: 400 })
+    }
+
+    const parsedAmount = parseFloat(amount)
+    if (isNaN(parsedAmount) || !isFinite(parsedAmount)) {
+      return NextResponse.json({ error: "金额无效" }, { status: 400 })
+    }
+
+    const balance = await prisma.balance.create({
+      data: {
+        amount: parsedAmount,
+        recordedAt: new Date(recordedAt),
+        assetId,
+        note: note || null,
+      },
+      include: { asset: true },
+    })
+    return NextResponse.json(balance)
+  } catch (error) {
+    console.error("创建余额快照失败:", error)
+    return NextResponse.json({ error: "创建余额快照失败" }, { status: 500 })
   }
-
-  const parsedAmount = parseFloat(amount)
-  if (isNaN(parsedAmount) || !isFinite(parsedAmount)) {
-    return NextResponse.json({ error: "金额无效" }, { status: 400 })
-  }
-
-  const balance = await prisma.balance.create({
-    data: {
-      amount: parsedAmount,
-      recordedAt: new Date(recordedAt),
-      assetId,
-    },
-    include: { asset: true },
-  })
-  return NextResponse.json(balance)
 }

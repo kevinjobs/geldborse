@@ -51,4 +51,5 @@ export interface Balance {
   assetId: string
   createdAt: string
   updatedAt: string
+  note?: string | null
 }

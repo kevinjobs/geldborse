@@ -42,6 +42,7 @@ interface Balance {
   amount: number
   recordedAt: string
   assetId: string
+  note?: string | null
 }
 
 interface AccountDetailModalProps {
@@ -394,9 +395,16 @@ export function AccountDetailModal({
                                 {formatDateTime(balance.recordedAt)}
                               </span>
                               <div className="ml-auto flex items-center gap-3">
-                                <span className={`font-mono text-sm ${balance.amount < 0 ? "text-destructive" : "text-success"}`}>
-                                  {formatAmount(balance.amount)}
-                                </span>
+                                <div className="flex flex-col items-end">
+                                  <span className={`font-mono text-sm ${balance.amount < 0 ? "text-destructive" : "text-success"}`}>
+                                    {formatAmount(balance.amount)}
+                                  </span>
+                                  {balance.note && (
+                                    <span className="text-[10px] text-muted-foreground mt-0.5">
+                                      {balance.note}
+                                    </span>
+                                  )}
+                                </div>
                                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
                                   <Button
                                     variant="ghost"

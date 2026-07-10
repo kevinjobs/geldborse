@@ -82,13 +82,14 @@ model Asset {
 }
 
 model Balance {
-  id        String   @id @default(cuid())
-  amount    Float
+  id         String   @id @default(cuid())
+  amount     Float
   recordedAt DateTime
-  assetId   String
-  asset     Asset    @relation(fields: [assetId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  assetId    String
+  asset      Asset    @relation(fields: [assetId], references: [id])
+  note       String?  @db.VarChar(20)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@index([assetId])
   @@index([recordedAt])

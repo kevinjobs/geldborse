@@ -11,7 +11,9 @@ vi.mock('@/lib/prisma', () => ({
   prisma: {
     balance: {
       findMany: vi.fn(),
+      findFirst: vi.fn(),
       create: vi.fn(),
+      update: vi.fn(),
     },
     asset: {
       findFirst: vi.fn(),
@@ -26,10 +28,13 @@ vi.mock('@/lib/prisma', () => ({
 import { authenticateRequest } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { GET, POST } from './route'
+import { PUT } from './[id]/route'
 
 const mockAuthenticateRequest = authenticateRequest as ReturnType<typeof vi.fn>
 const mockPrismaBalanceFindMany = prisma.balance.findMany as ReturnType<typeof vi.fn>
+const mockPrismaBalanceFindFirst = prisma.balance.findFirst as ReturnType<typeof vi.fn>
 const mockPrismaBalanceCreate = prisma.balance.create as ReturnType<typeof vi.fn>
+const mockPrismaBalanceUpdate = prisma.balance.update as ReturnType<typeof vi.fn>
 const mockPrismaAssetFindFirst = prisma.asset.findFirst as ReturnType<typeof vi.fn>
 const mockPrismaAccountFindFirst = prisma.account.findFirst as ReturnType<typeof vi.fn>
 
@@ -248,6 +253,124 @@ describe('POST /api/balances', () => {
         amount: 100,
         recordedAt: new Date('2024-01-01'),
         assetId: 'asset-1',
+        note: null,
+      },
+      include: { asset: true },
+    })
+  })
+})
+
+describe('PUT /api/balances/:id', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('returns 401 when auth fails', async () => {
+    const unauthorized = NextResponse.json({ error: '未授权' }, { status: 401 })
+    mockAuthenticateRequest.mockResolvedValue(unauthorized)
+
+    const response = await PUT(
+      createRequest('http://localhost/api/balances/bal-1', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: 200, recordedAt: '2024-01-02' }),
+      }),
+      { params: Promise.resolve({ id: 'bal-1' }) }
+    )
+    const data = await response.json()
+
+    expect(response.status).toBe(401)
+    expect(data.error).toBe('未授权')
+    expect(mockPrismaBalanceUpdate).not.toHaveBeenCalled()
+  })
+
+  it('returns 404 when balance does not exist', async () => {
+    mockAuthenticateRequest.mockResolvedValue({ userId: 'user-1' })
+    mockPrismaBalanceFindFirst.mockResolvedValue(null)
+
+    const response = await PUT(
+      createRequest('http://localhost/api/balances/bal-1', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: 200, recordedAt: '2024-01-02' }),
+      }),
+      { params: Promise.resolve({ id: 'bal-1' }) }
+    )
+    const data = await response.json()
+
+    expect(response.status).toBe(404)
+    expect(data.error).toBe('余额快照不存在或无权操作')
+    expect(mockPrismaBalanceUpdate).not.toHaveBeenCalled()
+  })
+
+  it('updates balance with note', async () => {
+    mockAuthenticateRequest.mockResolvedValue({ userId: 'user-1' })
+    mockPrismaBalanceFindFirst.mockResolvedValue({ id: 'bal-1', assetId: 'asset-1', account: { userId: 'user-1' } })
+
+    const updatedBalance = {
+      id: 'bal-1',
+      amount: 200,
+      recordedAt: new Date('2024-01-02'),
+      assetId: 'asset-1',
+      note: '期末调整',
+      asset: { id: 'asset-1', name: '现金' },
+    }
+    mockPrismaBalanceUpdate.mockResolvedValue(updatedBalance)
+
+    const response = await PUT(
+      createRequest('http://localhost/api/balances/bal-1', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: 200, recordedAt: '2024-01-02', note: '期末调整' }),
+      }),
+      { params: Promise.resolve({ id: 'bal-1' }) }
+    )
+    const data = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(data).toEqual({ ...updatedBalance, recordedAt: updatedBalance.recordedAt.toISOString() })
+    expect(mockPrismaBalanceUpdate).toHaveBeenCalledWith({
+      where: { id: 'bal-1' },
+      data: {
+        amount: 200,
+        recordedAt: new Date('2024-01-02'),
+        note: '期末调整',
+      },
+      include: { asset: true },
+    })
+  })
+
+  it('updates balance and clears note when note is empty', async () => {
+    mockAuthenticateRequest.mockResolvedValue({ userId: 'user-1' })
+    mockPrismaBalanceFindFirst.mockResolvedValue({ id: 'bal-1', assetId: 'asset-1', account: { userId: 'user-1' } })
+
+    const updatedBalance = {
+      id: 'bal-1',
+      amount: 200,
+      recordedAt: new Date('2024-01-02'),
+      assetId: 'asset-1',
+      note: null,
+      asset: { id: 'asset-1', name: '现金' },
+    }
+    mockPrismaBalanceUpdate.mockResolvedValue(updatedBalance)
+
+    const response = await PUT(
+      createRequest('http://localhost/api/balances/bal-1', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: 200, recordedAt: '2024-01-02', note: '' }),
+      }),
+      { params: Promise.resolve({ id: 'bal-1' }) }
+    )
+    const data = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(mockPrismaBalanceUpdate).toHaveBeenCalledWith({
+      where: { id: 'bal-1' },
+      data: {
+        amount: 200,
+        recordedAt: new Date('2024-01-02'),
+        note: null,
       },
       include: { asset: true },
     })

@@ -47,10 +47,11 @@ export async function GET(request: NextRequest) {
             type: asset.type,
             amount: asset.amount ?? 0,
             accountId: asset.accountId,
-            balances: asset.balances.map((b) => ({
-              amount: b.amount,
-              recordedAt: b.recordedAt.toISOString(),
-            })),
+              balances: asset.balances.map((b) => ({
+                amount: b.amount,
+                recordedAt: b.recordedAt.toISOString(),
+                note: b.note || null,
+              })),
           })),
         })),
         snapshots: snapshots.map((s) => ({

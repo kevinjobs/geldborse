@@ -22,6 +22,8 @@ interface BalanceFormDialogProps {
   onBalanceAmountChange: (amount: string) => void
   balanceDate: string
   onBalanceDateChange: (date: string) => void
+  balanceNote: string
+  onBalanceNoteChange: (note: string) => void
   saving: boolean
   onSave: () => void
 }
@@ -34,6 +36,8 @@ export function BalanceFormDialog({
   onBalanceAmountChange,
   balanceDate,
   onBalanceDateChange,
+  balanceNote,
+  onBalanceNoteChange,
   saving,
   onSave,
 }: BalanceFormDialogProps) {
@@ -63,6 +67,17 @@ export function BalanceFormDialog({
             <DateTimePicker
               value={balanceDate}
               onChange={onBalanceDateChange}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="balanceNote">备注（可选，最多20字）</Label>
+            <Input
+              id="balanceNote"
+              type="text"
+              maxLength={20}
+              placeholder="请输入备注"
+              value={balanceNote}
+              onChange={(e) => onBalanceNoteChange(e.target.value)}
             />
           </div>
         </div>

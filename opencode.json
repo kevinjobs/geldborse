@@ -1,10 +1,2 @@
 {
-  "$schema": "https://opencode.ai/config.json",
-  "mcp": {
-    "Sentry": {
-      "type": "remote",
-      "url": "https://mcp.sentry.dev/mcp/mint-forge/javascript-nextjs",
-      "oauth": {}
-    }
-  }
-}
+  "$schema": "https://opencode.ai/config.json",}

@@ -226,7 +226,7 @@ export async function POST(request: NextRequest) {
 async function importBalances(
   tx: Prisma.TransactionClient,
   assetId: string,
-  balanceDataList: { amount: number; recordedAt: string }[] | undefined
+  balanceDataList: { amount: number; recordedAt: string; note?: string | null }[] | undefined
 ): Promise<{ created: number; duplicates: number; invalid: number }> {
   if (!balanceDataList || !Array.isArray(balanceDataList) || balanceDataList.length === 0) {
     return { created: 0, duplicates: 0, invalid: 0 }
@@ -251,7 +251,8 @@ async function importBalances(
       data: newBalances.map(b => ({
         amount: b.amount,
         recordedAt: new Date(b.recordedAt),
-        assetId
+        assetId,
+        note: b.note || null,
       }))
     })
   }

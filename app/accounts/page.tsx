@@ -51,6 +51,7 @@ export default function AccountsPage() {
   const [editingBalance, setEditingBalance] = useState<Balance | null>(null)
   const [balanceAmount, setBalanceAmount] = useState("")
   const [balanceDate, setBalanceDate] = useState("")
+  const [balanceNote, setBalanceNote] = useState("")
   const [snapshotDate, setSnapshotDate] = useState<string>("") // "" = current, no filter
   const [modalAccount, setModalAccount] = useState<Account | null>(null)
   const [modalExpandedAssets, setModalExpandedAssets] = useState<Set<string>>(new Set())
@@ -285,6 +286,7 @@ export default function AccountsPage() {
   const handleAddBalance = () => {
     setEditingBalance(null)
     setBalanceAmount("")
+    setBalanceNote("")
     const now = new Date()
     const year = now.getFullYear()
     const month = String(now.getMonth() + 1).padStart(2, '0')
@@ -305,6 +307,7 @@ export default function AccountsPage() {
     const hours = String(date.getHours()).padStart(2, '0')
     const minutes = String(date.getMinutes()).padStart(2, '0')
     setBalanceDate(`${year}-${month}-${day}T${hours}:${minutes}`)
+    setBalanceNote(balance.note || "")
     setBalanceDialogOpen(true)
   }
 
@@ -330,26 +333,26 @@ export default function AccountsPage() {
     setSaving(true)
     try {
       if (editingBalance) {
-        const updatedBalance = await api.put<Balance>(`/api/balances/${editingBalance.id}`, { amount: parseFloat(balanceAmount), recordedAt: new Date(balanceDate).toISOString() })
+        const updatedBalance = await api.put<Balance>(`/api/balances/${editingBalance.id}`, { amount: parseFloat(balanceAmount), recordedAt: new Date(balanceDate).toISOString(), note: balanceNote || null })
         if (editingBalance.assetId) {
           setAssetBalances(prev => ({
             ...prev,
             [editingBalance.assetId]: prev[editingBalance.assetId]?.map(b => b.id === editingBalance.id ? updatedBalance : b) || []
           }))
-          // 重新获取账户列表，更新账户总额
           fetchAccounts()
         }
+        setBalanceNote("")
         setBalanceDialogOpen(false)
       } else {
-        const newBalance = await api.post<Balance>("/api/balances", { amount: parseFloat(balanceAmount), recordedAt: new Date(balanceDate).toISOString(), assetId: selectedAsset!.id })
+        const newBalance = await api.post<Balance>("/api/balances", { amount: parseFloat(balanceAmount), recordedAt: new Date(balanceDate).toISOString(), assetId: selectedAsset!.id, note: balanceNote || null })
         if (selectedAsset) {
           setAssetBalances(prev => ({
             ...prev,
             [selectedAsset.id]: [...(prev[selectedAsset.id] || []), newBalance]
           }))
-          // 重新获取账户列表，更新账户总额
           fetchAccounts()
         }
+        setBalanceNote("")
         setBalanceDialogOpen(false)
       }
     } catch (error) {
@@ -746,6 +749,8 @@ export default function AccountsPage() {
         onBalanceAmountChange={setBalanceAmount}
         balanceDate={balanceDate}
         onBalanceDateChange={setBalanceDate}
+        balanceNote={balanceNote}
+        onBalanceNoteChange={setBalanceNote}
         saving={saving}
         onSave={handleSaveBalance}
       />

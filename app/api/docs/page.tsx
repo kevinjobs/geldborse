@@ -401,7 +401,7 @@ export default function ApiDocsPage() {
                 {
                   method: "POST", path: "/api/balances",
                   auth: "assets:write",
-                  body: JSON.stringify({ amount: 150000, recordedAt: "2026-06-15T10:00:00.000Z", assetId: "asset_id" }, null, 2),
+                  body: JSON.stringify({ amount: 150000, recordedAt: "2026-06-15T10:00:00.000Z", assetId: "asset_id", note: "初始余额" }, null, 2),
                   response: "201 — 创建的 Balance（含资产信息）",
                   errors: "400 — 参数错误, 500",
                   description: "创建一条余额快照记录。",
@@ -417,7 +417,7 @@ export default function ApiDocsPage() {
                 {
                   method: "PUT", path: "/api/balances/:id",
                   auth: "assets:write",
-                  body: JSON.stringify({ amount: 160000, recordedAt: "2026-06-20T10:00:00.000Z" }, null, 2),
+                  body: JSON.stringify({ amount: 160000, recordedAt: "2026-06-20T10:00:00.000Z", note: "期末调整" }, null, 2),
                   response: "200 — 更新后的 Balance（含资产信息）",
                   errors: "404 — 余额记录不存在, 500",
                   description: "更新余额快照。",

@@ -32,6 +32,7 @@ export interface Balance {
   recordedAt: string
   assetId: string
   asset?: Asset
+  note?: string | null
   createdAt?: string
   updatedAt?: string
 }
