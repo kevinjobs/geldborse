@@ -35,12 +35,15 @@ No typecheck script exists. There are pre-existing lint errors (mostly `no-expli
 - Client regenerate: `bunx prisma generate`
 - DATABASE_URL goes in `.env` (also contains admin credentials — never commit)
 
-Singleton client at `@/lib/prisma.ts`. Schema at `prisma/schema.prisma` (models: User, Account, Asset, Balance, Record, DailySnapshot, LoginHistory).
+Singleton client at `@/lib/prisma.ts`. Schema at `prisma/schema.prisma` (models: User, Account, AccountMember, Asset, Balance, Record, DailySnapshot, LoginHistory, ApiKey).
 
 ## Auth (custom, not next-auth)
 
 - Auth context/provider at `@/lib/auth-context.tsx` — stores user in localStorage under key `geldborse_user`
-- API auth: `getCurrentUserId(request)` from `@/lib/auth` extracts Bearer token from `Authorization` header (the token value IS the user ID — simplified, no JWT)
+- API auth:
+  - `authenticateRequest(request, { requiredScope })` from `@/lib/auth` — 标准 API 路由鉴权，返回 `{ userId, scopes }` 或 `NextResponse` 错误，支持 scope 检查和 API Key
+  - `getCurrentUserId(request)` — 轻量鉴权，仅验证 session token（优先 cookie，其次 Bearer），返回 `string | null`。用于无需 scope 检查的简单场景（如 auth 路由、工具函数）
+  - Token 值即用户 ID（简化设计，无 JWT）
 - Protected pages wrap content in `<ProtectedRoute>` component
 
 ## Project architecture
@@ -74,4 +77,7 @@ Singleton client at `@/lib/prisma.ts`. Schema at `prisma/schema.prisma` (models:
 
 ## IMPORTANT RULES
 
- - DO NOT RUN `bun run build` when you done a small fix
+ - DO NOT RUN `bun run build` when you're done a small fix
+- **API 错误处理**: API route handler 应使用 try/catch，返回 `{ error: "描述" }` + 对应 HTTP status code，避免未捕获异常导致模糊的 "Request failed"
+- **数据更新流程**: 前端修改数据时先调用 API，成功后更新本地 state 并全量刷新（如 `fetchAccounts()`）；失败时 toast 提示，本地 state 保持不变
+- **Balance 备注**: 备注字段 `note String? @db.VarChar(20)`，前端 `Input` 限制 `maxLength={20}`，空备注存为 `null`
