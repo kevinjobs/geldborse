@@ -81,6 +81,9 @@ logs/error.log
 # CodeGraph index
 .codegraph/
 
+# OpenCode workspace
+.opencode/
+
 # Deepwork session files
 .slim/
 *.xlsx
