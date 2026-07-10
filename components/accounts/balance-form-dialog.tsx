@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { DateTimePicker } from "@/components/ui/date-time-picker"
 import type { Balance } from "./types"
 
 interface BalanceFormDialogProps {
@@ -45,7 +46,7 @@ export function BalanceFormDialog({
             {editingBalance ? "修改余额快照信息" : "记录当前资产余额"}
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4">
+        <div className="space-y-5 mb-5">
           <div className="space-y-2">
             <Label htmlFor="balanceAmount">金额</Label>
             <Input
@@ -59,11 +60,9 @@ export function BalanceFormDialog({
           </div>
           <div className="space-y-2">
             <Label htmlFor="balanceDate">登记时间</Label>
-            <Input
-              id="balanceDate"
-              type="datetime-local"
+            <DateTimePicker
               value={balanceDate}
-              onChange={(e) => onBalanceDateChange(e.target.value)}
+              onChange={onBalanceDateChange}
             />
           </div>
         </div>
