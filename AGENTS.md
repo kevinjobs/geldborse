@@ -21,7 +21,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 | Test coverage | `bun test --coverage` |
 | Test UI | `bun test:ui` |
 
-No typecheck script exists. There are pre-existing lint errors (mostly `no-explicit-any` in test files) — do not introduce new ones.
+No typecheck script exists. There are pre-existing lint errors (mostly `no-explicit-any` in test files) — do not introduce new ones. Type errors are caught by `bun run build` (runs TypeScript type checking).
 
 ## Git
 
@@ -32,10 +32,12 @@ No typecheck script exists. There are pre-existing lint errors (mostly `no-expli
 - Migration (dev): `bunx prisma migrate dev`
 - Deploy (prod): `bunx prisma migrate deploy`
 - Seed: `bunx prisma db seed` (runs `tsx prisma/seed.ts`)
-- Client regenerate: `bunx prisma generate`
+- Client regenerate: `bunx prisma generate` — **schema 变更后必须运行**，否则 `bun run build` 会因 stale 类型定义失败（生成的 client 不会自动跟随 schema 更新）
 - DATABASE_URL goes in `.env` (also contains admin credentials — never commit)
 
 Singleton client at `@/lib/prisma.ts`. Schema at `prisma/schema.prisma` (models: User, Account, AccountMember, Asset, Balance, Record, DailySnapshot, LoginHistory, ApiKey).
+
+> **坑**: 若改了 `prisma/schema.prisma` 后 `bun run build` 报 "Object literal may only specify known properties" 之类类型错误，先 `bunx prisma generate` 再构建即可。
 
 ## Auth (custom, not next-auth)
 
@@ -48,7 +50,7 @@ Singleton client at `@/lib/prisma.ts`. Schema at `prisma/schema.prisma` (models:
 
 ## Project architecture
 
-- Pages: `/app/` (App Router), flat routes: `/overview`, `/accounts`, `/record`, `/record/add`, `/snapshots`, `/export`, `/settings`, `/auth/login`, `/auth/register`
+- Pages: `/app/` (App Router), flat routes: `/overview`, `/accounts`, `/record`, `/record/add`, `/snapshots`, `/export`, `/settings`, `/help`, `/auth/login`, `/auth/register`
 - API routes: `/app/api/` — RESTful pattern, `route.ts` files, no tRPC
 - Components: `/components/` (app-level) + `/components/ui/` (Shadcn)
 - Lib: `/lib/` — utils, auth, prisma, account-config, account-logos
@@ -75,9 +77,18 @@ Singleton client at `@/lib/prisma.ts`. Schema at `prisma/schema.prisma` (models:
 - **Package registry**: `bunfig.toml` sets mirror to `registry.npmmirror.com`
 - **Bun config**: `bunfig.toml` in root — only sets registry mirror
 
+## Vercel deployment
+
+- **Prisma 事务超时**: 云数据库（Neon / Prisma Postgres）网络延迟高于本地，`prisma.$transaction(async (tx) => {...})` 交互事务默认超时 5s 在数据量大时可能失败。关键路由（如快照生成）已调至 `{ timeout: 15000 }`
+- **Prisma client**: schema 变更后需确保 `bunx prisma generate` 在构建前运行（Vercel 会自动检测 Prisma 并运行，但本地构建需要手动执行）
+- **Sentry**: 配置在 `next.config.ts`，`onRequestError` 自动捕获未处理异常。被 catch 接住的预期错误不上报，通过 Vercel Function Logs 查看
+
 ## IMPORTANT RULES
 
  - DO NOT RUN `bun run build` when you're done a small fix
 - **API 错误处理**: API route handler 应使用 try/catch，返回 `{ error: "描述" }` + 对应 HTTP status code，避免未捕获异常导致模糊的 "Request failed"
+  - 所有 catch 块必须绑定 `(error)` 并调用 `console.error("描述:", error)`，将原始异常写入 stderr — 这是 Vercel Function Logs 中唯一的错误来源
+  - 被 catch 接住的错误**不上报 Sentry**（预期处理路径），未捕获的异常由 `Sentry.onRequestError` 自动捕获
+  - 调试线上 API 错误时，查看 **Vercel → Project → Functions → Logs**，搜索 catch 中的错误描述即可找到原始 Prisma 异常堆栈
 - **数据更新流程**: 前端修改数据时先调用 API，成功后更新本地 state 并全量刷新（如 `fetchAccounts()`）；失败时 toast 提示，本地 state 保持不变
 - **Balance 备注**: 备注字段 `note String? @db.VarChar(20)`，前端 `Input` 限制 `maxLength={20}`，空备注存为 `null`
