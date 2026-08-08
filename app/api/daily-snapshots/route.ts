@@ -207,7 +207,7 @@ export async function POST(request: NextRequest) {
         }
       }
       return results
-    })
+    }, { timeout: 15000 })
 
     return NextResponse.json({
       success: true,

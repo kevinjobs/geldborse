@@ -56,7 +56,8 @@ export async function PUT(
       include: { account: true },
     })
     return NextResponse.json(asset)
-  } catch {
+  } catch (error) {
+    console.error("更新失败:", error)
     return NextResponse.json({ error: "更新失败" }, { status: 500 })
   }
 }
@@ -87,7 +88,8 @@ export async function DELETE(
       where: { id },
     })
     return NextResponse.json({ success: true })
-  } catch {
+  } catch (error) {
+    console.error("删除失败:", error)
     return NextResponse.json({ error: "删除失败" }, { status: 500 })
   }
 }

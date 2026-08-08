@@ -41,7 +41,8 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: "desc" },
     })
     return NextResponse.json(assets)
-  } catch {
+  } catch (error) {
+    console.error("获取资产失败:", error)
     return NextResponse.json({ error: "获取资产失败" }, { status: 500 })
   }
 }

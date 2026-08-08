@@ -71,7 +71,8 @@ export async function GET(request: NextRequest) {
       orderBy: { recordedAt: "desc" },
     })
     return NextResponse.json(balances)
-  } catch {
+  } catch (error) {
+    console.error("获取余额失败:", error)
     return NextResponse.json({ error: "获取余额失败" }, { status: 500 })
   }
 }

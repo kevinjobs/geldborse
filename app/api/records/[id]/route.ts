@@ -98,7 +98,8 @@ export async function PUT(
       include: { account: true, asset: true },
     })
     return NextResponse.json(record)
-  } catch {
+  } catch (error) {
+    console.error("更新失败:", error)
     return NextResponse.json({ error: "更新失败" }, { status: 500 })
   }
 }

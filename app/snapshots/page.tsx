@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button"
 import { formatAmount, formatAmountShort } from "@/lib/format"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
+import { toast } from "sonner"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -104,6 +105,8 @@ export default function SnapshotsPage() {
       setGenerateOpen(false)
     } catch (error) {
       console.error("生成快照失败:", error)
+      const message = error instanceof Error ? error.message : "生成快照失败"
+      toast.error(message)
     } finally {
       setGenerating(false)
     }
